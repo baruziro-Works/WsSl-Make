@@ -57,7 +57,7 @@
             font-weight: 700;
             line-height: 1.1;
             padding-bottom: 0.1em;
-            text-align: center !important; /* 中央寄せを確実に強制 */
+            text-align: center !important; /* 中書きを確実に強制 */
         }
     </style>
 </head>
@@ -251,8 +251,8 @@
                     <button onclick="prevSlide()" class="bg-slate-700 p-2 rounded-lg text-white"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
                     <span id="slideIndexText" class="text-sm font-bold text-slate-300 px-3 py-1 bg-slate-900 rounded-lg">0 / 0</span>
                     <button onclick="nextSlide()" class="bg-slate-700 p-2 rounded-lg text-white"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
-                    <button onclick="startPresentation()" id="presentationBtn" class="bg-sky-600 text-white font-bold px-5 py-2 rounded-lg flex items-center gap-2 ml-4 hover:bg-sky-500 transition">
-                        <i data-lucide="play" class="w-4 h-4"></i> プレゼン開始
+                    <button onclick="startPresentation()" id="presentationBtn" class="bg-sky-600 text-white font-bold px-5 py-2 rounded-lg flex items-center gap-2 ml-4 hover:bg-sky-500 transition" title="自動的にブラウザを全画面表示にしてプレゼンを開始します">
+                        <i data-lucide="monitor-play" class="w-4 h-4"></i> プレゼン開始 (全画面)
                     </button>
                 </div>
             </div>
@@ -348,7 +348,10 @@
             </div>
             <div onclick="prevSlide()" class="absolute left-0 top-0 bottom-0 w-1/5 cursor-w-resize z-20"></div>
             <div onclick="nextSlide()" class="absolute right-0 top-0 bottom-0 w-1/5 cursor-e-resize z-20"></div>
-            <div class="absolute top-4 right-4 z-30 opacity-20 hover:opacity-100 transition">
+            <div class="absolute top-4 right-4 z-30 opacity-20 hover:opacity-100 transition flex items-center gap-2">
+                <button onclick="toggleSystemFullscreen()" class="bg-slate-900/80 hover:bg-slate-900 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-1" title="全画面表示を切り替えます">
+                    <i data-lucide="maximize" class="w-4 h-4" id="fsToggleIcon"></i> 全画面切替
+                </button>
                 <button onclick="stopPresentation()" class="bg-slate-900/80 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
                     <i data-lucide="x" class="w-4 h-4"></i> 閉じる (Esc)
                 </button>
@@ -465,84 +468,6 @@
         </div>
     </div>
 
-    <!-- 典礼項目コピペ登録モーダル -->
-    <div id="liturgyModal" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-start">
-                <h3 class="text-base font-bold text-amber-400 flex items-center gap-2">
-                    <i data-lucide="table-properties" class="w-5 h-5"></i> 典礼項目コピペ登録
-                </h3>
-                <button onclick="toggleLiturgyModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            
-            <p class="text-xs text-slate-300 leading-relaxed">
-                Excel or スプレッドシートから3つの列をコピペしてください。
-            </p>
-
-            <div>
-                <textarea id="liturgyExcelPaste" rows="5" placeholder="祝祷	1	仰[あお]ぎ願[ねが]わくは、主[しゅ]イエス・キリストの恵[めぐ]み...&#10;報告	2	司会者より来週[らいしゅう]の集まりの案内をいたします。" class="w-full bg-slate-900 border border-slate-650 rounded p-2.5 text-xs text-white font-mono"></textarea>
-            </div>
-
-            <div>
-                <span class="block text-[10px] text-slate-400 font-bold mb-1.5">現在登録済みのプログラム自動項目一覧</span>
-                <div id="liturgyList" class="bg-slate-950 rounded-lg p-2 max-h-36 overflow-y-auto text-xs space-y-1.5 border border-slate-800">
-                </div>
-            </div>
-
-            <div class="flex-end flex justify-end space-x-2 pt-2 border-t border-slate-700">
-                <button onclick="toggleLiturgyModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-650">閉じる</button>
-                <button onclick="processLiturgyExcelImport()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5">
-                    <i data-lucide="arrow-down-to-line" class="w-4 h-4"></i> 一括取り込み・上書き
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- システム設定モーダル -->
-    <div id="settingsModal" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-start">
-                <h3 class="text-base font-bold text-sky-400 flex items-center gap-2">
-                    <i data-lucide="settings" class="w-5 h-5"></i> WorshipSlide システム設定
-                </h3>
-                <button onclick="toggleSettingsModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            
-            <div class="space-y-3">
-                <!-- Kuromoji.js の準備状態を示すバッジ -->
-                <div class="bg-slate-950 p-3 rounded-lg border border-slate-850 flex items-center justify-between">
-                    <span class="text-xs text-slate-300 font-bold">ローカルルビ振りエンジン</span>
-                    <span id="kuromojiStatusBadge" class="text-[10px] px-2 py-0.5 rounded border bg-rose-500/10 text-rose-400 border-rose-500/20">準備中...</span>
-                </div>
-
-                <div class="bg-slate-950 p-3 rounded-lg border border-slate-850 space-y-2">
-                    <label class="block text-xs font-bold text-slate-300">Gemini APIキー (自動保存されます)</label>
-                    <input type="password" id="settingsApiKeyInput" placeholder="AIzaSy... から始まるキーを貼り付けてください" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-sky-500">
-                    <p class="text-[9px] text-slate-450 leading-relaxed">
-                        ※Google AI Studioで「AIzaSy」から始まるGemini API専用キーを再取得してください。
-                    </p>
-                </div>
-
-                <div class="flex gap-2">
-                    <button onclick="saveSettingsApiKey()" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 rounded-lg text-xs transition">
-                        設定を保存
-                    </button>
-                    <button id="testApiBtn" onclick="testApiKeyConnection()" class="bg-slate-700 hover:bg-slate-650 text-slate-200 font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-1 justify-center">
-                        <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> 接続テスト
-                    </button>
-                </div>
-
-                <!-- テスト結果表示エリア -->
-                <div id="testResultArea" class="hidden bg-slate-900 p-3 rounded-lg border border-slate-800 text-[11px] font-mono whitespace-pre-wrap leading-relaxed">
-                </div>
-            </div>
-
-            <div class="flex justify-end pt-2 border-t border-slate-700">
-                <button onclick="toggleSettingsModal()" class="bg-slate-700 hover:bg-slate-650 text-white font-bold px-4 py-1.5 rounded-lg text-xs">閉じる</button>
-            </div>
-        </div>
-    </div>
-
     <!-- 歌詞データベース管理マネージャーモーダル -->
     <div id="manageDatabaseModal" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-4xl w-full h-[85vh] p-6 flex flex-col space-y-4 shadow-2xl">
@@ -645,7 +570,7 @@
                 },
                 { 
                     title: "主[しゅ]の祈[いの]り", 
-                    content: "我[われ]らに罪[つみ]を犯[おか]す者[もの]を, 我[われ]らが許[ゆる]すごとく、\n我[われ]らの罪[つみ]をも許[ゆる]したまえ。\n我[われ]らを試[こころ]みに合わせず、悪[あく]より救[すく]い出したまえ。\n国[くに]と、力[ち力]と、栄[さか]えとは、\n限りなく汝[なんじ]のものなればなり。アーメン。", 
+                    content: "我[われ]らに罪[つみ]を犯[おか]す者[もの]を、我[われ]らが許[ゆる]すごとく、\n我[われ]らの罪[つみ]をも許[ゆる]したまえ。\n我[われ]らを試[こころ]みに合わせず、悪[あく]より救[すく]い出したまえ。\n国[くに]と、力[ち力]と、栄[さか]えとは、\n限りなく汝[なんじ]のものなればなり。アーメン。", 
                     bottomLeft: "主の祈り",
                     fontSize: 90, titleFontSize: 100, footerFontSize: 100, padding: "narrow", verticalAlign: "center", hideFooter: false
                 }
@@ -1090,6 +1015,7 @@
             showNotification("スライドデータをエクスポートしました。");
         }
 
+        document.getElementById('wslideImportInput').addEventListener('change', importWorshipData);
         function triggerImportWorshipData() {
             const fileInput = document.getElementById('wslideImportInput');
             if (fileInput) fileInput.click();
@@ -1439,7 +1365,7 @@
                             rowsToProcess.forEach(row => row.formattedContent = row.content);
                         }
 
-                        // 元のCSV of 行順の通りに新スライドを組み立て
+                        // 元のCSVの行順の通りに、新スライド配列を組み立てる
                         for (let row of validRows) {
                             if (row.isPreset) {
                                 newDirectSlides.push(...row.presetSlides);
@@ -1494,7 +1420,7 @@
                                     const currentBatch = validRows.slice(i, i + batchSize);
                                     const batchContents = currentBatch.map(r => r.content);
                                     const batchNum = Math.floor(i / batchSize) + 1;
-                                    const totalBatches = Math.ceil(validRows.length / batchSize);
+                                    const totalBatches = Math.ceil(rowsToProcess.length / batchSize);
                                     showNotification(`【進捗: ${batchNum} / ${totalBatches} バッチ】AIルビ振りを実行中...`);
 
                                     const formattedContents = await requestAIBatchFormatAndRubi(batchContents, "lyrics");
@@ -1502,7 +1428,7 @@
                                         row.formattedContent = (formattedContents && formattedContents[idx]) ? formattedContents[idx] : row.content;
                                     });
 
-                                    if (i + batchSize < validRows.length) {
+                                    if (i + batchSize < rowsToProcess.length) {
                                         await sleep(1500);
                                     }
                                 }
@@ -1865,6 +1791,7 @@
             updateControlPanelUI(slide); updatePreview();
         }
 
+        // 余白の設定
         function setPadding(paddingType) {
             if (slides.length === 0) return;
             slides[currentSlideIndex].padding = paddingType; updatePreview();
@@ -1989,6 +1916,23 @@
             }
         }
 
+        // フルスクリーンの切替ロジック (ON/OFFトグル)
+        function toggleSystemFullscreen() {
+            const isFullscreen = document.fullscreenElement || 
+                                 document.mozFullScreenElement || 
+                                 document.webkitFullscreenElement || 
+                                 document.msFullscreenElement;
+            const icon = document.getElementById('fsToggleIcon');
+            if (isFullscreen) {
+                exitSystemFullscreen();
+                if (icon) icon.setAttribute('data-lucide', 'maximize');
+            } else {
+                requestSystemFullscreen();
+                if (icon) icon.setAttribute('data-lucide', 'minimize');
+            }
+            lucide.createIcons();
+        }
+
         function updatePreview() {
             if (!slides || slides.length === 0 || !slides[currentSlideIndex]) return;
             const s = slides[currentSlideIndex];
@@ -2036,7 +1980,7 @@
 
             // 1. 画像・PDFスライド資料の全画面表示処理の最適化（背後の水色グラデーションとはみ出しを完全消去）
             if (isImg) {
-                // 画像モード：はみ出した周りの隙間に水色背景（.sky-bg）や雲のオブジェクトが残らないよう、コンテナ自体を真っ黒（黒ベタ）にする
+                // 画像モード：はみ出した周りの隙間に水色背景（.sky-bg）や雲のオブジェクトが残らないよう、コンテナ自体を真っ黒（黒ベタ背景）にする
                 [pScreen, fScreen].forEach(el => {
                     if (!el) return;
                     el.style.background = '#000000';
@@ -2381,8 +2325,10 @@
                 overlay.classList.remove('hidden');
                 overlay.focus(); 
             }
+            // 自動的にシステムのフルスクリーン（全画面）表示をリクエスト
+            requestSystemFullscreen();
             updatePreview(); 
-            showNotification("プレゼンテーション投影を開始しました。ESCキーで終了します。");
+            showNotification("全画面投影を開始しました。ESCキー、または右上の閉じるボタンで戻ります。");
         }
 
         function stopPresentation() {
@@ -2431,6 +2377,7 @@
             for (let key in fullDict) {
                 const songTitle = key.replace(/LP\d+|教会福音讃美歌\d+/g, "").trim();
                 const textToSearch = `${key} ${songTitle}`.toUpperCase();
+
                 if (!query || textToSearch.includes(query)) {
                     hasResults = true;
                     const isCustom = customDictionary[key] !== undefined;
@@ -2445,7 +2392,8 @@
                                 <p class="text-xs font-bold truncate">${songTitle || key}</p>
                             </div>
                             <span class="text-[8px] px-1.5 py-0.5 rounded border shrink-0 ${badgeColor}">${badgeText}</span>
-                        </div>`;
+                        </div>
+                    `;
                 }
             }
             if (!hasResults) listEl.innerHTML = `<p class="text-center text-slate-500 text-xs py-4">該当曲がありません。</p>`;
