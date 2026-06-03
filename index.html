@@ -339,7 +339,7 @@
                     </div>
                 </div>
                 <div id="fsFooterFrame" class="flex justify-between items-end w-full border-t border-sky-955/10 pt-[2%] transition-all duration-150">
-                    <div id="fsFooterLeft" class="worship-font-bold dynamic-footer-left truncate max-w-[70%]"></div>
+                    <div id="fsFooterLeft" class="worship-font-bold dynamic-footer-left truncate border-t border-sky-955/10 pt-[2%]"></div>
                     <div class="flex items-center worship-font-bold dynamic-footer-right">
                         <span id="fsFooterArrow" class="mr-[1cqw]">→</span>
                         <span id="fsFooterIndex">1/1</span>
@@ -1913,46 +1913,69 @@
 
         // ブラウザ自体のフルスクリーンリクエスト
         function requestSystemFullscreen() {
-            const element = document.documentElement; // 画面全体
-            if (element.requestFullscreen) {
-                element.requestFullscreen();
-            } else if (element.mozRequestFullScreen) { /* Firefox */
-                element.mozRequestFullScreen();
-            } else if (element.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-                element.webkitRequestFullscreen();
-            } else if (element.msRequestFullscreen) { /* IE/Edge */
-                element.msRequestFullscreen();
+            try {
+                const element = document.documentElement; // 画面全体
+                if (element.requestFullscreen) {
+                    element.requestFullscreen().catch(err => {
+                        console.warn("Fullscreen request denied by browser policy:", err);
+                    });
+                } else if (element.mozRequestFullScreen) { /* Firefox */
+                    element.mozRequestFullScreen();
+                } else if (element.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+                    element.webkitRequestFullscreen();
+                } else if (element.msRequestFullscreen) { /* IE/Edge */
+                    element.msRequestFullscreen();
+                }
+            } catch (err) {
+                console.warn("Fullscreen failed or disallowed by permissions policy:", err);
             }
         }
 
         // フルスクリーンからの脱出
         function exitSystemFullscreen() {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.mozCancelFullScreen) { /* Firefox */
-                document.mozCancelFullScreen();
-            } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) { /* IE/Edge */
-                document.msExitFullscreen();
+            try {
+                // フルスクリーン状態である場合のみ解除を要求する
+                const isFullscreen = document.fullscreenElement || 
+                                     document.mozFullScreenElement || 
+                                     document.webkitFullscreenElement || 
+                                     document.msFullscreenElement;
+                if (!isFullscreen) return;
+
+                if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(err => {
+                        console.warn("Exit fullscreen denied by browser policy:", err);
+                    });
+                } else if (document.mozCancelFullScreen) { /* Firefox */
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE/Edge */
+                    document.msExitFullscreen();
+                }
+            } catch (err) {
+                console.warn("Exit fullscreen failed or disallowed:", err);
             }
         }
 
         // フルスクリーンの切替ロジック (ON/OFFトグル)
         function toggleSystemFullscreen() {
-            const isFullscreen = document.fullscreenElement || 
-                                 document.mozFullscreenElement || 
-                                 document.webkitFullscreenElement || 
-                                 document.msFullscreenElement;
-            const icon = document.getElementById('fsToggleIcon');
-            if (isFullscreen) {
-                exitSystemFullscreen();
-                if (icon) icon.setAttribute('data-lucide', 'maximize');
-            } else {
-                requestSystemFullscreen();
-                if (icon) icon.setAttribute('data-lucide', 'minimize');
+            try {
+                const isFullscreen = document.fullscreenElement || 
+                                     document.mozFullScreenElement || 
+                                     document.webkitFullscreenElement || 
+                                     document.msFullscreenElement;
+                const icon = document.getElementById('fsToggleIcon');
+                if (isFullscreen) {
+                    exitSystemFullscreen();
+                    if (icon) icon.setAttribute('data-lucide', 'maximize');
+                } else {
+                    requestSystemFullscreen();
+                    if (icon) icon.setAttribute('data-lucide', 'minimize');
+                }
+                lucide.createIcons();
+            } catch (err) {
+                console.warn("Toggle fullscreen failed:", err);
             }
-            lucide.createIcons();
         }
 
         function updatePreview() {
@@ -2002,7 +2025,7 @@
 
             // 1. 画像・PDFスライド資料の全画面表示処理の最適化（背後の水色グラデーションとはみ出しを完全消去）
             if (isImg) {
-                // 画像モード：はみ出した周りの隙間に水色背景（.sky-bg）や雲のオブジェクトが残らないよう、コンテナ自体を真っ黒（黒ベタ背景）にする
+                // 画像モード：はみ出した周りの隙間に水色背景（.sky-bg）や雲のオブジェクトが残らないよう, コンテナ自体を真っ黒（黒ベタ背景）にする
                 [pScreen, fScreen].forEach(el => {
                     if (!el) return;
                     el.style.background = '#000000';
@@ -2419,6 +2442,7 @@
             if (!hasResults) listEl.innerHTML = `<p class="text-center text-slate-500 text-xs py-4">該当曲がありません。</p>`;
         }
 
+        // データベースの曲選択
         function selectDBSong(key) {
             selectedDBSongKey = key; filterDatabaseList(); 
             const fullDict = { ...WORSHIP_DICTIONARY, ...customDictionary };
