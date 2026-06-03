@@ -339,7 +339,7 @@
                     </div>
                 </div>
                 <div id="fsFooterFrame" class="flex justify-between items-end w-full border-t border-sky-955/10 pt-[2%] transition-all duration-150">
-                    <div id="fsFooterLeft" class="worship-font-bold dynamic-footer-left truncate border-t border-sky-955/10 pt-[2%]"></div>
+                    <div id="fsFooterLeft" class="worship-font-bold dynamic-footer-left truncate max-w-[70%]"></div>
                     <div class="flex items-center worship-font-bold dynamic-footer-right">
                         <span id="fsFooterArrow" class="mr-[1cqw]">→</span>
                         <span id="fsFooterIndex">1/1</span>
@@ -584,7 +584,7 @@
                 },
                 { 
                     title: "信仰告白 (使徒信条)", 
-                    content: "ポンテオ・ピラトのもとに苦[くる]しみを受け、十字架[じゅうじか]に付けられ、\n死[し]に、葬[ほう]むられ、陰府[よみ]に下[くだ]り, \n三日[みっか]目[め]に死人[しにん]の内[うち]よりよみがえり、天[てん]に昇[のぼ]り、\n全能[ぜんのう]の父[ち力]なる神[かみ]の右[みぎ]に座[ざ]したまえり、", 
+                    content: "ポンテオ・ピラトのもとに苦[くる]しみを受け、十字架[じゅうじか]に付けられ、\n死[し]に、葬[ほう]むられ、陰府[よみ]に下[くだ]り, \n三日[みっか]目[め]に死人[しにん]の内[うち]よりよみがえり、天[てん]に昇[のぼ]り, \n全能[ぜんのう]の父[ち力]なる神[かみ]の右[みぎ]に座[ざ]したまえり、", 
                     bottomLeft: "信仰告白",
                     fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false
                 },
@@ -629,11 +629,38 @@
         let slides = [];
         let currentSlideIndex = 0;
         let isPresenting = false; 
+
+        // ブラウザセキュリティ制限（LocalStorage完全保護フォールバック機能）
+        let safeStorage = {
+            available: false,
+            memory: {},
+            init: function() {
+                try {
+                    localStorage.setItem('__storage_test__', '1');
+                    localStorage.removeItem('__storage_test__');
+                    this.available = true;
+                } catch(e) {
+                    this.available = false;
+                    console.warn("LocalStorage is disabled/blocked by browser security. Using Memory cache mode instead.");
+                }
+            },
+            getItem: function(key) {
+                if (this.available) return localStorage.getItem(key);
+                return this.memory[key] || null;
+            },
+            setItem: function(key, val) {
+                if (this.available) {
+                    try { localStorage.setItem(key, val); } catch(e) {}
+                }
+                this.memory[key] = val;
+            }
+        };
+        safeStorage.init();
         
-        let customDictionary = JSON.parse(localStorage.getItem('worship_custom_dict') || '{}'); 
-        let liturgyDatabase = JSON.parse(localStorage.getItem('worship_liturgy_db') || JSON.stringify(DEFAULT_LITURGIES)); 
-        let activeBgTheme = localStorage.getItem('worship_bg_theme') || 'sky';
-        let customBgImage = localStorage.getItem('worship_custom_bg_img') || '';
+        let customDictionary = JSON.parse(safeStorage.getItem('worship_custom_dict') || '{}'); 
+        let liturgyDatabase = JSON.parse(safeStorage.getItem('worship_liturgy_db') || JSON.stringify(DEFAULT_LITURGIES)); 
+        let activeBgTheme = safeStorage.getItem('worship_bg_theme') || 'sky';
+        let customBgImage = safeStorage.getItem('worship_custom_bg_img') || '';
 
         const apiKey = ""; // デフォルトキー
         let selectedDBSongKey = null; 
@@ -649,16 +676,12 @@
 
         // ローカルストレージ安全保存ヘルパー
         function safeSaveToLocalStorage(key, val) {
-            try {
-                localStorage.setItem(key, val);
-            } catch (e) {
-                console.error("LocalStorage save failed:", e);
-            }
+            safeStorage.setItem(key, val);
         }
 
         // 稼働APIキー取得
         function getActiveApiKey() {
-            return localStorage.getItem('worship_gemini_apikey') || apiKey;
+            return safeStorage.getItem('worship_gemini_apikey') || apiKey;
         }
 
         // 遅延処理用のPromiseヘルパー
@@ -671,7 +694,7 @@
             lucide.createIcons(); 
             
             // 【改良点③】前回のプログラム状態があればそれを読み込み、なければサンプルをロード
-            const savedProgram = localStorage.getItem('worship_program_input');
+            const savedProgram = safeStorage.getItem('worship_program_input');
             const programInputEl = document.getElementById('programInput');
             if (programInputEl) {
                 if (savedProgram) {
@@ -697,14 +720,14 @@
             changeBgTheme(activeBgTheme, false);
             updateCsvInstruction();
             
-            const storedKey = localStorage.getItem('worship_gemini_apikey') || "";
+            const storedKey = safeStorage.getItem('worship_gemini_apikey') || "";
             const settingsApiKeyInputEl = document.getElementById('settingsApiKeyInput');
             if (settingsApiKeyInputEl) {
                 settingsApiKeyInputEl.value = storedKey;
             }
 
             // Kuromoji.js 初期化
-            initKuromojiEngine();
+            setTimeout(initKuromojiEngine, 300);
         };
 
         // ユーザーがプログラムを入力したときにLocalStorageに自動保存して次回引き継げるようにする
@@ -838,7 +861,7 @@
                 modal.classList.toggle('hidden');
                 if (!modal.classList.contains('hidden')) {
                     const apiKeyInput = document.getElementById('settingsApiKeyInput');
-                    if (apiKeyInput) apiKeyInput.value = localStorage.getItem('worship_gemini_apikey') || "";
+                    if (apiKeyInput) apiKeyInput.value = safeStorage.getItem('worship_gemini_apikey') || "";
                     const resArea = document.getElementById('testResultArea');
                     if (resArea) resArea.classList.add('hidden');
                 }
@@ -849,7 +872,7 @@
             const apiKeyInput = document.getElementById('settingsApiKeyInput');
             if (apiKeyInput) {
                 const val = apiKeyInput.value.trim();
-                localStorage.setItem('worship_gemini_apikey', val);
+                safeStorage.setItem('worship_gemini_apikey', val);
                 showNotification("APIキー設定を保存しました。");
             }
         }
@@ -897,7 +920,7 @@
                             resArea.className = "bg-emerald-950/40 border border-emerald-900/50 p-3 rounded-lg text-[11px] text-emerald-300";
                             resArea.innerHTML = `🟢 接続成功！\nAIへの接続が確認されました（モデル: ${modelName}）。\n[応答]: ${data.candidates?.[0]?.content?.parts?.[0]?.text || "OK"}`;
                         }
-                        localStorage.setItem('worship_gemini_apikey', testKey);
+                        safeStorage.setItem('worship_gemini_apikey', testKey);
                         success = true;
                         break;
                     } else {
@@ -1015,7 +1038,6 @@
             showNotification("スライドデータをエクスポートしました。");
         }
 
-        document.getElementById('wslideImportInput').addEventListener('change', importWorshipData);
         function triggerImportWorshipData() {
             const fileInput = document.getElementById('wslideImportInput');
             if (fileInput) fileInput.click();
@@ -1365,7 +1387,7 @@
                             rowsToProcess.forEach(row => row.formattedContent = row.content);
                         }
 
-                        // 元のCSVの行順の通りに、新スライド配列を組み立てる
+                        // 元のCSV of 行順の通りに新スライドを組み立て
                         for (let row of validRows) {
                             if (row.isPreset) {
                                 newDirectSlides.push(...row.presetSlides);
@@ -1428,7 +1450,7 @@
                                         row.formattedContent = (formattedContents && formattedContents[idx]) ? formattedContents[idx] : row.content;
                                     });
 
-                                    if (i + batchSize < rowsToProcess.length) {
+                                    if (i + batchSize < validRows.length) {
                                         await sleep(1500);
                                     }
                                 }
@@ -1919,7 +1941,7 @@
         // フルスクリーンの切替ロジック (ON/OFFトグル)
         function toggleSystemFullscreen() {
             const isFullscreen = document.fullscreenElement || 
-                                 document.mozFullScreenElement || 
+                                 document.mozFullscreenElement || 
                                  document.webkitFullscreenElement || 
                                  document.msFullscreenElement;
             const icon = document.getElementById('fsToggleIcon');
@@ -2377,7 +2399,6 @@
             for (let key in fullDict) {
                 const songTitle = key.replace(/LP\d+|教会福音讃美歌\d+/g, "").trim();
                 const textToSearch = `${key} ${songTitle}`.toUpperCase();
-
                 if (!query || textToSearch.includes(query)) {
                     hasResults = true;
                     const isCustom = customDictionary[key] !== undefined;
@@ -2392,8 +2413,7 @@
                                 <p class="text-xs font-bold truncate">${songTitle || key}</p>
                             </div>
                             <span class="text-[8px] px-1.5 py-0.5 rounded border shrink-0 ${badgeColor}">${badgeText}</span>
-                        </div>
-                    `;
+                        </div>`;
                 }
             }
             if (!hasResults) listEl.innerHTML = `<p class="text-center text-slate-500 text-xs py-4">該当曲がありません。</p>`;
