@@ -81,9 +81,7 @@
             <button onclick="toggleImportModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition">
                 <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> 外部データインポート
             </button>
-            <button onclick="toggleSettingsModal()" class="bg-slate-700 hover:bg-slate-650 text-slate-200 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition" title="APIキー設定・接続テスト">
-                <i data-lucide="settings" class="w-4 h-4 text-sky-400"></i> 設定
-            </button>
+
             <div class="bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center space-x-2 text-xs">
                 <button onclick="exportWorshipData()" class="text-sky-400 hover:text-sky-300 font-bold flex items-center gap-1" title="スライドデータや登録歌詞、登録典礼を丸ごと保存">
                     <i data-lucide="download" class="w-3.5 h-3.5"></i> データ保存
@@ -110,9 +108,6 @@
                 <textarea id="programInput" onkeydown="handleInputKeydown(event)" oninput="handleProgramInputChanged(this.value)" class="w-full h-32 bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm focus:ring-2 focus:ring-sky-500 text-slate-200" placeholder="ここにプログラムを貼り付け..."></textarea>
                 <div class="flex gap-2 justify-end">
                     <button onclick="loadSample('june7')" class="text-xs bg-slate-700 hover:bg-slate-650 px-2.5 py-1 rounded">6/7 サンプル読込</button>
-                    <button onclick="generateSlidesWithAI()" id="aiGenerateBtn" class="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-4 py-2 rounded-lg flex items-center gap-1.5 transition">
-                        AIで生成
-                    </button>
                 </div>
             </div>
 
@@ -399,17 +394,7 @@
                     </select>
                 </div>
 
-                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between">
-                    <div>
-                        <span class="block text-[11px] text-slate-300 font-bold">3. ふりがな(ルビ)自動処理</span>
-                        <span class="block text-[9px] text-slate-400">Google Gemini AI を使います。設定からAPIキーを登録してください。</span>
-                    </div>
-                    <!-- エンジンセレクター -->
-                    <select id="rubiEngineSelect" class="bg-slate-900 border border-slate-700 rounded text-slate-200 text-xs py-1 px-1.5 focus:outline-none">
-                        <option value="gemini">Google Gemini AI (高精度・要ネット)</option>
-                        <option value="none">自動ルビ振りをしない</option>
-                    </select>
-                </div>
+
 
                 <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700">
                     <p class="text-xs text-slate-300 leading-relaxed" id="csvInstructions">
@@ -500,45 +485,6 @@
                 <button onclick="processLiturgyExcelImport()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5">
                     <i data-lucide="arrow-down-to-line" class="w-4 h-4"></i> 一括取り込み・上書き
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- システム設定モーダル -->
-    <div id="settingsModal" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-start">
-                <h3 class="text-base font-bold text-sky-400 flex items-center gap-2">
-                    <i data-lucide="settings" class="w-5 h-5"></i> WorshipSlide システム設定
-                </h3>
-                <button onclick="toggleSettingsModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            
-            <div class="space-y-3">
-<div class="bg-slate-950 p-3 rounded-lg border border-slate-850 space-y-2">
-                    <label class="block text-xs font-bold text-slate-300">Gemini APIキー (自動保存されます)</label>
-                    <input type="password" id="settingsApiKeyInput" placeholder="AIzaSy... から始まるキーを貼り付けてください" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-sky-500">
-                    <p class="text-[9px] text-slate-450 leading-relaxed">
-                        ※Google AI Studioで「AIzaSy」から始まるGemini API専用キーを再取得してください。
-                    </p>
-                </div>
-
-                <div class="flex gap-2">
-                    <button onclick="saveSettingsApiKey()" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 rounded-lg text-xs transition">
-                        設定を保存
-                    </button>
-                    <button id="testApiBtn" onclick="testApiKeyConnection()" class="bg-slate-700 hover:bg-slate-650 text-slate-200 font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-1 justify-center">
-                        <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> 接続テスト
-                    </button>
-                </div>
-
-                <!-- テスト結果表示エリア -->
-                <div id="testResultArea" class="hidden bg-slate-900 p-3 rounded-lg border border-slate-800 text-[11px] font-mono whitespace-pre-wrap leading-relaxed">
-                </div>
-            </div>
-
-            <div class="flex justify-end pt-2 border-t border-slate-700">
-                <button onclick="toggleSettingsModal()" class="bg-slate-700 hover:bg-slate-650 text-white font-bold px-4 py-1.5 rounded-lg text-xs">閉じる</button>
             </div>
         </div>
     </div>
@@ -737,7 +683,6 @@
         let activeBgTheme = safeStorage.getItem('worship_bg_theme') || 'sky';
         let customBgImage = safeStorage.getItem('worship_custom_bg_img') || '';
 
-        const apiKey = ""; // デフォルトキー
         let selectedDBSongKey = null; 
 
         // YouTube公式プレイヤー制御用のグローバル変数
@@ -752,10 +697,6 @@
             safeStorage.setItem(key, val);
         }
 
-        // 稼働APIキー取得
-        function getActiveApiKey() {
-            return safeStorage.getItem('worship_gemini_apikey') || apiKey;
-        }
 
         // 遅延処理用のPromiseヘルパー
         const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -793,13 +734,7 @@
             changeBgTheme(activeBgTheme, false);
             updateCsvInstruction();
             
-            const storedKey = safeStorage.getItem('worship_gemini_apikey') || "";
-            const settingsApiKeyInputEl = document.getElementById('settingsApiKeyInput');
-            if (settingsApiKeyInputEl) {
-                settingsApiKeyInputEl.value = storedKey;
-            }
-
-            // データ読み込み用インプットへのイベント登録をwindow.onload完了時に安全にバインド
+// データ読み込み用インプットへのイベント登録をwindow.onload完了時に安全にバインド
             const importInput = document.getElementById('wslideImportInput');
             if (importInput) {
                 importInput.addEventListener('change', importWorshipData);
@@ -849,95 +784,8 @@
             }
         }
 
-        function toggleSettingsModal() {
-            const modal = document.getElementById('settingsModal');
-            if (modal) {
-                modal.classList.toggle('hidden');
-                if (!modal.classList.contains('hidden')) {
-                    const apiKeyInput = document.getElementById('settingsApiKeyInput');
-                    if (apiKeyInput) apiKeyInput.value = safeStorage.getItem('worship_gemini_apikey') || "";
-                    const resArea = document.getElementById('testResultArea');
-                    if (resArea) resArea.classList.add('hidden');
-                }
-            }
-        }
 
-        function saveSettingsApiKey() {
-            const apiKeyInput = document.getElementById('settingsApiKeyInput');
-            if (apiKeyInput) {
-                const val = apiKeyInput.value.trim();
-                safeStorage.setItem('worship_gemini_apikey', val);
-                showNotification("APIキー設定を保存しました。");
-            }
-        }
 
-        async function testApiKeyConnection() {
-            const apiKeyInput = document.getElementById('settingsApiKeyInput');
-            const testKey = apiKeyInput ? apiKeyInput.value.trim() : "" || apiKey;
-            const resArea = document.getElementById('testResultArea');
-            const testBtn = document.getElementById('testApiBtn');
-            
-            if (!testKey) {
-                if (resArea) {
-                    resArea.classList.remove('hidden');
-                    resArea.className = "bg-rose-955/40 border border-rose-900/50 p-3 rounded-lg text-[11px] text-rose-300";
-                    resArea.innerHTML = "❌ 接続テスト失敗:\nAPIキーを入力してください。";
-                }
-                return;
-            }
-
-            if (testBtn) {
-                testBtn.disabled = true;
-                testBtn.innerHTML = `テスト中...`;
-            }
-            if (resArea) {
-                resArea.classList.remove('hidden');
-                resArea.className = "bg-slate-900 border border-slate-800 p-3 rounded-lg text-[11px] text-slate-300 animate-pulse";
-                resArea.innerHTML = "📡 Googleサーバーに接続中 (gemini-2.5-flash)...";
-            }
-
-            const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash"];
-            let success = false;
-            let lastError = "";
-
-            for (let modelName of modelsToTry) {
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${testKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: "Say OK" }] }] })
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (resArea) {
-                            resArea.className = "bg-emerald-950/40 border border-emerald-900/50 p-3 rounded-lg text-[11px] text-emerald-300";
-                            resArea.innerHTML = `🟢 接続成功！\nAIへの接続が確認されました（モデル: ${modelName}）。\n[応答]: ${data.candidates?.[0]?.content?.parts?.[0]?.text || "OK"}`;
-                        }
-                        safeStorage.setItem('worship_gemini_apikey', testKey);
-                        success = true;
-                        break;
-                    } else {
-                        const errData = await response.json().catch(() => ({}));
-                        lastError = errData.error?.message || response.statusText;
-                    }
-                } catch (err) {
-                    lastError = err.message;
-                }
-            }
-
-            if (!success && resArea) {
-                resArea.className = "bg-rose-955/40 border border-rose-900/50 p-3 rounded-lg text-[11px] text-rose-300";
-                let jaExplanation = lastError.toLowerCase().includes("quota") ? "【解説】 1日の無料制限枠上限に到達しました。" : "【解説】 キーのスペルミス, 制限設定, 混雑などが考えられます。";
-                resArea.innerHTML = `❌ 接続テスト失敗\n詳細: ${lastError}\n\n${jaExplanation}`;
-            }
-
-            if (testBtn) {
-                testBtn.disabled = false;
-                testBtn.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> 接続テスト`;
-            }
-            if (typeof lucide !== "undefined") lucide.createIcons();
-        }
 
         function saveCurrentSlideToLyricsDatabase() {
             if (slides.length === 0 || !slides[currentSlideIndex]) {
@@ -1226,85 +1074,6 @@
             }
         }
 
-        async function requestAIBatchFormatAndRubi(contentsArray, type) {
-            const activeKey = getActiveApiKey();
-            if (!activeKey) {
-                showNotification("AI一括処理スキップ: 設定画面からAPIキーを設定してください。");
-                return contentsArray; 
-            }
-            let contextPrompt = type === "lyrics" 
-                ? "これは賛美歌の歌詞です。歌いやすいように意味のまとまりで改行し, 1枚のスライドが長すぎる場合（概ね4行以上）は空行（\\n\\n）を入れてページ分割してください。"
-                : "これは礼拝のプログラムやテキストです。読みやすいように意味のまとまりで改行し, 長すぎる場合は空行（\\n\\n）を入れてページ分割してください。";
-
-            const systemPrompt = `あなたは教会の礼拝スライド作成アシスタントです。提供されたテキストの配列に対して, 個別にルビ（ふりがな）を付与し、見やすく改行・ページ分割を施してください。
-【厳格なルール】
-1. すべての漢字に「漢字[かんじ]」形式でブラケットルビを付与してください。
-2. ${contextPrompt}
-3. 必ず入力のID（id）と正確に対応させて、JSONオブジェクト形式 of 配列「results」として返答してください。解説などは含めないでください。`;
-
-            const inputItems = contentsArray.map((text, idx) => ({ id: idx, content: text }));
-            let delay = 3000; 
-            const maxRetries = 5;
-            const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash"];
-
-            for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                for (let modelName of modelsToTry) {
-                    try {
-                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${activeKey}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                contents: [{ parts: [{ text: JSON.stringify(inputItems) }] }],
-                                systemInstruction: { parts: [{ text: systemPrompt }] },
-                                generationConfig: {
-                                    responseMimeType: "application/json",
-                                    responseSchema: {
-                                        type: "OBJECT",
-                                        properties: {
-                                            results: {
-                                                type: "ARRAY",
-                                                items: {
-                                                    type: "OBJECT",
-                                                    properties: { id: { type: "INTEGER" }, formattedContent: { type: "STRING" } },
-                                                    required: ["id", "formattedContent"]
-                                                }
-                                            }
-                                        }
-                                    },
-                                    required: ["results"]
-                                }
-                            })
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                            const parsedResult = JSON.parse(jsonText);
-                            const outputArray = [...contentsArray];
-                            if (parsedResult && parsedResult.results) {
-                                parsedResult.results.forEach(item => {
-                                    if (item.id !== undefined && item.formattedContent !== undefined) {
-                                        outputArray[item.id] = item.formattedContent;
-                                    }
-                                });
-                            }
-                            return outputArray;
-                        }
-                        if (response.status === 429) {
-                            showNotification(`一時制限を検出。冷却中 (${attempt}/${maxRetries}回目)...`);
-                            await sleep(delay);
-                            delay *= 2.5;
-                        } else {
-                            continue;
-                        }
-                    } catch (err) {
-                        console.error(`Batch request to ${modelName} failed:`, err);
-                    }
-                }
-                await sleep(4000);
-            }
-            return contentsArray;
-        }
 
         function updateCsvInstruction() {
             const targetType = document.querySelector('input[name="csvTargetType"]:checked').value;
@@ -1339,7 +1108,6 @@
         // --- 【大不具合解決】堅牢なインポート＆自動ルビ振りロジック (エラーによるクラッシュを完全に防御) ---
         async function handleCsvProcessing(file) {
             const encoding = document.getElementById('csvEncodingSelect').value || 'utf-8';
-            const engine = document.getElementById('rubiEngineSelect').value || 'none';
             const reader = new FileReader();
             const fullDict = { ...WORSHIP_DICTIONARY, ...customDictionary };
             
@@ -1375,7 +1143,6 @@
                         return;
                     }
 
-                    const batchSize = 5; 
 
                     if (targetType === "direct_slides") {
                         let addedSlidesCount = 0;
@@ -1406,23 +1173,7 @@
                         // DBにない行だけを抽出して一括処理
                         const rowsToProcess = validRows.filter(r => !r.isPreset);
 
-                        if (engine === 'gemini' && rowsToProcess.length > 0) {
-                            showNotification(`AI自動ルビ処理を実行中（全 ${rowsToProcess.length} 件）...`);
-                            for (let i = 0; i < rowsToProcess.length; i += batchSize) {
-                                const currentBatch = rowsToProcess.slice(i, i + batchSize);
-                                const batchContents = currentBatch.map(r => r.content);
-                                const batchNum = Math.floor(i / batchSize) + 1;
-                                const totalBatches = Math.ceil(rowsToProcess.length / batchSize);
-                                showNotification(`【進捗: ${batchNum} / ${totalBatches} バッチ】AI自動ルビ振りを実行中...`);
-                                const formattedContents = await requestAIBatchFormatAndRubi(batchContents, "program");
-                                currentBatch.forEach((row, idx) => {
-                                    row.formattedContent = (formattedContents && formattedContents[idx]) ? formattedContents[idx] : row.content;
-                                });
-                                if (i + batchSize < rowsToProcess.length) await sleep(1500);
-                            }
-                        } else {
-                            rowsToProcess.forEach(row => row.formattedContent = row.content);
-                        }
+                        rowsToProcess.forEach(row => row.formattedContent = row.content);
 
                         // 元のCSV of 行順の通りに新スライドを組み立て
                         for (let row of validRows) {
@@ -1468,23 +1219,7 @@
                         let count = 0;
                         let lastKey = "";
 
-                        if (engine === 'gemini') {
-                            showNotification("AIでデータベース歌詞を一括ルビ振り中...");
-                            for (let i = 0; i < validRows.length; i += batchSize) {
-                                const currentBatch = validRows.slice(i, i + batchSize);
-                                const batchContents = currentBatch.map(r => r.content);
-                                const batchNum = Math.floor(i / batchSize) + 1;
-                                const totalBatches = Math.ceil(validRows.length / batchSize);
-                                showNotification(`【進捗: ${batchNum} / ${totalBatches} バッチ】AIルビ振りを実行中...`);
-                                const formattedContents = await requestAIBatchFormatAndRubi(batchContents, "lyrics");
-                                currentBatch.forEach((row, idx) => {
-                                    row.formattedContent = (formattedContents && formattedContents[idx]) ? formattedContents[idx] : row.content;
-                                });
-                                if (i + batchSize < validRows.length) await sleep(1500);
-                            }
-                        } else {
-                            validRows.forEach(row => row.formattedContent = row.content);
-                        }
+                        validRows.forEach(row => row.formattedContent = row.content);
 
                         for (let row of validRows) {
                             const title = row.title;
@@ -1671,100 +1406,7 @@
             renderSlideList(); updatePreview();
         }
 
-        function mergeDictionaryToSlides(aiSlides) {
-            let merged = [];
-            const fullDict = { ...WORSHIP_DICTIONARY, ...customDictionary };
-            aiSlides.forEach(slide => {
-                let searchText = (slide.title + " " + slide.content + " " + slide.bottomLeft).toUpperCase();
-                let matchedKey = null;
-                for (let key in fullDict) {
-                    if (searchText.includes(key.toUpperCase())) { matchedKey = key; break; }
-                }
-                if (matchedKey) merged.push(...JSON.parse(JSON.stringify(fullDict[matchedKey])));
-                else merged.push(slide);
-            });
-            return merged;
-        }
 
-        async function generateSlidesWithAI() {
-            const programText = document.getElementById('programInput').value.trim();
-            if (!programText) return showNotification("プログラムを入力してください。");
-            const aiBtn = document.getElementById('aiGenerateBtn');
-            const originalHtml = aiBtn.innerHTML;
-            if (aiBtn) {
-                aiBtn.innerHTML = `<i class="w-3.5 h-3.5 animate-spin" data-lucide="loader"></i> 解析中...`;
-                aiBtn.disabled = true;
-            }
-
-            const activeKey = getActiveApiKey();
-            if (!activeKey) {
-                showNotification("AI処理エラー: 設定画面からAPIキーを設定してください。");
-                if (aiBtn) {
-                    aiBtn.innerHTML = originalHtml; aiBtn.disabled = false;
-                }
-                return;
-            }
-
-            const systemPrompt = `あなたは教会の有能な礼拝補助アシスタントです。礼拝プログラムを解析しスライドデータを出力してください。漢字には「漢字[かんじ]」形式を適用してください。`;
-            const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash"];
-            let success = false;
-            let lastError = "";
-
-            for (let modelName of modelsToTry) {
-                try {
-                    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + activeKey, {
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: programText }] }],
-                            systemInstruction: { parts: [{ text: systemPrompt }] },
-                            generationConfig: {
-                                responseMimeType: "application/json",
-                                responseSchema: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        slides: {
-                                            type: "ARRAY",
-                                            items: {
-                                                type: "OBJECT",
-                                                properties: { title: { type: "STRING" }, content: { type: "STRING" }, bottomLeft: { type: "STRING" }, arrow: { type: "STRING" } },
-                                                required: ["title", "content", "bottomLeft", "arrow"]
-                                            }
-                                        }
-                                    },
-                                    required: ["slides"]
-                                }
-                            }
-                        })
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        const result = JSON.parse(data.candidates[0].content.parts[0].text);
-                        if (result && result.slides) {
-                            slides = mergeDictionaryToSlides(result.slides);
-                            currentSlideIndex = 0; renderSlideList(); updatePreview();
-                            showNotification("AIスライド生成が完了しました！");
-                            success = true;
-                            break;
-                        }
-                    } else {
-                        const errData = await response.json().catch(() => ({}));
-                        lastError = errData.error?.message || response.statusText;
-                    }
-                } catch (error) {
-                    lastError = error.message;
-                }
-            }
-            if (!success) {
-                showNotification(`AI生成に失敗しました: ${lastError}`);
-                parseProgramText(programText);
-            }
-            if (aiBtn) {
-                aiBtn.innerHTML = originalHtml; aiBtn.disabled = false;
-            }
-            if (typeof lucide !== "undefined") lucide.createIcons();
-        }
 
         function renderSlideList() {
             const list = document.getElementById('slideList');
