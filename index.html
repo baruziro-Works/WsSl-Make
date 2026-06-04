@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- GitHub Pages の Permissions-Policy 対策: autoplay と fullscreen を明示許可 -->
+    <meta http-equiv="Permissions-Policy" content="autoplay=*, fullscreen=*">
     <title>礼拝スライド自動作成システム - WorshipSlide AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
@@ -268,7 +270,7 @@
                             <img id="previewImage" class="hidden h-full object-contain max-h-full">
                             
                             <!-- YouTubeスライド用のプレビューiframe & ローカル時エラー153回避レイヤー -->
-                            <div id="previewYoutubeContainer" class="hidden w-full h-full relative aspect-video">
+                            <div id="previewYoutubeContainer" class="hidden w-full h-full relative aspect-video" allow="autoplay; fullscreen; encrypted-media">
                                 <div id="ytPlayer_preview" class="w-full h-full rounded-[1.5cqw]"></div>
                                 <div id="previewYtLocalFallback" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 text-center rounded-[1.5cqw] hidden">
                                     <div class="text-rose-500 font-bold text-[3.2cqw] mb-[1.5cqw] flex items-center gap-[1.5cqw]">
@@ -318,7 +320,7 @@
                     <img id="fsImage" class="hidden h-full object-contain max-h-full">
                     
                     <!-- YouTubeスライド用のフルスクリーンiframe & ローカル時エラー153回避レイヤー -->
-                    <div id="fsYoutubeContainer" class="hidden w-full h-full relative aspect-video">
+                    <div id="fsYoutubeContainer" class="hidden w-full h-full relative aspect-video" allow="autoplay; fullscreen; encrypted-media">
                         <div id="ytPlayer_fs" class="w-full h-full rounded-[1.5cqw]"></div>
                         <div id="fsYtLocalFallback" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 text-center rounded-[1.5cqw] hidden">
                             <div class="text-rose-500 font-bold text-[3.2cqw] mb-[1.5cqw] flex items-center gap-[1.5cqw]">
@@ -821,9 +823,18 @@
         }
 
         // YouTube Iframe Player APIの準備完了イベント
-        function onYouTubeIframeAPIReady() {
+        // GitHub Pages 環境でも確実に発火するよう、window直下に定義する
+        window.onYouTubeIframeAPIReady = function() {
             console.log("YouTube Iframe API Ready.");
-        }
+            // APIが準備できたとき、YouTubeスライドが表示中なら即座に再生を試みる
+            if (slides.length > 0 && slides[currentSlideIndex]) {
+                const s = slides[currentSlideIndex];
+                const ytId = s.youtubeId || extractYoutubeId(s.content);
+                if (ytId && window.location.protocol !== 'file:') {
+                    tryLoadYoutubePlayerWithFallback(isPresenting ? 'fs' : 'preview', ytId);
+                }
+            }
+        };
 
         function initKuromojiEngine() {
             try {
@@ -1974,6 +1985,11 @@
             parent.innerHTML = `<div id="${containerId}" class="w-full h-full rounded-[1.5cqw]"></div>` + fallbackHtml;
 
             try {
+                // GitHub Pages等のhttps環境では origin を正確に設定しないと再生がブロックされる
+                const pageOrigin = (window.location.protocol === 'file:')
+                    ? 'https://www.youtube.com'
+                    : window.location.origin;
+
                 const newPlayer = new YT.Player(containerId, {
                     height: '100%',
                     width: '100%',
@@ -1984,11 +2000,13 @@
                         'enablejsapi': 1,
                         'rel': 0,
                         'controls': 1,
-                        'origin': window.location.origin
+                        'playsinline': 1,
+                        'origin': pageOrigin
                     },
                     events: {
                         'onReady': (event) => {
-                            event.target.playVideo();
+                            // onReady でも必ず playVideo() を呼ぶ（GitHub Pages 対策）
+                            try { event.target.playVideo(); } catch(e) {}
                         },
                         'onStateChange': (event) => {
                             // 再生開始時（PLAYING）に自動フルスクリーン化
@@ -2005,9 +2023,27 @@
                                     showNotification("動画再生が完了しました。");
                                 }
                             }
+                        },
+                        'onError': (event) => {
+                            console.warn("YouTube Player Error:", event.data);
+                            // エラー時はフォールバックボタンを表示する
+                            const fallbackEl = document.getElementById(type === 'fs' ? 'fsYtLocalFallback' : 'previewYtLocalFallback');
+                            const linkEl = document.getElementById(type === 'fs' ? 'fsYtLink' : 'previewYtLink');
+                            if (linkEl) linkEl.href = `https://www.youtube.com/watch?v=${videoId}`;
+                            if (fallbackEl) fallbackEl.classList.remove('hidden');
                         }
                     }
                 });
+
+                // YT.Player が生成した iframe に allow 属性を追加（GitHub Pages の Permissions-Policy 対策）
+                // iframe は非同期で生成されるため少し待ってから付与する
+                setTimeout(() => {
+                    const iframe = document.querySelector(`#${containerId} iframe`);
+                    if (iframe) {
+                        iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture');
+                        iframe.setAttribute('allowfullscreen', '');
+                    }
+                }, 800);
 
                 if (type === 'fs') {
                     ytPlayer_fs = newPlayer;
@@ -2016,6 +2052,11 @@
                 }
             } catch (err) {
                 console.error("Failed to initialize YT.Player:", err);
+                // 初期化失敗時もフォールバックを表示
+                const fallbackEl = document.getElementById(type === 'fs' ? 'fsYtLocalFallback' : 'previewYtLocalFallback');
+                const linkEl = document.getElementById(type === 'fs' ? 'fsYtLink' : 'previewYtLink');
+                if (linkEl) linkEl.href = `https://www.youtube.com/watch?v=${videoId}`;
+                if (fallbackEl) fallbackEl.classList.remove('hidden');
             }
         }
 
@@ -2246,13 +2287,14 @@
                 const isLocalFile = window.location.protocol === 'file:';
                 const youtubeWatchUrl = `https://www.youtube.com/watch?v=${ytId}`;
 
+                // YouTubeリンクを常にセット（フォールバック用）
+                const previewYtLink = document.getElementById('previewYtLink');
+                const fsYtLink = document.getElementById('fsYtLink');
+                if (previewYtLink) previewYtLink.href = youtubeWatchUrl;
+                if (fsYtLink) fsYtLink.href = youtubeWatchUrl;
+
                 if (isLocalFile) {
                     // file:// で起動しているとき（自動再生規制エラー153がブラウザによって出されるため、専用ボタンに置き換える）
-                    const previewYtLink = document.getElementById('previewYtLink');
-                    const fsYtLink = document.getElementById('fsYtLink');
-                    if (previewYtLink) previewYtLink.href = youtubeWatchUrl;
-                    if (fsYtLink) fsYtLink.href = youtubeWatchUrl;
-
                     const previewYtFallback = document.getElementById('previewYtLocalFallback');
                     const fsYtFallback = document.getElementById('fsYtLocalFallback');
                     if (previewYtFallback) previewYtFallback.classList.remove('hidden');
@@ -2467,6 +2509,7 @@
                 overlay.focus(); 
             }
             // 自動的にシステムのフルスクリーン（全画面）表示をリクエスト
+            // ※ユーザーのクリック操作のコールチェーン内なので許可される
             requestSystemFullscreen();
             updatePreview(); 
             showNotification("全画面投影を開始しました。ESCキー、または右上の閉じるボタンで戻ります。");
