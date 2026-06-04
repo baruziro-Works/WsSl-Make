@@ -10,13 +10,13 @@
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
     <!-- パワポpptxファイルやZIP解析に必須 of ZIP解析ライブラリ JSZip -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
     <!-- 純国産オープンソース日本語形態素解析器 Kuromoji.js -->
-    <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js" defer></script>
     <!-- YouTube Iframe Player API -->
-    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="https://www.youtube.com/iframe_api" defer></script>
     <!-- PDFをクライアントサイドで超高速かつ綺麗にパース・ラスタライズする pdf.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" defer></script>
     <style>
         body { font-family: 'BIZ UDGothic', 'Noto Sans JP', sans-serif; }
         .worship-font-bold { font-weight: 900; }
@@ -755,8 +755,7 @@
         let ytPlayer_fs = null;
         let activeYtVideoId = null;
 
-        // pdf.js のワーカーパス設定
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        // pdf.js のワーカーパス設定（defer読み込みのためwindow.onload内で設定）
 
         // ローカルストレージ安全保存ヘルパー
         function safeSaveToLocalStorage(key, val) {
@@ -816,8 +815,13 @@
                 importInput.addEventListener('change', importWorshipData);
             }
 
-            // Kuromoji.js 初期化
-            setTimeout(initKuromojiEngine, 300);
+            // pdf.js のワーカーパス設定（defer読み込み後に安全に実行）
+            if (typeof pdfjsLib !== 'undefined') {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+            }
+
+            // Kuromoji.js 初期化（deferで遅延読み込みのため2秒後に試みる）
+            setTimeout(initKuromojiEngine, 2000);
         };
 
         // ユーザーがプログラムを入力したときにLocalStorageに自動保存して次回引き継げるようにする
@@ -2359,6 +2363,12 @@
                 if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
                     // --- PDFファイル一括抽出処理 ---
                     try {
+                        if (typeof pdfjsLib === 'undefined') {
+                            showNotification('PDFライブラリの読み込みが完了していません。しばらく待ってから再試行してください。');
+                            continue;
+                        }
+                        // pdf.js ワーカーパスを念のため再設定
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
                         const arrayBuffer = await file.arrayBuffer();
                         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                         showNotification(`PDF「${file.name}」（全${pdf.numPages}頁）を展開中...`);
