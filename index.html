@@ -92,7 +92,7 @@
                 <button onclick="triggerImportWorshipData()" class="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1" title="保存した.wslideデータの復元">
                     <i data-lucide="upload" class="w-3.5 h-3.5"></i> データ読込
                 </button>
-                <input type="file" id="wslideImportInput" class="hidden" accept=".wslide" onchange="importWorshipData(event)">
+                <input type="file" id="wslideImportInput" class="hidden" accept=".wslide">
             </div>
         </div>
     </header>
@@ -468,6 +468,84 @@
         </div>
     </div>
 
+    <!-- 典礼項目コピペ登録モーダル -->
+    <div id="liturgyModal" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-start">
+                <h3 class="text-base font-bold text-amber-400 flex items-center gap-2">
+                    <i data-lucide="table-properties" class="w-5 h-5"></i> 典礼項目コピペ登録
+                </h3>
+                <button onclick="toggleLiturgyModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <p class="text-xs text-slate-300 leading-relaxed">
+                Excel or スプレッドシートから3つの列をコピペしてください。
+            </p>
+
+            <div>
+                <textarea id="liturgyExcelPaste" rows="5" placeholder="祝祷	1	仰[あお]ぎ願[ねが]わくは、主[しゅ]イエス・キリストの恵[めぐ]み...&#10;報告	2	司会者より来週[らいしゅう]の集まりの案内をいたします。" class="w-full bg-slate-900 border border-slate-650 rounded p-2.5 text-xs text-white font-mono"></textarea>
+            </div>
+
+            <div>
+                <span class="block text-[10px] text-slate-400 font-bold mb-1.5">現在登録済みのプログラム自動項目一覧</span>
+                <div id="liturgyList" class="bg-slate-950 rounded-lg p-2 max-h-36 overflow-y-auto text-xs space-y-1.5 border border-slate-800">
+                </div>
+            </div>
+
+            <div class="flex-end flex justify-end space-x-2 pt-2 border-t border-slate-700">
+                <button onclick="toggleLiturgyModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-650">閉じる</button>
+                <button onclick="processLiturgyExcelImport()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5">
+                    <i data-lucide="arrow-down-to-line" class="w-4 h-4"></i> 一括取り込み・上書き
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- システム設定モーダル -->
+    <div id="settingsModal" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-start">
+                <h3 class="text-base font-bold text-sky-400 flex items-center gap-2">
+                    <i data-lucide="settings" class="w-5 h-5"></i> WorshipSlide システム設定
+                </h3>
+                <button onclick="toggleSettingsModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="space-y-3">
+                <!-- Kuromoji.js の準備状態を示すバッジ -->
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-850 flex items-center justify-between">
+                    <span class="text-xs text-slate-300 font-bold">ローカルルビ振りエンジン</span>
+                    <span id="kuromojiStatusBadge" class="text-[10px] px-2 py-0.5 rounded border bg-rose-500/10 text-rose-400 border-rose-500/20">準備中...</span>
+                </div>
+
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-850 space-y-2">
+                    <label class="block text-xs font-bold text-slate-300">Gemini APIキー (自動保存されます)</label>
+                    <input type="password" id="settingsApiKeyInput" placeholder="AIzaSy... から始まるキーを貼り付けてください" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-sky-500">
+                    <p class="text-[9px] text-slate-450 leading-relaxed">
+                        ※Google AI Studioで「AIzaSy」から始まるGemini API専用キーを再取得してください。
+                    </p>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="saveSettingsApiKey()" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 rounded-lg text-xs transition">
+                        設定を保存
+                    </button>
+                    <button id="testApiBtn" onclick="testApiKeyConnection()" class="bg-slate-700 hover:bg-slate-650 text-slate-200 font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-1 justify-center">
+                        <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> 接続テスト
+                    </button>
+                </div>
+
+                <!-- テスト結果表示エリア -->
+                <div id="testResultArea" class="hidden bg-slate-900 p-3 rounded-lg border border-slate-800 text-[11px] font-mono whitespace-pre-wrap leading-relaxed">
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-slate-700">
+                <button onclick="toggleSettingsModal()" class="bg-slate-700 hover:bg-slate-650 text-white font-bold px-4 py-1.5 rounded-lg text-xs">閉じる</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 歌詞データベース管理マネージャーモーダル -->
     <div id="manageDatabaseModal" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-4xl w-full h-[85vh] p-6 flex flex-col space-y-4 shadow-2xl">
@@ -724,6 +802,12 @@
             const settingsApiKeyInputEl = document.getElementById('settingsApiKeyInput');
             if (settingsApiKeyInputEl) {
                 settingsApiKeyInputEl.value = storedKey;
+            }
+
+            // データ読み込み用インプットへのイベント登録をwindow.onload完了時に安全にバインド
+            const importInput = document.getElementById('wslideImportInput');
+            if (importInput) {
+                importInput.addEventListener('change', importWorshipData);
             }
 
             // Kuromoji.js 初期化
@@ -1176,6 +1260,30 @@
             if (currentCell || text[text.length - 1] === delimiter) currentRow.push(currentCell);
             if (currentRow.length > 0) rows.push(currentRow);
             return rows;
+        }
+
+        // --- 全自動監視・再リトライタイマー付き YouTube API プレイヤーロードロジック ---
+        let ytApiRetryTimer = null;
+        function tryLoadYoutubePlayerWithFallback(type, videoId) {
+            if (typeof YT !== 'undefined' && YT.Player) {
+                if (ytApiRetryTimer) {
+                    clearInterval(ytApiRetryTimer);
+                    ytApiRetryTimer = null;
+                }
+                setupIframePlayer(type, videoId);
+            } else {
+                console.log(`YouTube API is not loaded yet. Waiting...`);
+                // 100ミリ秒ごとにAPIのロード状況を自動監視するリトライタイマーを開始
+                if (!ytApiRetryTimer) {
+                    ytApiRetryTimer = setInterval(() => {
+                        if (typeof YT !== 'undefined' && YT.Player) {
+                            clearInterval(ytApiRetryTimer);
+                            ytApiRetryTimer = null;
+                            setupIframePlayer(type, videoId);
+                        }
+                    }, 100);
+                }
+            }
         }
 
         async function requestAIBatchFormatAndRubi(contentsArray, type) {
@@ -2156,19 +2264,7 @@
                     if (previewYtFallback) previewYtFallback.classList.add('hidden');
                     if (fsYtFallback) fsYtFallback.classList.add('hidden');
 
-                    if (typeof YT !== 'undefined' && YT.Player) {
-                        if (isPresenting) {
-                            setupIframePlayer('fs', ytId);
-                            // 編集側は無駄な再生を防ぐためにリセット
-                            const pDiv = document.getElementById('ytPlayer_preview');
-                            if (pDiv) pDiv.innerHTML = "";
-                        } else {
-                            setupIframePlayer('preview', ytId);
-                            // 全画面側はリセット
-                            const fDiv = document.getElementById('ytPlayer_fs');
-                            if (fDiv) fDiv.innerHTML = "";
-                        }
-                    }
+                    tryLoadYoutubePlayerWithFallback(isPresenting ? 'fs' : 'preview', ytId);
                 }
             } else {
                 activeYtVideoId = null;
@@ -2276,7 +2372,7 @@
                 currentSlideIndex = insertIndex - 1; // 最後に読み込まれたスライドを選択
                 renderSlideList();
                 updatePreview();
-                showNotification("一括処理完了：新たに " + addedCount + " 枚の資料を差し込みました！");
+                showNotification("一括処理完了：新たに " + addedCount + " 枚의 資料を差し込みました！");
             }
             e.target.value = ""; // リセット
         }
