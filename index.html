@@ -8,7 +8,7 @@
     <title>礼拝スライド自動作成システム - WorshipSlide AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
     <!-- パワポpptxファイルやZIP解析に必須 of ZIP解析ライブラリ JSZip -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- 純国産オープンソース日本語形態素解析器 Kuromoji.js -->
@@ -467,6 +467,10 @@
                 <div id="pptxProgressArea" class="hidden bg-slate-950 p-2.5 rounded-lg text-[11px] max-h-36 overflow-y-auto space-y-1 font-mono">
                 </div>
             </div>
+            <!-- モーダル共通フッター：キャンセルボタン -->
+            <div class="flex justify-end pt-3 border-t border-slate-700">
+                <button onclick="toggleImportModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold px-5 py-2 rounded-lg text-xs flex items-center gap-1.5 transition">キャンセルして閉じる</button>
+            </div>
         </div>
     </div>
 
@@ -771,7 +775,7 @@
         // 3. アプリケーション関数群
         // ==========================================
         window.onload = () => { 
-            lucide.createIcons(); 
+            if (typeof lucide !== "undefined") lucide.createIcons(); 
             
             // 【改良点③】前回のプログラム状態があればそれを読み込み、なければサンプルをロード
             const savedProgram = safeStorage.getItem('worship_program_input');
@@ -1037,7 +1041,7 @@
                 testBtn.disabled = false;
                 testBtn.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> 接続テスト`;
             }
-            lucide.createIcons();
+            if (typeof lucide !== "undefined") lucide.createIcons();
         }
 
         function saveCurrentSlideToLyricsDatabase() {
@@ -1855,7 +1859,7 @@
             if (aiBtn) {
                 aiBtn.innerHTML = originalHtml; aiBtn.disabled = false;
             }
-            lucide.createIcons();
+            if (typeof lucide !== "undefined") lucide.createIcons();
         }
 
         function renderSlideList() {
@@ -1873,7 +1877,7 @@
                     <span class="text-[9px] text-slate-500 shrink-0 font-mono">${i+1}/${slides.length}</span>
                 </div>`;
             });
-            lucide.createIcons();
+            if (typeof lucide !== "undefined") lucide.createIcons();
             const slide = slides[currentSlideIndex];
             if (slide) {
                 const quickEditAreaEl = document.getElementById('quickEditArea');
@@ -2121,7 +2125,7 @@
                     requestSystemFullscreen();
                     if (icon) icon.setAttribute('data-lucide', 'minimize');
                 }
-                lucide.createIcons();
+                if (typeof lucide !== "undefined") lucide.createIcons();
             } catch (err) {
                 console.warn("Toggle fullscreen failed:", err);
             }
