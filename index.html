@@ -263,7 +263,7 @@
                             <img id="previewImage" class="hidden h-full object-contain max-h-full">
                             
                             <!-- YouTubeスライド用のプレビューiframe & ローカル時エラー153回避レイヤー -->
-                            <div id="previewYoutubeContainer" class="hidden w-full h-full relative aspect-video" allow="autoplay; fullscreen; encrypted-media">
+                            <div id="previewYoutubeContainer" class="hidden w-full h-full relative" style="aspect-ratio:16/9; max-height:100%;" allow="autoplay; fullscreen; encrypted-media">
                                 <div id="ytPlayer_preview" class="w-full h-full rounded-[1.5cqw]"></div>
                                 <div id="previewYtLocalFallback" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 text-center rounded-[1.5cqw] hidden">
                                     <div class="text-rose-500 font-bold text-[3.2cqw] mb-[1.5cqw] flex items-center gap-[1.5cqw]">
@@ -313,7 +313,7 @@
                     <img id="fsImage" class="hidden h-full object-contain max-h-full">
                     
                     <!-- YouTubeスライド用のフルスクリーンiframe & ローカル時エラー153回避レイヤー -->
-                    <div id="fsYoutubeContainer" class="hidden w-full h-full relative aspect-video" allow="autoplay; fullscreen; encrypted-media">
+                    <div id="fsYoutubeContainer" class="hidden w-full h-full relative" style="aspect-ratio:16/9; max-height:100%;" allow="autoplay; fullscreen; encrypted-media">
                         <div id="ytPlayer_fs" class="w-full h-full rounded-[1.5cqw]"></div>
                         <div id="fsYtLocalFallback" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 text-center rounded-[1.5cqw] hidden">
                             <div class="text-rose-500 font-bold text-[3.2cqw] mb-[1.5cqw] flex items-center gap-[1.5cqw]">
@@ -1328,6 +1328,26 @@
                     continue;
                 }
 
+                // 固定辞書（主の祈り・使徒信条など）を最優先でチェック（liturgyDatabaseより先）
+                if (normalizedLine.includes("招詞") || normalizedLine.includes("招きのことば") || normalizedLine.includes("まねき")) {
+                    if (normalizedLine.includes("95")) slides.push(...JSON.parse(JSON.stringify(BIBLE_PRESETS["詩篇95篇1-2節"])));
+                    else slides.push(...JSON.parse(JSON.stringify(BIBLE_PRESETS["詩篇100篇1-2節"])));
+                    lastPulledFromDB = true; continue;
+                }
+                else if (normalizedLine.includes("主の祈り") || normalizedLine.includes("主のいのり")) {
+                    slides.push(...JSON.parse(JSON.stringify(fullDict["主の祈り"])));
+                    lastPulledFromDB = true; continue;
+                }
+                else if (normalizedLine.includes("2026") || (normalizedLine.includes("コリント") && normalizedLine.includes("5") && normalizedLine.includes("7"))) {
+                    slides.push(...JSON.parse(JSON.stringify(fullDict["2026聖句"])));
+                    lastPulledFromDB = true; continue;
+                }
+                else if (normalizedLine.includes("使徒信条") || normalizedLine.includes("信仰告白")) {
+                    slides.push(...JSON.parse(JSON.stringify(fullDict["使徒信条"])));
+                    lastPulledFromDB = true; continue;
+                }
+
+                // 次に典礼項目データベースをチェック
                 let foundLiturgy = false;
                 for (let key in liturgyDatabase) {
                     if (cleanLine.includes(key)) {
@@ -1346,24 +1366,6 @@
                     }
                 }
                 if (foundLiturgy) continue;
-
-                if (normalizedLine.includes("招詞") || normalizedLine.includes("招きのことば") || normalizedLine.includes("まねき")) {
-                    if (normalizedLine.includes("95")) slides.push(...JSON.parse(JSON.stringify(BIBLE_PRESETS["詩篇95篇1-2節"])));
-                    else slides.push(...JSON.parse(JSON.stringify(BIBLE_PRESETS["詩篇100篇1-2節"])));
-                    lastPulledFromDB = true;
-                }
-                else if (normalizedLine.includes("主の祈り") || normalizedLine.includes("主のいのり")) {
-                    slides.push(...JSON.parse(JSON.stringify(fullDict["主の祈り"])));
-                    lastPulledFromDB = true;
-                }
-                else if (normalizedLine.includes("2026") || (normalizedLine.includes("コリント") && normalizedLine.includes("5") && normalizedLine.includes("7"))) {
-                    slides.push(...JSON.parse(JSON.stringify(fullDict["2026聖句"])));
-                    lastPulledFromDB = true;
-                }
-                else if (normalizedLine.includes("使徒信条") || normalizedLine.includes("信仰告白")) {
-                    slides.push(...JSON.parse(JSON.stringify(fullDict["使徒信条"])));
-                    lastPulledFromDB = true;
-                }
                 else if (extractYoutubeId(cleanLine)) {
                     const ytId = extractYoutubeId(cleanLine);
                     slides.push({ title: "動画上映 (YouTube)", content: cleanLine, youtubeId: ytId, bottomLeft: "YouTube動画", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
