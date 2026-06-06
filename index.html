@@ -157,51 +157,51 @@
                     </div>
                     
                     <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 space-y-2.5 text-xs">
-                        <div class="grid grid-cols-3 gap-2 border-b border-slate-900 pb-2">
+                        <div class="grid grid-cols-3 gap-1.5 border-b border-slate-900 pb-2">
                             <div>
-                                <span class="block text-[8px] text-slate-400 font-bold mb-1">本文サイズ</span>
-                                <div class="flex items-center justify-between bg-slate-900 rounded p-1">
-                                    <button onclick="adjustFontSize('fontSize', -10)" class="text-white hover:text-sky-400 font-bold px-1 text-xs">-</button>
-                                    <span id="fontSizeDisplay" class="text-[10px] font-mono font-bold text-sky-400">100%</span>
-                                    <button onclick="adjustFontSize('fontSize', 10)" class="text-white hover:text-sky-400 font-bold px-1 text-xs">+</button>
+                                <span class="block text-[8px] text-slate-400 font-bold mb-1 text-center">本文サイズ</span>
+                                <div class="flex items-center justify-between bg-slate-900 rounded overflow-hidden">
+                                    <button onclick="adjustFontSize('fontSize', -10)" class="bg-rose-700 hover:bg-rose-600 active:bg-rose-800 text-white font-bold w-8 py-2 text-base leading-none flex-shrink-0 transition">－</button>
+                                    <span id="fontSizeDisplay" class="text-[10px] font-mono font-bold text-sky-300 px-1 text-center flex-1">100%</span>
+                                    <button onclick="adjustFontSize('fontSize', 10)" class="bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-bold w-8 py-2 text-base leading-none flex-shrink-0 transition">＋</button>
                                 </div>
                             </div>
                             <div>
-                                <span class="block text-[8px] text-slate-400 font-bold mb-1">見出サイズ</span>
-                                <div class="flex items-center justify-between bg-slate-900 rounded p-1">
-                                    <button onclick="adjustFontSize('titleFontSize', -10)" class="text-white hover:text-sky-400 font-bold px-1 text-xs">-</button>
-                                    <span id="titleFontSizeDisplay" class="text-[10px] font-mono font-bold text-sky-400">100%</span>
-                                    <button onclick="adjustFontSize('titleFontSize', 10)" class="text-white hover:text-sky-400 font-bold px-1 text-xs">+</button>
+                                <span class="block text-[8px] text-slate-400 font-bold mb-1 text-center">見出サイズ</span>
+                                <div class="flex items-center justify-between bg-slate-900 rounded overflow-hidden">
+                                    <button onclick="adjustFontSize('titleFontSize', -10)" class="bg-rose-700 hover:bg-rose-600 active:bg-rose-800 text-white font-bold w-8 py-2 text-base leading-none flex-shrink-0 transition">－</button>
+                                    <span id="titleFontSizeDisplay" class="text-[10px] font-mono font-bold text-sky-300 px-1 text-center flex-1">100%</span>
+                                    <button onclick="adjustFontSize('titleFontSize', 10)" class="bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-bold w-8 py-2 text-base leading-none flex-shrink-0 transition">＋</button>
                                 </div>
                             </div>
                             <div>
-                                <span class="block text-[8px] text-slate-400 font-bold mb-1">足元サイズ</span>
-                                <div class="flex items-center justify-between bg-slate-900 rounded p-1">
-                                    <button onclick="adjustFontSize('footerFontSize', -10)" class="text-white hover:text-sky-400 font-bold px-1 text-xs">-</button>
-                                    <span id="footerFontSizeDisplay" class="text-[10px] font-mono font-bold text-sky-400">100%</span>
-                                    <button onclick="adjustFontSize('footerFontSize', 10)" class="text-white hover:text-sky-400 font-bold px-1 text-xs">+</button>
+                                <span class="block text-[8px] text-slate-400 font-bold mb-1 text-center">足元サイズ</span>
+                                <div class="flex items-center justify-between bg-slate-900 rounded overflow-hidden">
+                                    <button onclick="adjustFontSize('footerFontSize', -10)" class="bg-rose-700 hover:bg-rose-600 active:bg-rose-800 text-white font-bold w-8 py-2 text-base leading-none flex-shrink-0 transition">－</button>
+                                    <span id="footerFontSizeDisplay" class="text-[10px] font-mono font-bold text-sky-300 px-1 text-center flex-1">100%</span>
+                                    <button onclick="adjustFontSize('footerFontSize', 10)" class="bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-bold w-8 py-2 text-base leading-none flex-shrink-0 transition">＋</button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="space-y-1.5">
                             <div>
                                 <span class="block text-[9px] text-slate-400 font-bold mb-1">左右の余白</span>
-                                <select id="padSelect" onchange="setPadding(this.value)" class="w-full bg-slate-900 border border-slate-750 rounded text-slate-200 text-[10px] py-1 px-1 focus:outline-none">
-                                    <option value="extra-narrow">極狭 (0.5%)</option>
-                                    <option value="narrow">狭く (2.5%)</option>
-                                    <option value="standard">標準 (6.5%)</option>
-                                    <option value="wide">広く (12.5%)</option>
-                                </select>
+                                <div class="flex rounded bg-slate-900 p-0.5 gap-0.5">
+                                    <button onclick="setPaddingBtn('extra-narrow')" id="pad-extra-narrow" class="flex-1 text-[9px] py-1 rounded font-bold transition text-slate-400 hover:text-white">極狭</button>
+                                    <button onclick="setPaddingBtn('narrow')"       id="pad-narrow"       class="flex-1 text-[9px] py-1 rounded font-bold transition text-slate-400 hover:text-white">狭</button>
+                                    <button onclick="setPaddingBtn('standard')"     id="pad-standard"     class="flex-1 text-[9px] py-1 rounded font-bold transition text-slate-400 hover:text-white">標準</button>
+                                    <button onclick="setPaddingBtn('wide')"         id="pad-wide"         class="flex-1 text-[9px] py-1 rounded font-bold transition text-slate-400 hover:text-white">広</button>
+                                </div>
                             </div>
                             <div>
                                 <span class="block text-[9px] text-slate-400 font-bold mb-1">上下の余白</span>
-                                <select id="vPadSelect" onchange="setVerticalPadding(this.value)" class="w-full bg-slate-900 border border-slate-750 rounded text-slate-200 text-[10px] py-1 px-1 focus:outline-none">
-                                    <option value="none">極狭 (0.5%)</option>
-                                    <option value="tight">狭く (2%)</option>
-                                    <option value="standard">標準 (5%)</option>
-                                    <option value="wide">広く (9%)</option>
-                                </select>
+                                <div class="flex rounded bg-slate-900 p-0.5 gap-0.5">
+                                    <button onclick="setVerticalPadding('none')"     id="vpad-none"     class="flex-1 text-[9px] py-1 rounded font-bold transition text-slate-400 hover:text-white">極狭</button>
+                                    <button onclick="setVerticalPadding('tight')"    id="vpad-tight"    class="flex-1 text-[9px] py-1 rounded font-bold transition text-slate-400 hover:text-white">狭</button>
+                                    <button onclick="setVerticalPadding('standard')" id="vpad-standard" class="flex-1 text-[9px] py-1 rounded font-bold transition text-slate-400 hover:text-white">標準</button>
+                                    <button onclick="setVerticalPadding('wide')"     id="vpad-wide"     class="flex-1 text-[9px] py-1 rounded font-bold transition text-slate-400 hover:text-white">広</button>
+                                </div>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
@@ -225,7 +225,14 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-between pt-1 border-t border-slate-900">
+                        <!-- 前のスライドと同じ設定をコピー -->
+                        <div class="pt-1 border-t border-slate-900">
+                            <button onclick="copySettingsFromPrevSlide()" class="w-full bg-slate-800 hover:bg-sky-900/50 border border-slate-700 hover:border-sky-600 text-slate-300 hover:text-sky-300 font-bold text-[10px] py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition">
+                                <i data-lucide="copy-check" class="w-3.5 h-3.5 text-sky-400"></i> 前のスライドと同じ設定にする
+                            </button>
+                        </div>
+
+                        <div class="flex items-center justify-between border-t border-slate-900 pt-1">
                             <span class="text-[10px] text-slate-300 font-bold">このスライドのページ数・出典を隠す</span>
                             <label class="relative inline-flex inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="hideFooterToggle" onchange="toggleHideFooter(this.checked)" class="sr-only peer">
@@ -296,6 +303,18 @@
                         <i data-lucide="monitor-play" class="w-4 h-4"></i> プレゼン開始 (全画面)
                     </button>
                 </div>
+            </div>
+
+            <!-- プレビューサイズ調整 -->
+            <div class="flex items-center gap-2 px-1 py-1">
+                <span class="text-[9px] text-slate-500 font-bold">プレビューサイズ:</span>
+                <div class="flex rounded bg-slate-900 border border-slate-700 overflow-hidden">
+                    <button onclick="setPreviewSize('sm')"  id="prev-sm"  class="text-[9px] px-2 py-1 font-bold transition text-slate-400 hover:text-white" title="小さく表示">小</button>
+                    <button onclick="setPreviewSize('md')"  id="prev-md"  class="text-[9px] px-2 py-1 font-bold transition text-slate-400 hover:text-white" title="中サイズ">中</button>
+                    <button onclick="setPreviewSize('lg')"  id="prev-lg"  class="text-[9px] px-2 py-1 font-bold transition bg-sky-600 text-white" title="大きく表示（デフォルト）">大</button>
+                    <button onclick="setPreviewSize('full')" id="prev-full" class="text-[9px] px-2 py-1 font-bold transition text-slate-400 hover:text-white" title="横幅いっぱい">最大</button>
+                </div>
+                <span class="text-[9px] text-slate-600">← 画面が狭いときは「小」にするとプレビューが右側に収まります</span>
             </div>
 
             <div class="flex-1 flex items-center justify-center py-2">
@@ -462,7 +481,7 @@
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-[10px] text-slate-400 font-bold mb-1">讃美歌番号 (例: LP99, 讃美歌300)</label>
-                        <input type="text" id="importKey" placeholder="LP77" class="w-full bg-slate-900 border border-slate-650 rounded px-2.5 py-1.5 text-xs text-white">
+                        <input type="text" id="importKey" placeholder="例：LP78" class="w-full bg-slate-900 border border-slate-650 rounded px-2.5 py-1.5 text-xs text-white">
                     </div>
                     <div>
                         <label class="block text-[10px] text-slate-400 font-bold mb-1">曲タイトル</label>
@@ -547,7 +566,7 @@
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="block text-[10px] text-slate-400 font-bold mb-1">讃美歌番号 (登録キー)</label>
-                                    <input type="text" id="dbSongKey" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-orange-500" placeholder="LP77">
+                                    <input type="text" id="dbSongKey" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-orange-500" placeholder="例：LP78">
                                 </div>
                                 <div>
                                     <label class="block text-[10px] text-slate-400 font-bold mb-1">曲のタイトル</label>
@@ -634,10 +653,6 @@
                     bottomLeft: "信仰告白",
                     fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false
                 }
-            ],
-            "LP77": [
-                { title: "賛美 (リビングプレイズ 77)", content: "聖霊[せい霊]の神[かみ]よ 今[いま]\n私[わたし]にあふれて", bottomLeft: "聖霊の神よ LP77" },
-                { title: "賛美 (リビングプレイズ 77)", content: "聖[きよ]め 満[み]たし 主[しゅ]のものと\nならせてください", bottomLeft: "聖霊の神よ LP77" }
             ]
         };
 
@@ -966,7 +981,7 @@
         }
 
         function loadSample(key) {
-            // 保存されたカスタムサンプルがある場合はそれを優先使用
+            // 保存されたカスタムサンプルがある場合はそれを使用
             const savedSampleSlides = safeStorage.getItem('worship_saved_sample_slides');
             if (savedSampleSlides) {
                 try {
@@ -981,14 +996,8 @@
                     return;
                 } catch(e) {}
             }
-            // 保存サンプルがなければデフォルトプログラムテキストを使用
-            const doc = `招詞　詩篇100篇1-2節\n主の祈り\n2026聖句　コリントⅡ 5:7\n賛美　リビングプレイズ　77\n説教　「神の器」\n信仰告白　使徒信条\n献金\n祝祷`;
-            const programInputEl = document.getElementById('programInput');
-            if (programInputEl) {
-                programInputEl.value = doc;
-            }
-            safeSaveToLocalStorage('worship_program_input', doc);
-            parseProgramText(doc);
+            // 保存サンプルがない場合は何もしない（空の状態でスタート）
+            showNotification("「現在をサンプル保存」ボタンで、礼拝プログラムを保存できます。");
         }
 
         // 手動ルビ（漢字[かんじ]形式）の送り仮名を分割するヘルパー（Kuromojiとは無関係）
@@ -1497,7 +1506,6 @@
             const titleFontSizeDisplay = document.getElementById('titleFontSizeDisplay');
             const footerFontSizeDisplay = document.getElementById('footerFontSizeDisplay');
             const padSelect = document.getElementById('padSelect');
-            const vPadSelect = document.getElementById('vPadSelect');
             const hideFooterToggle = document.getElementById('hideFooterToggle');
             const textColorSelect = document.getElementById('textColorSelect');
 
@@ -1505,9 +1513,26 @@
             if (titleFontSizeDisplay) titleFontSizeDisplay.innerText = (slide.titleFontSize || 100) + "%";
             if (footerFontSizeDisplay) footerFontSizeDisplay.innerText = (slide.footerFontSize || 100) + "%";
             if (padSelect) padSelect.value = slide.padding || "standard";
-            if (vPadSelect) vPadSelect.value = slide.verticalPadding || "standard";
             if (textColorSelect) textColorSelect.value = slide.textColor || "auto";
             
+            // 左右余白ボタンのアクティブ状態を更新
+            const pad = slide.padding || "standard";
+            ["extra-narrow","narrow","standard","wide"].forEach(v => {
+                const btn = document.getElementById(`pad-${v}`);
+                if (btn) btn.className = v === pad
+                    ? "flex-1 text-[9px] py-1 rounded font-bold transition bg-amber-600 text-white shadow-sm"
+                    : "flex-1 text-[9px] py-1 rounded font-bold transition text-slate-400 hover:text-white";
+            });
+
+            // 上下余白ボタンのアクティブ状態を更新
+            const vpad = slide.verticalPadding || "standard";
+            ["none","tight","standard","wide"].forEach(v => {
+                const btn = document.getElementById(`vpad-${v}`);
+                if (btn) btn.className = v === vpad
+                    ? "flex-1 text-[9px] py-1 rounded font-bold transition bg-sky-600 text-white shadow-sm"
+                    : "flex-1 text-[9px] py-1 rounded font-bold transition text-slate-400 hover:text-white";
+            });
+
             const valign = slide.verticalAlign || "center";
             ["top", "center"].forEach(v => {
                 const btn = document.getElementById(`valign-${v}`);
@@ -1528,7 +1553,36 @@
             updateControlPanelUI(slide); updatePreview();
         }
 
-        // 余白の設定
+
+        // 左右余白ボタン版（ボタンのアクティブ状態も更新）
+        function setPaddingBtn(paddingType) {
+            if (slides.length === 0) return;
+            slides[currentSlideIndex].padding = paddingType;
+            updateControlPanelUI(slides[currentSlideIndex]);
+            updatePreview();
+        }
+
+        // プレビュースクリーンサイズ変更（小/中/大/最大）
+        function setPreviewSize(size) {
+            const screen = document.getElementById('projectorScreen');
+            if (!screen) return;
+            const sizeMap = {
+                'sm':   'w-full max-w-[260px]',
+                'md':   'w-full max-w-[400px]',
+                'lg':   'w-full max-w-[600px]',
+                'full': 'w-full max-w-full'
+            };
+            const baseClass = 'sky-bg rounded-2xl border-4 border-slate-700 shadow-2xl relative flex flex-col justify-between p-[4%]';
+            screen.className = (sizeMap[size] || sizeMap['lg']) + ' ' + baseClass;
+            ['sm','md','lg','full'].forEach(s => {
+                const btn = document.getElementById('prev-' + s);
+                if (btn) btn.className = s === size
+                    ? 'text-[9px] px-2 py-1 font-bold transition bg-sky-600 text-white'
+                    : 'text-[9px] px-2 py-1 font-bold transition text-slate-400 hover:text-white';
+            });
+        }
+
+        // 余白の設定（後方互換）
         function setPadding(paddingType) {
             if (slides.length === 0) return;
             slides[currentSlideIndex].padding = paddingType; updatePreview();
@@ -2105,6 +2159,23 @@
             updatePreview();
             const colorNames = { auto:"自動", white:"白", black:"黒", yellow:"黄色", lightblue:"水色", gold:"ゴールド" };
             showNotification(`全 ${slides.length} 枚のスライドの文字色を「${colorNames[colorKey] || colorKey}」に一括変更しました。`);
+        }
+
+
+        // 前のスライドの表示設定を現在のスライドにコピー
+        function copySettingsFromPrevSlide() {
+            if (currentSlideIndex === 0) {
+                showNotification("最初のスライドです。前のスライドがありません。"); return;
+            }
+            if (slides.length < 2) { showNotification("スライドが1枚しかありません。"); return; }
+            const prev = slides[currentSlideIndex - 1];
+            const curr = slides[currentSlideIndex];
+            // コピーする設定項目
+            const keys = ['fontSize','titleFontSize','footerFontSize','padding','verticalPadding','verticalAlign','textColor','hideFooter'];
+            keys.forEach(k => { if (prev[k] !== undefined) curr[k] = prev[k]; });
+            updateControlPanelUI(curr);
+            updatePreview();
+            showNotification(`前のスライド（${currentSlideIndex}枚目）の設定をコピーしました。`);
         }
 
         // 上下余白の設定
