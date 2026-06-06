@@ -106,7 +106,7 @@
     <main class="flex-1 flex flex-row overflow-hidden min-w-0">
         
         <!-- 左側：入力と編集 -->
-        <section id="leftPanel" class="w-[320px] min-w-[220px] max-w-[400px] border-r border-slate-700 p-3 flex flex-col space-y-3 overflow-y-auto shrink-0" style="height:calc(100vh - 56px)">
+        <section id="leftPanel" class="border-r border-slate-700 p-3 flex flex-col space-y-3 overflow-y-auto shrink-0" style="height:calc(100vh - 56px); width:50%; min-width:200px;">
             
             <!-- プログラム入力（折りたたみ可能） -->
             <div class="bg-slate-800/80 rounded-xl border border-slate-700">
@@ -268,8 +268,15 @@
             </div>
         </section>
 
+        <!-- ドラッグリサイザー -->
+        <div id="panelResizer" style="width:6px; cursor:col-resize; background:transparent; flex-shrink:0; position:relative; z-index:10;"
+             class="hover:bg-sky-500/40 active:bg-sky-500/60 transition-colors"
+             title="ドラッグして左右幅を調整">
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); height:40px; width:3px; background:rgba(100,116,139,0.5); border-radius:3px; pointer-events:none;"></div>
+        </div>
+
         <!-- 右側：プレビュー -->
-        <section class="flex-1 min-w-[280px] p-4 flex flex-col space-y-3 overflow-y-auto" style="height:calc(100vh - 56px)">
+        <section id="rightPanel" class="flex-1 p-4 flex flex-col space-y-3 overflow-y-auto" style="height:calc(100vh - 56px); min-width:220px;">
             <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/60 flex flex-wrap items-center justify-between gap-4">
                 <span class="text-sm font-bold text-slate-300">3. プレビュー表示</span>
                 
@@ -787,6 +794,8 @@
                 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
             }
 
+            // パネルリサイザー初期化
+            initPanelResizer();
         };
 
         // ユーザーがプログラムを入力したときにLocalStorageに自動保存して次回引き継げるようにする
@@ -1574,6 +1583,73 @@
             if (body)    body.style.display    = programPanelOpen ? '' : 'none';
             if (chevron) chevron.style.transform = programPanelOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
             if (btn)     btn.classList.toggle('rounded-b-xl', !programPanelOpen);
+        }
+
+
+        // =============================================
+        // パネルリサイザー（左右ドラッグで幅調整）
+        // =============================================
+        function initPanelResizer() {
+            const resizer   = document.getElementById('panelResizer');
+            const leftPanel = document.getElementById('leftPanel');
+            const rightPanel= document.getElementById('rightPanel');
+            if (!resizer || !leftPanel || !rightPanel) return;
+
+            let isDragging = false;
+            let startX = 0;
+            let startLeftWidth = 0;
+
+            resizer.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startLeftWidth = leftPanel.offsetWidth;
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+                resizer.style.background = 'rgba(56,189,248,0.5)';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const delta = e.clientX - startX;
+                const mainW = (leftPanel.parentElement || document.querySelector('main')).offsetWidth;
+                const newLeft  = Math.max(200, Math.min(mainW - 220 - 6, startLeftWidth + delta));
+                leftPanel.style.width = newLeft + 'px';
+                // 保存
+                try { localStorage.setItem('ws_panel_left_w', newLeft); } catch(e) {}
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!isDragging) return;
+                isDragging = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                resizer.style.background = 'transparent';
+            });
+
+            // タッチ操作対応（スマホ・タブレット）
+            resizer.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                startX = e.touches[0].clientX;
+                startLeftWidth = leftPanel.offsetWidth;
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const delta = e.touches[0].clientX - startX;
+                const mainW = (leftPanel.parentElement || document.querySelector('main')).offsetWidth;
+                const newLeft = Math.max(200, Math.min(mainW - 220 - 6, startLeftWidth + delta));
+                leftPanel.style.width = newLeft + 'px';
+            }, { passive: true });
+
+            document.addEventListener('touchend', () => { isDragging = false; });
+
+            // 前回の幅を復元
+            try {
+                const saved = localStorage.getItem('ws_panel_left_w');
+                if (saved) leftPanel.style.width = parseInt(saved) + 'px';
+            } catch(e) {}
         }
 
         // 左右余白ボタン版（ボタンのアクティブ状態も更新）
