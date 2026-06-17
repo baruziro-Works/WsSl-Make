@@ -24,7 +24,27 @@
     <!-- YouTube Iframe Player API -->
     <script src="https://www.youtube.com/iframe_api" defer></script>
     <!-- PDFをクライアントサイドで超高速かつ綺麗にパース・ラスタライズする pdf.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" defer></script>
+    <!-- pdf.js 3.11.174（cdnjs優先、失敗時はjsDelivrに自動切替） -->
+    <script>
+    (function() {
+        const PDFJS_VERSION = '3.11.174';
+        const urls = [
+            `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`,
+            `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.min.js`
+        ];
+        let tried = 0;
+        function loadNext() {
+            if (tried >= urls.length) return;
+            const s = document.createElement('script');
+            s.src = urls[tried++];
+            s.defer = true;
+            s.onerror = loadNext; // 失敗したら次のCDNを試す
+            document.head.appendChild(s);
+        }
+        loadNext();
+        window._PDFJS_WORKER_VERSION = PDFJS_VERSION;
+    })();
+    </script>
     <style>
         body { font-family: 'BIZ UDGothic', 'Noto Sans JP', sans-serif; }
         .worship-font-bold { font-weight: 900; }
@@ -920,9 +940,17 @@
             }
 
             // pdf.js のワーカーパス設定（defer読み込み後に安全に実行）
-            if (typeof pdfjsLib !== 'undefined') {
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-            }
+            // 即時 + 2秒後の2段構えで確実に設定
+            const _applyPdfWorker = () => {
+                if (typeof pdfjsLib !== 'undefined') {
+                    const _pdfVer = window._PDFJS_WORKER_VERSION || '3.11.174';
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 
+                        `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${_pdfVer}/pdf.worker.min.js`;
+                    console.log('pdf.js ready, version:', pdfjsLib.version || _pdfVer);
+                }
+            };
+            _applyPdfWorker();
+            setTimeout(_applyPdfWorker, 2000);
 
             // パネルリサイザー初期化
             initPanelResizer();
@@ -1214,9 +1242,25 @@
             if (parts.length < 2) return { isTwoCol: false, html: compileRubi(text) };
             const leftHtml  = compileRubi(parts[0].trim());
             const rightHtml = compileRubi(parts.slice(1).join('\n').trim());
-            const html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5cqw;width:100%;height:100%;align-items:center;">
-                <div style="border-right:0.2cqw solid rgba(255,255,255,0.35);padding-right:1.5cqw;height:100%;display:flex;align-items:center;">${leftHtml}</div>
-                <div style="padding-left:0.5cqw;height:100%;display:flex;align-items:center;">${rightHtml}</div>
+            // gridはbody要素（display:flex）の中に入る
+            // 左列・右列それぞれ独立したブロック、縦方向は上揃えをデフォルトに
+            const html = `<div style="
+                display:grid;
+                grid-template-columns:1fr 1fr;
+                gap:0;
+                width:100%;
+                align-items:start;
+                word-break:break-all;
+            ">
+                <div style="
+                    border-right:0.25cqw solid rgba(255,255,255,0.4);
+                    padding-right:2cqw;
+                    padding-left:0.5cqw;
+                ">${leftHtml}</div>
+                <div style="
+                    padding-left:2cqw;
+                    padding-right:0.5cqw;
+                ">${rightHtml}</div>
             </div>`;
             return { isTwoCol: true, html };
         }
@@ -2148,6 +2192,10 @@
 
             const isHideFooter = !!s.hideFooter;
 
+            // 2段組・行間はスコープ外で宣言（画像/YouTube時もvAlign処理で参照するため）
+            const lineH = s.lineHeight || 1.8;
+            const colResult = compileTwoColumn(s.content || "");
+
             // 各種フレームを取得
             const pInner = document.getElementById('previewInnerFrame');
             const fInner = document.getElementById('fsInnerFrame');
@@ -2166,34 +2214,78 @@
 
             // 1. 画像・PDFスライド資料の全画面表示処理の最適化（背後の水色グラデーションとはみ出しを完全消去）
             if (isImg) {
-                // 画像モード：はみ出した周りの隙間に水色背景（.sky-bg）や雲のオブジェクトが残らないよう, コンテナ自体を真っ黒（黒ベタ背景）にする
+                // 画像モード：スクリーン全体を黒にして、img を absolute で完全充填
                 [pScreen, fScreen].forEach(el => {
                     if (!el) return;
                     el.style.background = '#000000';
                     el.style.backgroundImage = 'none';
-                    el.style.padding = '0';  // 画像スライドは枠余白ゼロ
+                    el.style.padding = '0';
+                    el.style.overflow = 'hidden';
                     Array.from(el.getElementsByClassName('cloud-1')).forEach(c => c.style.display = 'none');
                     Array.from(el.getElementsByClassName('cloud-2')).forEach(c => c.style.display = 'none');
                 });
 
-                // 余白、外枠、タイトル、フッターを完全に非表示・ゼロ化
+                // InnerFrame・ContentContainer をリセットして位置の基準にする
                 [pInner, fInner].forEach(el => {
                     if (!el) return;
-                    el.className = "w-full h-full flex flex-col justify-between relative z-10 box-border border-0 p-0 rounded-none bg-transparent";
-                    el.style.backgroundColor = "transparent";
-                    el.style.borderColor = "transparent";
+                    // 枠・余白を完全ゼロ、ただし relative のままにして img の absolute 基準にする
+                    el.style.cssText = 'width:100%;height:100%;padding:0;margin:0;border:none;background:transparent;position:relative;border-radius:0;display:block;';
+                    el.className = '';
                 });
-                [pTitle, fTitle, pFooter, fFooter, pBody, fBody].forEach(el => {
-                    if (el) el.classList.add('hidden');
+
+                // ContentContainer も完全充填
+                const pCont2 = document.getElementById('previewContentContainer');
+                const fCont2 = document.getElementById('fsContentContainer');
+                [pCont2, fCont2].forEach(el => {
+                    if (!el) return;
+                    el.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;';
+                    el.className = '';
                 });
+
+                // img を absolute で親いっぱいに広げる
                 [pImg, fImg].forEach(el => {
                     if (!el) return;
-                    el.className = "w-full h-full object-contain max-h-full block mx-auto";
+                    el.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;';
+                    el.className = '';
                     el.src = s.image;
-                    el.classList.remove('hidden');
+                    el.style.display = 'block';
+                });
+
+                [pTitle, fTitle, pFooter, fFooter, pBody, fBody].forEach(el => {
+                    if (el) { el.style.display = 'none'; el.classList.add('hidden'); }
                 });
             } else {
-                // 通常モード（テキスト・YouTube）：境界線、パディング、背景テーマスタイルを完璧に適用・復元
+                // 通常モード（テキスト・YouTube）：画像モードで上書きしたstyleを全てリセットしてから復元
+                // pImg/fImg を隠す＆styleリセット
+                [pImg, fImg].forEach(el => {
+                    if (!el) return;
+                    el.style.cssText = '';
+                    el.className = 'hidden';
+                    el.src = '';
+                });
+                // ContentContainer を元のflexスタイルに戻す
+                const pCont0 = document.getElementById('previewContentContainer');
+                const fCont0 = document.getElementById('fsContentContainer');
+                [pCont0, fCont0].forEach(el => {
+                    if (!el) return;
+                    el.style.cssText = '';
+                    el.className = 'flex-1 flex items-center justify-center text-center w-full overflow-visible my-1 relative';
+                });
+                // pInner/fInner の cssText リセット（後続で className が再設定される）
+                [pInner, fInner].forEach(el => {
+                    if (!el) return;
+                    el.style.cssText = '';
+                });
+                // pScreen overflow リセット
+                [pScreen, fScreen].forEach(el => {
+                    if (el) el.style.overflow = '';
+                });
+                // タイトル・本文・フッターを再表示（画像モードでhidden/display:noneにしたものを全て戻す）
+                [pTitle, fTitle, pBody, fBody, pFooter, fFooter].forEach(el => {
+                    if (el) { el.style.display = ''; el.classList.remove('hidden'); }
+                });
+
+                // 境界線、パディング、背景テーマスタイルを適用・復元
                 [pScreen, fScreen].forEach(el => {
                     if (!el) return;
                     if (activeBgTheme === 'custom') {
@@ -2264,39 +2356,62 @@
                 });
 
                 [pTitle, fTitle].forEach(el => {
-                    if (el) el.classList.remove('hidden');
+                    if (el) { el.style.display = ''; el.classList.remove('hidden'); }
                 });
                 [pFooter, fFooter].forEach(el => {
                     if (el) {
+                        el.style.display = '';
                         el.classList.remove('hidden');
                         el.classList.toggle('invisible', isHideFooter);
                     }
                 });
                 [pBody, fBody].forEach(el => {
-                    if (el) el.classList.toggle('hidden', isYt);
+                    if (el) { 
+                        el.style.display = isYt ? 'none' : '';
+                        el.classList.toggle('hidden', isYt); 
+                    }
                 });
                 [pImg, fImg].forEach(el => {
-                    if (el) el.classList.add('hidden');
+                    if (el) { el.style.display = 'none'; el.classList.add('hidden'); }
                 });
 
                 // 行間・本文レンダリング（2段組対応）
-                const lineH = s.lineHeight || 1.8;
-                const colResult = compileTwoColumn(s.content || "");
-                [pBody, fBody].forEach(el => {
+                const pCont = document.getElementById('previewContentContainer');
+                const fCont = document.getElementById('fsContentContainer');
+
+                [pBody, fBody].forEach((el, idx) => {
                     if (!el) return;
+                    const cont = idx === 0 ? pCont : fCont;
                     el.style.fontSize = finalFontSize;
                     el.style.lineHeight = lineH;
                     el.style.color = textBaseColor;
                     if (!isYt) {
                         if (colResult.isTwoCol) {
-                            // 2段組モード：bodyをflex幅いっぱいにしてgrid内包
-                            el.style.display = 'block';
+                            // 2段組モード：
+                            // bodyを親コンテナと同じサイズに広げてgridを内包
+                            el.style.display = 'flex';
                             el.style.width = '100%';
+                            el.style.height = '100%';
                             el.style.textAlign = 'left';
+                            el.style.padding = '0';
+                            // 親コンテナをflex→blockに切り替えてbodyが全幅取れるように
+                            if (cont) {
+                                cont.style.display = 'block';
+                                cont.style.width = '100%';
+                                cont.style.height = '100%';
+                            }
                             el.innerHTML = colResult.html;
                         } else {
                             el.style.display = 'inline-block';
                             el.style.width = '';
+                            el.style.height = '';
+                            el.style.padding = '';
+                            // 通常モード：親コンテナをflexに戻す
+                            if (cont) {
+                                cont.style.display = '';
+                                cont.style.width = '';
+                                cont.style.height = '';
+                            }
                             el.innerHTML = compileRubi(s.content);
                         }
                     }
@@ -2305,8 +2420,11 @@
             }
 
             const vAlign = s.verticalAlign || "center";
+            const isTwoCol = colResult && colResult.isTwoCol;
             [document.getElementById('previewContentContainer'), document.getElementById('fsContentContainer')].forEach(el => {
                 if (!el) return;
+                // 2段組モード中はcontainerのflex操作をスキップ（bodyがblock化されているため）
+                if (isTwoCol) return;
                 if (vAlign === "top" && !isImg) { 
                     el.classList.remove('items-center'); 
                     el.classList.add('items-start', 'pt-[4cqw]'); 
@@ -2417,40 +2535,66 @@
                     // --- PDFファイル一括抽出処理 ---
                     try {
                         if (typeof pdfjsLib === 'undefined') {
-                            showNotification('PDFライブラリの読み込みが完了していません。しばらく待ってから再試行してください。');
+                            showNotification('PDFライブラリの読み込みが完了していません。ページを再読込してから再試行してください。', 5000);
                             continue;
                         }
-                        // pdf.js ワーカーパスを念のため再設定
-                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+                        // workerSrc を毎回確実に設定
+                        const _pdfVer = window._PDFJS_WORKER_VERSION || '3.11.174';
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${_pdfVer}/pdf.worker.min.js`;
+
                         const arrayBuffer = await file.arrayBuffer();
-                        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                        const loadingTask = pdfjsLib.getDocument({ 
+                            data: arrayBuffer,
+                            cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${_pdfVer}/cmaps/`,
+                            cMapPacked: true,
+                            // 日本語フォント対応
+                            standardFontDataUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${_pdfVer}/standard_fonts/`
+                        });
+                        const pdf = await loadingTask.promise;
                         showNotification(`PDF「${file.name}」（全${pdf.numPages}頁）を展開中...`);
 
                         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                             const page = await pdf.getPage(pageNum);
-                            const viewport = page.getViewport({ scale: 1.5 }); // プロジェクター用に1.5倍ラスタライズ
+                            // スケールをプロジェクター解像度に合わせて計算
+                            // 4:3想定で横1280px相当になるscaleを設定
+                            const origViewport = page.getViewport({ scale: 1 });
+                            const targetWidth = 1280;
+                            const scale = targetWidth / origViewport.width;
+                            const viewport = page.getViewport({ scale });
 
                             const canvas = document.createElement('canvas');
                             const context = canvas.getContext('2d');
-                            canvas.height = viewport.height;
-                            canvas.width = viewport.width;
+                            canvas.width  = Math.floor(viewport.width);
+                            canvas.height = Math.floor(viewport.height);
 
-                            await page.render({ canvasContext: context, viewport: viewport }).promise;
-                            const imgData = canvas.toDataURL('image/jpeg', 0.85); // 圧縮率85%のJPEGデータに変換
+                            await page.render({ 
+                                canvasContext: context, 
+                                viewport 
+                            }).promise;
+
+                            const imgData = canvas.toDataURL('image/jpeg', 0.88);
 
                             slides.splice(insertIndex, 0, {
-                                title: `${file.name.replace(".pdf", "")} (${pageNum}/${pdf.numPages})`,
+                                title: `${file.name.replace(/\.pdf$/i, "")} (${pageNum}/${pdf.numPages})`,
                                 image: imgData,
+                                isImageSlide: true,
                                 bottomLeft: "PDF資料",
                                 fontSize: 100, titleFontSize: 100, footerFontSize: 100,
                                 padding: "standard", verticalAlign: "center", hideFooter: false
                             });
                             insertIndex++;
                             addedCount++;
+
+                            // 5ページごとに進捗通知
+                            if (pageNum % 5 === 0) {
+                                showNotification(`PDF展開中… ${pageNum}/${pdf.numPages}頁`);
+                                await new Promise(r => setTimeout(r, 0)); // UIを更新させる
+                            }
                         }
+                        showNotification(`PDF「${file.name}」（全${pdf.numPages}頁）の読み込みが完了しました。`);
                     } catch (err) {
                         console.error("PDF load failed:", err);
-                        showNotification(`PDF「${file.name}」の読み込みに失敗しました。`);
+                        showNotification(`PDF「${file.name}」の読み込みに失敗しました。（${err.message || err}）`);
                     }
                 } else {
                     // --- 通常の画像複数枚一括処理 ---
