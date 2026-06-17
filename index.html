@@ -182,10 +182,17 @@
                             </div>
                         </div>
                         <div>
-                            <label class="text-[9px] text-slate-400 font-bold block mb-0.5">本文 <span class="text-slate-600 font-normal">（漢字[かんじ] でルビ）</span></label>
+                            <div class="flex items-center justify-between mb-0.5">
+                                <label class="text-[9px] text-slate-400 font-bold">本文 <span class="text-slate-600 font-normal">（漢字[かんじ] でルビ）</span></label>
+                                <button onclick="insertTwoColumn()" title="カーソル位置に2段組区切り「|col|」を挿入"
+                                    class="text-[8px] bg-purple-800 hover:bg-purple-700 text-purple-200 font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 transition border border-purple-600">
+                                    <i data-lucide="columns-2" class="w-2.5 h-2.5"></i> ２段組
+                                </button>
+                            </div>
                             <textarea id="editSlideContent" oninput="updateSelectedSlide()" rows="4"
-                                class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-[11px] text-slate-200 focus:ring-1 focus:ring-sky-500 focus:outline-none resize-none"
-                                placeholder="スライド本文をここに入力..."></textarea>
+                                class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-[11px] text-slate-200 focus:ring-1 focus:ring-sky-500 focus:outline-none resize-none font-mono"
+                                placeholder="本文…　複数段落は空行で区切り、2段組は |col| で区切る"></textarea>
+                            <p class="text-[7px] text-slate-600 mt-0.5">2段組：左の文章を書いて「２段組」ボタン→右の文章を書く</p>
                         </div>
                     </div>
                     <!-- 画像スライド -->
@@ -355,6 +362,12 @@
                     <button onclick="switchFormatTab('vpadding')" id="tab-vpadding" class="px-2.5 py-1 text-xs font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-300 transition whitespace-nowrap">
                         <i data-lucide="arrows-vertical" class="w-3 h-3 inline mr-0.5"></i> 上下
                     </button>
+                    <button onclick="switchFormatTab('frame')" id="tab-frame" class="px-2.5 py-1 text-xs font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-300 transition whitespace-nowrap">
+                        <i data-lucide="square-dashed" class="w-3 h-3 inline mr-0.5"></i> 枠
+                    </button>
+                    <button onclick="switchFormatTab('lineheight')" id="tab-lineheight" class="px-2.5 py-1 text-xs font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-300 transition whitespace-nowrap">
+                        <i data-lucide="align-justify" class="w-3 h-3 inline mr-0.5"></i> 行間
+                    </button>
                 </div>
 
                 <!-- タブコンテンツ -->
@@ -449,6 +462,46 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                    <!-- タブ5：枠サイズ -->
+                    <div id="frame-tab" class="hidden space-y-1.5">
+                        <div class="border border-slate-500 rounded-lg p-2 bg-slate-950/50 space-y-2">
+                            <div>
+                                <span class="block text-[8px] text-slate-300 font-bold mb-1">白枠の外側余白 <span class="text-slate-600 font-normal">（小さいほど枠が外に広がる）</span></span>
+                                <div class="flex rounded bg-slate-900 p-0.5 gap-0.5">
+                                    <button onclick="setFramePadding('none')" id="frame-none" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white" title="枠を最大に広げる（余白ゼロ）">0</button>
+                                    <button onclick="setFramePadding('tiny')" id="frame-tiny" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">極小</button>
+                                    <button onclick="setFramePadding('small')" id="frame-small" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">小</button>
+                                    <button onclick="setFramePadding('standard')" id="frame-standard" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">標</button>
+                                    <button onclick="setFramePadding('large')" id="frame-large" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">大</button>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="block text-[8px] text-slate-300 font-bold mb-1">白枠の太さ</span>
+                                <div class="flex rounded bg-slate-900 p-0.5 gap-0.5">
+                                    <button onclick="setFrameBorder('none')" id="border-none" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white" title="枠線なし">なし</button>
+                                    <button onclick="setFrameBorder('thin')" id="border-thin" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">細</button>
+                                    <button onclick="setFrameBorder('standard')" id="border-standard" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">標</button>
+                                    <button onclick="setFrameBorder('thick')" id="border-thick" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">太</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- タブ6：行間 -->
+                    <div id="lineheight-tab" class="hidden">
+                        <div class="border border-slate-500 rounded-lg p-2 bg-slate-950/50">
+                            <span class="block text-[8px] text-slate-300 font-bold mb-1">行間</span>
+                            <div class="flex items-center bg-slate-900 rounded overflow-hidden">
+                                <button onclick="adjustLineHeight(-0.1)" class="bg-rose-700 hover:bg-rose-600 text-white font-bold px-2 py-0.5 text-xs leading-none shrink-0">狭−</button>
+                                <span id="lineHeightDisplay" class="text-[8px] font-mono font-bold text-sky-300 px-1 text-center flex-1">1.8</span>
+                                <button onclick="adjustLineHeight(0.1)" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-2 py-0.5 text-xs leading-none shrink-0">+広</button>
+                            </div>
+                            <p class="text-[7px] text-slate-600 mt-1">標準値: 1.8　　最小: 0.9</p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </section>
@@ -1154,6 +1207,20 @@
             return compiled.replace(/\n/g, '<br>');
         }
 
+        // 2段組レンダリング：|col| マーカーで左右に分割
+        function compileTwoColumn(text) {
+            if (!text) return { isTwoCol: false, html: "" };
+            const parts = text.split(/\r?\n\|col\|\r?\n|\|col\|/);
+            if (parts.length < 2) return { isTwoCol: false, html: compileRubi(text) };
+            const leftHtml  = compileRubi(parts[0].trim());
+            const rightHtml = compileRubi(parts.slice(1).join('\n').trim());
+            const html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5cqw;width:100%;height:100%;align-items:center;">
+                <div style="border-right:0.2cqw solid rgba(255,255,255,0.35);padding-right:1.5cqw;height:100%;display:flex;align-items:center;">${leftHtml}</div>
+                <div style="padding-left:0.5cqw;height:100%;display:flex;align-items:center;">${rightHtml}</div>
+            </div>`;
+            return { isTwoCol: true, html };
+        }
+
         function extractYoutubeId(url) {
             if (!url) return null;
             const regExp = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/i;
@@ -1655,6 +1722,69 @@
                 if (btn) btn.className = v === valign ? "flex-1 text-[9px] py-0.5 rounded font-bold transition bg-sky-600 text-white shadow-sm" : "flex-1 text-[9px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white";
             });
             if (hideFooterToggle) hideFooterToggle.checked = !!slide.hideFooter;
+
+            // 枠余白ボタンのアクティブ状態
+            const fp = slide.framePadding || "standard";
+            ["none","tiny","small","standard","large"].forEach(v => {
+                const btn = document.getElementById(`frame-${v}`);
+                if (btn) btn.className = v === fp
+                    ? "flex-1 text-[7px] py-0.5 rounded font-bold transition bg-violet-600 text-white shadow-sm"
+                    : "flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white";
+            });
+
+            // 枠線太さボタン
+            const fb = slide.frameBorder || "standard";
+            ["none","thin","standard","thick"].forEach(v => {
+                const btn = document.getElementById(`border-${v}`);
+                if (btn) btn.className = v === fb
+                    ? "flex-1 text-[7px] py-0.5 rounded font-bold transition bg-violet-600 text-white shadow-sm"
+                    : "flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white";
+            });
+
+            // 行間表示
+            const lhDisp = document.getElementById('lineHeightDisplay');
+            if (lhDisp) lhDisp.innerText = (slide.lineHeight || 1.8).toFixed(1);
+        }
+
+        // ===== 枠サイズ関数 =====
+        function setFramePadding(val) {
+            if (!slides[currentSlideIndex]) return;
+            slides[currentSlideIndex].framePadding = val;
+            updateControlPanelUI(slides[currentSlideIndex]);
+            updatePreview();
+        }
+        function setFrameBorder(val) {
+            if (!slides[currentSlideIndex]) return;
+            slides[currentSlideIndex].frameBorder = val;
+            updateControlPanelUI(slides[currentSlideIndex]);
+            updatePreview();
+        }
+
+        // ===== 行間調整関数 =====
+        function adjustLineHeight(delta) {
+            if (!slides[currentSlideIndex]) return;
+            const s = slides[currentSlideIndex];
+            let lh = (s.lineHeight || 1.8) + delta;
+            lh = Math.round(lh * 10) / 10;
+            if (lh < 0.9) lh = 0.9;
+            if (lh > 3.0) lh = 3.0;
+            s.lineHeight = lh;
+            updateControlPanelUI(s);
+            updatePreview();
+        }
+
+        // ===== 2段組ボタン：カーソル位置に |col| を挿入 =====
+        function insertTwoColumn() {
+            const ta = document.getElementById('editSlideContent');
+            if (!ta) return;
+            const start = ta.selectionStart;
+            const end = ta.selectionEnd;
+            const val = ta.value;
+            const marker = '\n|col|\n';
+            ta.value = val.slice(0, start) + marker + val.slice(end);
+            ta.selectionStart = ta.selectionEnd = start + marker.length;
+            ta.focus();
+            updateSelectedSlide();
         }
 
         function adjustFontSize(propType, delta) {
@@ -2041,6 +2171,7 @@
                     if (!el) return;
                     el.style.background = '#000000';
                     el.style.backgroundImage = 'none';
+                    el.style.padding = '0';  // 画像スライドは枠余白ゼロ
                     Array.from(el.getElementsByClassName('cloud-1')).forEach(c => c.style.display = 'none');
                     Array.from(el.getElementsByClassName('cloud-2')).forEach(c => c.style.display = 'none');
                 });
@@ -2095,9 +2226,33 @@
                 const hPadClass = hPaddingMap[pad] || "px-[7%]";
                 const vPadClass = vPaddingMap[vPad] || "py-[5%]";
 
+                // 枠外側余白（pScreen の p-[4%] を上書き）
+                const framePadMap = {
+                    "none":     "0%",
+                    "tiny":     "1%",
+                    "small":    "2%",
+                    "standard": "4%",
+                    "large":    "6%"
+                };
+                const framePadVal = framePadMap[s.framePadding || "standard"];
+                [pScreen, fScreen].forEach(el => {
+                    if (el) el.style.padding = framePadVal;
+                });
+
+                // 枠線の太さ
+                const frameBorderMap = {
+                    "none":     "0px",
+                    "thin":     "0.5cqw",
+                    "standard": "1.2cqw",
+                    "thick":    "2.5cqw"
+                };
+                const frameBorderVal = frameBorderMap[s.frameBorder || "standard"];
+
                 [pInner, fInner].forEach(el => {
                     if (!el) return;
-                    el.className = "border-[1.2cqw] border-white border-opacity-90 rounded-[3cqw] w-full h-full flex flex-col justify-between relative z-10 box-border bg-white/5 backdrop-blur-[1px] shadow-inner transition-all duration-150";
+                    el.className = "border-white border-opacity-90 rounded-[3cqw] w-full h-full flex flex-col justify-between relative z-10 box-border bg-white/5 backdrop-blur-[1px] shadow-inner transition-all duration-150";
+                    el.style.borderWidth = frameBorderVal;
+                    el.style.borderStyle = s.frameBorder === 'none' ? 'none' : 'solid';
                     el.classList.add(hPadClass, vPadClass);
                     if (isDarkBackground || activeBgTheme === "custom") { 
                         el.style.backgroundColor = "rgba(0, 0, 0, 0.25)"; 
@@ -2124,11 +2279,27 @@
                     if (el) el.classList.add('hidden');
                 });
 
+                // 行間・本文レンダリング（2段組対応）
+                const lineH = s.lineHeight || 1.8;
+                const colResult = compileTwoColumn(s.content || "");
                 [pBody, fBody].forEach(el => {
                     if (!el) return;
                     el.style.fontSize = finalFontSize;
+                    el.style.lineHeight = lineH;
                     el.style.color = textBaseColor;
-                    if (!isYt) el.innerHTML = compileRubi(s.content);
+                    if (!isYt) {
+                        if (colResult.isTwoCol) {
+                            // 2段組モード：bodyをflex幅いっぱいにしてgrid内包
+                            el.style.display = 'block';
+                            el.style.width = '100%';
+                            el.style.textAlign = 'left';
+                            el.innerHTML = colResult.html;
+                        } else {
+                            el.style.display = 'inline-block';
+                            el.style.width = '';
+                            el.innerHTML = compileRubi(s.content);
+                        }
+                    }
                     el.querySelectorAll('rt').forEach(rt => rt.style.color = rtBaseColor);
                 });
             }
@@ -2165,6 +2336,7 @@
                     if (!el) return;
                     el.style.background = '#000000';
                     el.style.backgroundImage = 'none';
+                    el.style.padding = '0';  // YouTube時は枠余白ゼロ
                     Array.from(el.getElementsByClassName('cloud-1')).forEach(c => c.style.display = 'none');
                     Array.from(el.getElementsByClassName('cloud-2')).forEach(c => c.style.display = 'none');
                 });
@@ -2372,7 +2544,7 @@
             const prev = slides[currentSlideIndex - 1];
             const curr = slides[currentSlideIndex];
             // コピーする設定項目
-            const keys = ['fontSize','titleFontSize','footerFontSize','padding','verticalPadding','verticalAlign','textColor','hideFooter'];
+            const keys = ['fontSize','titleFontSize','footerFontSize','padding','verticalPadding','verticalAlign','textColor','hideFooter','framePadding','frameBorder','lineHeight'];
             keys.forEach(k => { if (prev[k] !== undefined) curr[k] = prev[k]; });
             updateControlPanelUI(curr);
             updatePreview();
@@ -2898,7 +3070,7 @@
         // ==========================================
         function switchFormatTab(tabName) {
             // すべてのタブを非表示
-            const tabs = ['fontSize', 'color', 'hpadding', 'vpadding'];
+            const tabs = ['fontSize', 'color', 'hpadding', 'vpadding', 'frame', 'lineheight'];
             tabs.forEach(tab => {
                 const tabEl = document.getElementById(tab + '-tab');
                 if (tabEl) tabEl.classList.add('hidden');
