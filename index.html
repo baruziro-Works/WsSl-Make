@@ -157,7 +157,7 @@
                 <div id="slideList" class="flex-1 space-y-2 overflow-y-auto min-h-[100px]"></div>
 
                 <!-- ✏️ クイック編集エリア -->
-                <div id="quickEditArea" class="hidden bg-slate-900 rounded-lg border border-slate-700 p-2.5 space-y-2 shrink-0">
+                <div id="quickEditArea" class="hidden bg-slate-900 rounded-lg border border-slate-700 p-2 space-y-1.5 shrink-0">
                     <div class="flex items-center justify-between pb-1 border-b border-slate-800">
                         <label class="text-[10px] text-amber-400 font-bold flex items-center gap-1">
                             <i data-lucide="edit-3" class="w-3 h-3"></i> スライド編集
@@ -166,23 +166,26 @@
                     </div>
                     <!-- テキストスライド編集 -->
                     <div id="textEditGroup" class="space-y-1.5">
-                        <div>
-                            <label class="text-[9px] text-slate-400 font-bold">見出し</label>
-                            <input type="text" id="editSlideTitle" oninput="updateSelectedSlide()"
-                                class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-[11px] text-slate-200 focus:ring-1 focus:ring-sky-500 focus:outline-none mt-0.5"
-                                placeholder="見出し（空白でもOK）">
+                        <!-- 見出し＋左下出典：横並び（幅があるとき）または縦並び -->
+                        <div class="flex flex-col min-[280px]:flex-row gap-1.5">
+                            <div class="flex-1 min-w-0">
+                                <label class="text-[9px] text-slate-400 font-bold block mb-0.5">見出し</label>
+                                <input type="text" id="editSlideTitle" oninput="updateSelectedSlide()"
+                                    class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-[11px] text-slate-200 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                                    placeholder="見出し（空白でもOK）">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <label class="text-[9px] text-slate-400 font-bold block mb-0.5">左下出典</label>
+                                <input type="text" id="editSlideBottomLeft" oninput="updateSelectedSlide()"
+                                    class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-[11px] text-slate-200 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                                    placeholder="出典・フッター">
+                            </div>
                         </div>
                         <div>
-                            <label class="text-[9px] text-slate-400 font-bold">本文 <span class="text-slate-600">（漢字[かんじ] でルビ）</span></label>
+                            <label class="text-[9px] text-slate-400 font-bold block mb-0.5">本文 <span class="text-slate-600 font-normal">（漢字[かんじ] でルビ）</span></label>
                             <textarea id="editSlideContent" oninput="updateSelectedSlide()" rows="4"
-                                class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-[11px] text-slate-200 focus:ring-1 focus:ring-sky-500 focus:outline-none mt-0.5 resize-none"
+                                class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-[11px] text-slate-200 focus:ring-1 focus:ring-sky-500 focus:outline-none resize-none"
                                 placeholder="スライド本文をここに入力..."></textarea>
-                        </div>
-                        <div>
-                            <label class="text-[9px] text-slate-400 font-bold">左下出典</label>
-                            <input type="text" id="editSlideBottomLeft" oninput="updateSelectedSlide()"
-                                class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-[11px] text-slate-200 focus:ring-1 focus:ring-sky-500 focus:outline-none mt-0.5"
-                                placeholder="出典・フッターテキスト">
                         </div>
                     </div>
                     <!-- 画像スライド -->
@@ -410,9 +413,10 @@
                     <!-- タブ3：左右余白 -->
                     <div id="hpadding-tab" class="hidden">
                         <div class="border border-slate-500 rounded-lg p-2 bg-slate-950/50">
-                            <span class="block text-[8px] text-slate-300 font-bold mb-1">左右余白</span>
+                            <span class="block text-[8px] text-slate-300 font-bold mb-1">左右余白 <span class="text-slate-600 font-normal">（「0」は枠ギリギリ）</span></span>
                             <div class="flex rounded bg-slate-900 p-0.5 gap-0.5">
-                                <button onclick="setPadding('extra-narrow')" id="pad-extra-narrow" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">特狭</button>
+                                <button onclick="setPadding('zero')" id="pad-zero" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white" title="枠線ギリギリ（余白なし）">0</button>
+                                <button onclick="setPadding('extra-narrow')" id="pad-extra-narrow" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">極狭</button>
                                 <button onclick="setPadding('narrow')" id="pad-narrow" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">狭</button>
                                 <button onclick="setPadding('standard')" id="pad-standard" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">標</button>
                                 <button onclick="setPadding('wide')" id="pad-wide" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">広</button>
@@ -1629,7 +1633,7 @@
             
             // 左右余白ボタンのアクティブ状態を更新
             const pad = slide.padding || "standard";
-            ["extra-narrow","narrow","standard","wide"].forEach(v => {
+            ["zero","extra-narrow","narrow","standard","wide"].forEach(v => {
                 const btn = document.getElementById(`pad-${v}`);
                 if (btn) btn.className = v === pad
                     ? "flex-1 text-[9px] py-1 rounded font-bold transition bg-amber-600 text-white shadow-sm"
@@ -2075,10 +2079,11 @@
 
                 const pad = s.padding || "standard";
                 const hPaddingMap = { 
-                    "extra-narrow": "px-[0.5%]", 
-                    "narrow": "px-[2.5%]", 
-                    "standard": "px-[6.5%]", 
-                    "wide": "px-[12.5%]" 
+                    "zero":         "px-[0%]",
+                    "extra-narrow": "px-[1.5%]", 
+                    "narrow": "px-[3.5%]", 
+                    "standard": "px-[7%]", 
+                    "wide": "px-[13%]" 
                 };
                 const vPad = s.verticalPadding || "standard";
                 const vPaddingMap = {
@@ -2087,7 +2092,7 @@
                     "standard": "py-[5%]",
                     "wide":   "py-[9%]"
                 };
-                const hPadClass = hPaddingMap[pad] || "px-[6.5%]";
+                const hPadClass = hPaddingMap[pad] || "px-[7%]";
                 const vPadClass = vPaddingMap[vPad] || "py-[5%]";
 
                 [pInner, fInner].forEach(el => {
@@ -2488,15 +2493,54 @@
         window.addEventListener('keydown', e => {
             if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
             if (isPresenting) return;
-            if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); selectNextSlide(); }
-            if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); selectPrevSlide(); }
+            // 矢印キー・PageDown/PageUp でスライド切り替え（R400対応）
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); selectNextSlide(); }
+            if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft'  || e.key === 'PageUp')   { e.preventDefault(); selectPrevSlide(); }
+            // F5 でプレゼン開始（R400の再生ボタン）
+            if (e.key === 'F5') { e.preventDefault(); startPresentation(); }
         });
 
         function handlePresentationKeydown(e) {
             if (!isPresenting) return;
-            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); nextSlide(); }
-            else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); prevSlide(); }
-            else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); stopPresentation(); }
+            // 進む：PageDown, 矢印右/下, スペース, Enter（R400「進む」はPageDown）
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'PageDown') {
+                e.preventDefault(); e.stopPropagation(); nextSlide();
+            }
+            // 戻る：PageUp, 矢印左/上（R400「戻る」はPageUp）
+            else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+                e.preventDefault(); e.stopPropagation(); prevSlide();
+            }
+            // B または . でブラックアウト（R400「ブラックアウト」ボタン）
+            else if (e.key === 'b' || e.key === 'B' || e.key === '.') {
+                e.preventDefault(); e.stopPropagation(); toggleBlackout();
+            }
+            // Escape または F5 でプレゼン終了
+            else if (e.key === 'Escape' || e.key === 'F5') {
+                e.preventDefault(); e.stopPropagation(); stopPresentation();
+            }
+        }
+
+        // ブラックアウト機能（R400の「B」ボタン対応）
+        let _blackoutActive = false;
+        function toggleBlackout() {
+            const overlay = document.getElementById('presentationOverlay');
+            if (!overlay) return;
+            _blackoutActive = !_blackoutActive;
+            if (_blackoutActive) {
+                // 真っ黒なオーバーレイを最前面に重ねる
+                let bo = document.getElementById('_blackoutLayer');
+                if (!bo) {
+                    bo = document.createElement('div');
+                    bo.id = '_blackoutLayer';
+                    bo.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;cursor:none;';
+                    bo.addEventListener('click', toggleBlackout);
+                    document.body.appendChild(bo);
+                }
+                bo.style.display = 'block';
+            } else {
+                const bo = document.getElementById('_blackoutLayer');
+                if (bo) bo.style.display = 'none';
+            }
         }
 
         function toggleManageDatabaseModal() {
