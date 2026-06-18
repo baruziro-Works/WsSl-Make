@@ -90,6 +90,8 @@
             text-align: center !important; /* 中書きを確実に強制 */
         }
     </style>
+    <!-- jsPDF: スライドPDF書き出し用 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
 
@@ -120,6 +122,10 @@
                 </button>
                 <input type="file" id="wslideImportInput" class="hidden" accept=".wslide">
             </div>
+
+            <button onclick="exportSlidesToPDF()" class="bg-rose-700 hover:bg-rose-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition shadow-lg shadow-rose-900/30" title="全スライドをPDFファイルとして書き出す">
+                <i data-lucide="file-down" class="w-4 h-4"></i> PDF出力
+            </button>
         </div>
     </header>
 
@@ -219,11 +225,18 @@
                     <div id="imageEditGroup" class="hidden text-center py-2">
                         <p class="text-[10px] text-slate-500">画像スライドはテキスト編集できません</p>
                     </div>
-                    <!-- 前スライド同設定ボタン -->
-                    <button onclick="copySettingsFromPrevSlide()"
-                        class="w-full bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white font-bold px-3 py-1.5 rounded-lg text-[10px] flex items-center justify-center gap-1.5 transition border border-slate-600">
-                        <i data-lucide="copy-check" class="w-3.5 h-3.5 text-sky-400"></i> 前のスライドと同じ（書式）設定にする
-                    </button>
+                    <!-- 前スライド同設定ボタン + 全スライド一括適用ボタン -->
+                    <div class="flex gap-1.5">
+                        <button onclick="copySettingsFromPrevSlide()"
+                            class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white font-bold px-2 py-1.5 rounded-lg text-[9px] flex items-center justify-center gap-1 transition border border-slate-600">
+                            <i data-lucide="copy-check" class="w-3 h-3 text-sky-400"></i> 前と同じ書式
+                        </button>
+                        <button onclick="applySettingsToAllSlides()"
+                            class="flex-1 bg-indigo-700 hover:bg-indigo-600 text-indigo-100 hover:text-white font-bold px-2 py-1.5 rounded-lg text-[9px] flex items-center justify-center gap-1 transition border border-indigo-500"
+                            title="現在のスライドの書式設定を全スライドに一括適用します">
+                            <i data-lucide="layers" class="w-3 h-3 text-indigo-300"></i> 全スライドに適用
+                        </button>
+                    </div>
                 </div>
 
                 <!-- 🔊 音声管理セクション -->
@@ -526,6 +539,29 @@
             </div>
         </section>
     </main>
+
+    <!-- PDF出力 進捗モーダル -->
+    <div id="pdfExportModal" class="fixed inset-0 z-[60] bg-black/80 hidden flex items-center justify-center">
+        <div class="bg-slate-800 border border-slate-600 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-2xl space-y-5">
+            <div class="flex items-center gap-3">
+                <div class="bg-rose-700 p-2 rounded-lg"><i data-lucide="file-down" class="w-5 h-5 text-white"></i></div>
+                <div>
+                    <h3 class="font-bold text-white text-base">PDF出力中…</h3>
+                    <p class="text-slate-400 text-xs">しばらくお待ちください</p>
+                </div>
+            </div>
+            <div>
+                <div class="flex justify-between text-xs text-slate-400 mb-1">
+                    <span id="pdfProgressLabel">準備中...</span>
+                    <span id="pdfProgressCount">0 / 0</span>
+                </div>
+                <div class="w-full bg-slate-900 rounded-full h-3 overflow-hidden">
+                    <div id="pdfProgressBar" class="bg-rose-500 h-3 rounded-full transition-all duration-200" style="width:0%"></div>
+                </div>
+            </div>
+            <p class="text-[10px] text-slate-500 text-center">スライドを画像に変換してPDFを生成しています。<br>枚数が多い場合は少し時間がかかります。</p>
+        </div>
+    </div>
 
     <!-- 全画面投影用オーバーレイ -->
     <div id="presentationOverlay" tabindex="0" onkeydown="handlePresentationKeydown(event)" class="fixed inset-0 z-50 bg-black hidden flex items-center justify-center outline-none">
@@ -2388,8 +2424,8 @@
                     if (!isYt) {
                         if (colResult.isTwoCol) {
                             // 2段組モード：
-                            // bodyを親コンテナと同じサイズに広げてgridを内包
-                            el.style.display = 'flex';
+                            // bodyをblock表示にしてgridを内包（flexにするとgrid子要素がレイアウト崩れする）
+                            el.style.display = 'block';
                             el.style.width = '100%';
                             el.style.height = '100%';
                             el.style.textAlign = 'left';
@@ -2693,6 +2729,22 @@
             updateControlPanelUI(curr);
             updatePreview();
             showNotification(`前のスライド（${currentSlideIndex}枚目）の設定をコピーしました。`);
+        }
+
+        // 全スライドに現在の書式設定を一括適用
+        function applySettingsToAllSlides() {
+            if (slides.length === 0) { showNotification("スライドがありません。"); return; }
+            if (slides.length === 1) { showNotification("スライドが1枚しかありません。"); return; }
+            const curr = slides[currentSlideIndex];
+            const keys = ['fontSize','titleFontSize','footerFontSize','padding','verticalPadding','verticalAlign','textColor','hideFooter','framePadding','frameBorder','lineHeight'];
+            let count = 0;
+            slides.forEach((s, i) => {
+                if (i === currentSlideIndex) return; // 自分自身はスキップ
+                keys.forEach(k => { if (curr[k] !== undefined) s[k] = curr[k]; });
+                count++;
+            });
+            updatePreview();
+            showNotification(`現在のスライドの書式設定を、残り ${count} 枚の全スライドに適用しました！`);
         }
 
         // 上下余白の設定
@@ -3210,8 +3262,292 @@
         }
 
         // ==========================================
-        // 🎨 タブ切り替え機能（右パネル下部）
+        // 📄 PDF出力機能
         // ==========================================
+        async function exportSlidesToPDF() {
+            if (slides.length === 0) { showNotification("スライドがありません。"); return; }
+
+            // jsPDF の読み込み確認
+            if (typeof window.jspdf === 'undefined') {
+                showNotification("PDFライブラリの読み込みが完了していません。少し待ってから再試行してください。", 4000);
+                return;
+            }
+
+            const modal = document.getElementById('pdfExportModal');
+            const progressBar = document.getElementById('pdfProgressBar');
+            const progressLabel = document.getElementById('pdfProgressLabel');
+            const progressCount = document.getElementById('pdfProgressCount');
+            if (modal) { modal.classList.remove('hidden'); modal.style.display = 'flex'; }
+
+            // 4:3 スライドサイズ（横960px × 縦720px）で高品質レンダリング
+            const SLIDE_W = 960;
+            const SLIDE_H = 720;
+
+            // スライド描画用オフスクリーンコンテナ（画面外に配置）
+            const offContainer = document.createElement('div');
+            offContainer.style.cssText = `
+                position: fixed;
+                left: -9999px;
+                top: 0;
+                width: ${SLIDE_W}px;
+                height: ${SLIDE_H}px;
+                overflow: hidden;
+                z-index: -1;
+                container-type: inline-size;
+                container-name: slide-view;
+            `;
+            document.body.appendChild(offContainer);
+
+            // jsPDF: A4横（297×210mm）でスライド比率4:3を最大化
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            const PAGE_W_MM = 297;
+            const PAGE_H_MM = 210;
+            // スライドをページ中央に配置（余白なし全面）
+            const imgW = PAGE_W_MM;
+            const imgH = PAGE_W_MM * (3/4); // 4:3 = 222.75mm
+            const imgX = 0;
+            const imgY = (PAGE_H_MM - imgH) / 2;
+
+            try {
+                for (let i = 0; i < slides.length; i++) {
+                    const s = slides[i];
+                    const pct = Math.round((i / slides.length) * 100);
+                    if (progressBar) progressBar.style.width = pct + '%';
+                    if (progressLabel) progressLabel.textContent = `スライド ${i + 1} を処理中…`;
+                    if (progressCount) progressCount.textContent = `${i + 1} / ${slides.length}`;
+
+                    // UIスレッドに制御を渡してモーダルを更新
+                    await new Promise(r => setTimeout(r, 0));
+
+                    let imgDataUrl;
+
+                    if (s.isImageSlide && s.image) {
+                        // ── 画像スライド：そのまま使用（高速） ──
+                        imgDataUrl = s.image;
+                    } else {
+                        // ── テキストスライド：Canvasにレンダリング ──
+                        imgDataUrl = await renderSlideToCanvas(s, SLIDE_W, SLIDE_H, offContainer);
+                    }
+
+                    if (i > 0) pdf.addPage();
+                    // 黒背景を敷く（余白部分用）
+                    pdf.setFillColor(0, 0, 0);
+                    pdf.rect(0, 0, PAGE_W_MM, PAGE_H_MM, 'F');
+                    pdf.addImage(imgDataUrl, 'JPEG', imgX, imgY, imgW, imgH, undefined, 'FAST');
+                }
+
+                if (progressBar) progressBar.style.width = '100%';
+                if (progressLabel) progressLabel.textContent = '保存しています…';
+                await new Promise(r => setTimeout(r, 100));
+
+                // ファイル名：日付入り
+                const now = new Date();
+                const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+                pdf.save(`WorshipSlide_${dateStr}.pdf`);
+                showNotification(`PDF出力完了！ 全 ${slides.length} 枚のスライドを保存しました。`);
+
+            } catch (err) {
+                console.error("PDF export error:", err);
+                showNotification(`PDF出力中にエラーが発生しました。（${err.message || err}）`, 5000);
+            } finally {
+                document.body.removeChild(offContainer);
+                if (modal) { modal.classList.add('hidden'); modal.style.display = ''; }
+            }
+        }
+
+        // スライド1枚をCanvasに直接描画してbase64 JPEGで返す（ローカル/GitHub両対応）
+        async function renderSlideToCanvas(s, width, height, _container) {
+            return renderSlideToCanvasDirectly(s, width, height);
+        }
+
+        // Canvas直接描画（ローカルファイル・GitHubどちらでも確実に動作）
+        function renderSlideToCanvasDirectly(s, width, height) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            // ── 背景 ──
+            const isDark = !['white'].includes(activeBgTheme);
+            if (activeBgTheme === 'custom' && customBgImage) {
+                try {
+                    const bgImg = new Image();
+                    bgImg.src = customBgImage;
+                    if (bgImg.complete && bgImg.naturalWidth > 0) {
+                        ctx.drawImage(bgImg, 0, 0, width, height);
+                    } else { _drawGradBg(ctx, 'sky', width, height); }
+                } catch(e) { _drawGradBg(ctx, 'sky', width, height); }
+            } else {
+                _drawGradBg(ctx, activeBgTheme || 'sky', width, height);
+            }
+
+            // ── 枠線 ──
+            const framePadPx   = { 'none':0,'tiny':10,'small':19,'standard':Math.round(width*0.04),'large':Math.round(width*0.06) };
+            const borderWidthPx = { 'none':0,'thin':Math.round(width*0.004),'standard':Math.round(width*0.011),'thick':Math.round(width*0.024) };
+            const fp = framePadPx[s.framePadding || 'standard'];
+            const bw = borderWidthPx[s.frameBorder || 'standard'];
+            if (bw > 0) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+                ctx.lineWidth = bw;
+                const rx = fp + bw/2, ry = fp + bw/2;
+                const rw = width - fp*2 - bw, rh = height - fp*2 - bw;
+                const radius = Math.round(width * 0.028);
+                ctx.beginPath();
+                ctx.moveTo(rx+radius, ry);
+                ctx.lineTo(rx+rw-radius, ry); ctx.arcTo(rx+rw, ry, rx+rw, ry+radius, radius);
+                ctx.lineTo(rx+rw, ry+rh-radius); ctx.arcTo(rx+rw, ry+rh, rx+rw-radius, ry+rh, radius);
+                ctx.lineTo(rx+radius, ry+rh); ctx.arcTo(rx, ry+rh, rx, ry+rh-radius, radius);
+                ctx.lineTo(rx, ry+radius); ctx.arcTo(rx, ry, rx+radius, ry, radius);
+                ctx.closePath(); ctx.stroke();
+                ctx.restore();
+            }
+
+            // ── 文字色 ──
+            const colorMap = {'white':'#ffffff','black':'#1e1e1e','yellow':'#fff176','lightblue':'#b3e5fc','gold':'#ffd700'};
+            const autoColor = isDark ? '#ffffff' : '#222222';
+            const textColor = (s.textColor && s.textColor !== 'auto') ? (colorMap[s.textColor] || '#ffffff') : autoColor;
+
+            // ── 余白計算 ──
+            const hPadPx = { 'zero':0,'extra-narrow':Math.round(width*0.015),'narrow':Math.round(width*0.035),'standard':Math.round(width*0.07),'wide':Math.round(width*0.13) };
+            const vPadPx = { 'none':Math.round(height*0.007),'tight':Math.round(height*0.02),'standard':Math.round(height*0.05),'wide':Math.round(height*0.09) };
+            const hPad = hPadPx[s.padding || 'standard'] + fp + bw;
+            const vPad = vPadPx[s.verticalPadding || 'standard'] + fp + bw;
+            const innerW = width - hPad * 2;
+
+            // ── フォントサイズ ──
+            const bodyMul   = (s.fontSize   || 100) / 100;
+            const titleMul  = (s.titleFontSize  || 100) / 100;
+            const footerMul = (s.footerFontSize || 100) / 100;
+            const plainLen  = stripRubyMarkup(s.content || '').replace(/\|col\|/g,'').replace(/\n/g,'').length;
+            const basePx    = plainLen > 130 ? 32 : plainLen > 90 ? 36 : plainLen > 60 ? 40 : plainLen > 35 ? 44 : 50;
+            const bodyPx    = Math.max(18, Math.round(basePx * bodyMul));
+            const titlePx   = Math.max(14, Math.round(38 * titleMul));
+            const footerPx  = Math.max(12, Math.round(26 * footerMul));
+            const lineH     = s.lineHeight || 1.8;
+            const fontFace  = "BIZ UDGothic, Noto Sans JP, sans-serif";
+
+            ctx.fillStyle = textColor;
+
+            // ── タイトル ──
+            let usedTopH = vPad;
+            if (s.title && s.title.trim()) {
+                ctx.font = `900 ${titlePx}px ${fontFace}`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+                const titleLines = wrapText(ctx, stripRubyMarkup(s.title), innerW);
+                titleLines.forEach((line, li) => ctx.fillText(line, width/2, usedTopH + li * titlePx * 1.3));
+                usedTopH += titleLines.length * titlePx * 1.3 + titlePx * 0.3;
+            }
+
+            // ── フッター高さを確保 ──
+            const footerAreaH = s.hideFooter ? 0 : footerPx * 2.2;
+            const bodyAreaTop = usedTopH;
+            const bodyAreaH   = height - usedTopH - (vPad + footerAreaH);
+
+            // ── 本文 ──
+            const rawContent = s.content || '';
+            const isTwoCol = rawContent.includes('|col|');
+            ctx.font = `700 ${bodyPx}px ${fontFace}`;
+
+            if (isTwoCol) {
+                const parts = rawContent.split('|col|');
+                const leftText  = stripRubyMarkup(parts[0] || '').trim();
+                const rightText = stripRubyMarkup(parts[1] || '').trim();
+                const colW = Math.floor(innerW / 2) - Math.round(width * 0.02);
+                const gap  = Math.round(width * 0.04);
+                ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+
+                const leftLines  = leftText.split('\n').flatMap(l => wrapText(ctx, l||' ', colW));
+                const rightLines = rightText.split('\n').flatMap(l => wrapText(ctx, l||' ', colW));
+                const leftH  = leftLines.length  * bodyPx * lineH;
+                const rightH = rightLines.length * bodyPx * lineH;
+                const lStartY = bodyAreaTop + (s.verticalAlign==='top' ? 0 : Math.max(0,(bodyAreaH-leftH)/2));
+                const rStartY = bodyAreaTop + (s.verticalAlign==='top' ? 0 : Math.max(0,(bodyAreaH-rightH)/2));
+
+                leftLines.forEach((line, li)  => { if(line.trim()) ctx.fillText(line, hPad, lStartY + li*bodyPx*lineH); });
+                rightLines.forEach((line, li) => { if(line.trim()) ctx.fillText(line, hPad+colW+gap, rStartY + li*bodyPx*lineH); });
+
+                // 仕切り線
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 2;
+                ctx.setLineDash([6,4]);
+                const divX = hPad + colW + gap/2;
+                ctx.beginPath();
+                ctx.moveTo(divX, bodyAreaTop + bodyAreaH*0.05);
+                ctx.lineTo(divX, bodyAreaTop + bodyAreaH*0.95);
+                ctx.stroke(); ctx.restore();
+
+            } else {
+                ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+                const paragraphs = rawContent.split('\n');
+                const allLines = [];
+                paragraphs.forEach((para, pi) => {
+                    const ls = wrapText(ctx, stripRubyMarkup(para)||' ', innerW);
+                    ls.forEach((l, i) => allLines.push({ text:l, paraBreak: i===0 && pi>0 }));
+                });
+                const totalH = allLines.reduce((sum, l) => sum + (l.paraBreak ? bodyPx*0.6 : 0) + bodyPx*lineH, 0);
+                let ty = bodyAreaTop + (s.verticalAlign==='top' ? bodyPx*0.3 : Math.max(0,(bodyAreaH-totalH)/2));
+                allLines.forEach(({ text, paraBreak }) => {
+                    if (paraBreak) ty += bodyPx * 0.6;
+                    if (text.trim()) ctx.fillText(text, width/2, ty);
+                    ty += bodyPx * lineH;
+                });
+            }
+
+            // ── フッター ──
+            if (!s.hideFooter) {
+                ctx.font = `700 ${footerPx}px ${fontFace}`;
+                ctx.textBaseline = 'bottom';
+                const fy = height - vPad;
+                ctx.textAlign = 'left';  ctx.fillText(stripRubyMarkup(s.bottomLeft||''), hPad, fy);
+                ctx.textAlign = 'right'; ctx.fillText(`${slides.indexOf(s)+1}/${slides.length}`, width-hPad, fy);
+            }
+
+            return canvas.toDataURL('image/jpeg', 0.93);
+        }
+
+        // グラデーション背景描画ヘルパー
+        function _drawGradBg(ctx, theme, w, h) {
+            const defs = {
+                'sky':    ['#1a6fa8','#2596c4','#1a8c7a'],
+                'night':  ['#0f0c29','#302b63','#24243e'],
+                'forest': ['#1a3a1a','#2d5a2d','#1a4020'],
+                'sunset': ['#7b2d00','#c0392b','#8e44ad'],
+                'gray':   ['#2c3e50','#3d5166','#2c3e50'],
+                'white':  ['#e8edf2','#f5f7fa','#e8edf2'],
+            };
+            const c = defs[theme] || defs['sky'];
+            const grad = ctx.createLinearGradient(0, 0, w, h);
+            grad.addColorStop(0, c[0]); grad.addColorStop(0.5, c[1]); grad.addColorStop(1, c[2]);
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+        }
+
+
+        // ルビマークアップをプレーンテキストに変換
+        function stripRubyMarkup(text) {
+            if (!text) return '';
+            return text.replace(/([^\[]+)\[([^\]]+)\]/g, '$1').replace(/\[.*?\]/g, '');
+        }
+
+        // Canvasでのテキスト折り返し
+        function wrapText(ctx, text, maxWidth) {
+            const words = text.split('');
+            const lines = [];
+            let currentLine = '';
+            for (const char of words) {
+                const testLine = currentLine + char;
+                if (ctx.measureText(testLine).width > maxWidth && currentLine.length > 0) {
+                    lines.push(currentLine);
+                    currentLine = char;
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            if (currentLine) lines.push(currentLine);
+            return lines.length ? lines : [''];
+        }
+
         function switchFormatTab(tabName) {
             // すべてのタブを非表示
             const tabs = ['fontSize', 'color', 'hpadding', 'vpadding', 'frame', 'lineheight'];
