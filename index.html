@@ -209,7 +209,7 @@
                         </div>
                         <div>
                             <div class="flex items-center justify-between mb-0.5">
-                                <label class="text-[9px] text-slate-400 font-bold">本文 <span class="text-slate-600 font-normal">（漢字[かんじ] でルビ）</span></label>
+                                <label class="text-[9px] text-slate-400 font-bold">本文 <span class="text-slate-600 font-normal">（漢字[かんじ] でルビ／〈語〉〈〈語〉〉で暗唱用の虫食い）</span></label>
                                 <button onclick="insertTwoColumn()" title="カーソル位置に2段組区切り「|col|」を挿入"
                                     class="text-[8px] bg-purple-800 hover:bg-purple-700 text-purple-200 font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 transition border border-purple-600">
                                     <i data-lucide="columns-2" class="w-2.5 h-2.5"></i> ２段組
@@ -218,7 +218,7 @@
                             <textarea id="editSlideContent" oninput="updateSelectedSlide()" rows="4"
                                 class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-[11px] text-slate-200 focus:ring-1 focus:ring-sky-500 focus:outline-none resize-none font-mono"
                                 placeholder="本文…　複数段落は空行で区切り、2段組は |col| で区切る"></textarea>
-                            <p class="text-[7px] text-slate-600 mt-0.5">2段組：左の文章を書いて「２段組」ボタン→右の文章を書く</p>
+                            <p class="text-[7px] text-slate-600 mt-0.5">2段組：左の文章を書いて「２段組」ボタン→右の文章を書く／暗唱：〈語〉=1回目で消える　〈〈語〉〉=2回目で消える（投影中に「次へ」操作で段階が進みます）</p>
                         </div>
                     </div>
                     <!-- 画像スライド -->
@@ -1271,13 +1271,61 @@
             return compiled.replace(/\n/g, '<br>');
         }
 
+        // ===== 暗唱用マーカー（虫食い）機能 =====
+        // 記法：〈単語〉= 1回目で消える, 〈〈単語〉〉= 2回目で消える, 〈〈〈単語〉〉〉= 3回目で消える（4重以上も対応）
+        // かっこの「重ね数」がそのまま段階数になる。compileRubi等の後段で呼び出して使う。
+
+        // テキスト中に存在する最大の暗唱段階（＝そのスライドの最大ネスト数）を調べる
+        function getMaxRecallStage(text) {
+            if (!text) return 0;
+            let max = 0;
+            const re = /(〈+)[^〈〉]+(〉+)/g;
+            let m;
+            while ((m = re.exec(text)) !== null) {
+                const depth = Math.min(m[1].length, m[2].length);
+                if (depth > max) max = depth;
+            }
+            return max;
+        }
+
+        // 暗唱マーカーをHTMLのspanに変換する。currentStage段階以下の単語はopacity:0にする。
+        // currentStageが未指定（null/undefined）の場合は「編集中表示」として消さずにマークだけ示す。
+        function compileRecallMarkup(text, currentStage) {
+            if (!text) return "";
+            const re = /(〈+)([^〈〉]+)(〉+)/g;
+            return text.replace(re, function(match, openBr, word, closeBr) {
+                const depth = Math.min(openBr.length, closeBr.length);
+                if (currentStage === undefined || currentStage === null) {
+                    return `<span class="_recall-mark" data-recall-depth="${depth}">${word}</span>`;
+                }
+                const isHidden = depth <= currentStage;
+                if (isHidden) {
+                    return `<span class="_recall-word" data-recall-depth="${depth}" style="opacity:0;">${word}</span>`;
+                }
+                return `<span class="_recall-word" data-recall-depth="${depth}">${word}</span>`;
+            });
+        }
+
+        // 暗唱マーカーの記号だけを取り除き、単語は残す（PDF出力・プレーンテキスト変換用）
+        function stripRecallMarkup(text) {
+            if (!text) return '';
+            return text.replace(/〈+([^〈〉]+)〉+/g, '$1');
+        }
+
+        // ルビ変換と暗唱マーカー変換を両方適用する（〈〉とルビの[]は文字が異なるため干渉しない）
+        function compileRubiWithRecall(text, currentStage) {
+            if (!text) return "";
+            const afterRubi = compileRubi(text);
+            return compileRecallMarkup(afterRubi, currentStage);
+        }
+
         // 2段組レンダリング：|col| マーカーで左右に分割
-        function compileTwoColumn(text) {
+        function compileTwoColumn(text, currentStage) {
             if (!text) return { isTwoCol: false, html: "" };
             const parts = text.split(/\r?\n\|col\|\r?\n|\|col\|/);
-            if (parts.length < 2) return { isTwoCol: false, html: compileRubi(text) };
-            const leftHtml  = compileRubi(parts[0].trim());
-            const rightHtml = compileRubi(parts.slice(1).join('\n').trim());
+            if (parts.length < 2) return { isTwoCol: false, html: compileRubiWithRecall(text, currentStage) };
+            const leftHtml  = compileRubiWithRecall(parts[0].trim(), currentStage);
+            const rightHtml = compileRubiWithRecall(parts.slice(1).join('\n').trim(), currentStage);
             // gridはbody要素（display:flex）の中に入る
             // 左列・右列それぞれ独立したブロック、縦方向は上揃えをデフォルトに
             const html = `<div style="
@@ -2194,6 +2242,9 @@
             const isYt = !!ytId;
             const isImg = !isYt && !!s.image;
 
+            // 暗唱用マーカー（虫食い）の現在の段階。スライドごとに保持。未設定なら0（何も消えていない）。
+            const recallStage = (s.recallStage !== undefined && s.recallStage !== null) ? s.recallStage : 0;
+
             const isDarkBackground = activeBgTheme === "dark" || activeBgTheme === "green";
             // テキスト色の決定（スライド個別設定 > 背景テーマ自動）
             const textColorKey = s.textColor || "auto";
@@ -2215,7 +2266,7 @@
             const titleMultiplier = (s.titleFontSize !== undefined ? s.titleFontSize : 100) / 100;
             const footerMultiplier = (s.footerFontSize !== undefined ? s.footerFontSize : 100) / 100;
 
-            const plainText = s.content ? s.content.replace(/\[.*?\]/g, '') : '';
+            const plainText = s.content ? s.content.replace(/\[.*?\]/g, '').replace(/[〈〉]/g, '') : '';
             const textLength = plainText.length;
             let baseFontSizeCqw = 5.2;
             if (textLength > 120) baseFontSizeCqw = 3.8;
@@ -2230,7 +2281,7 @@
 
             // 2段組・行間はスコープ外で宣言（画像/YouTube時もvAlign処理で参照するため）
             const lineH = s.lineHeight || 1.8;
-            const colResult = compileTwoColumn(s.content || "");
+            const colResult = compileTwoColumn(s.content || "", recallStage);
 
             // 各種フレームを取得
             const pInner = document.getElementById('previewInnerFrame');
@@ -2448,7 +2499,7 @@
                                 cont.style.width = '';
                                 cont.style.height = '';
                             }
-                            el.innerHTML = compileRubi(s.content);
+                            el.innerHTML = compileRubiWithRecall(s.content, recallStage);
                         }
                     }
                     el.querySelectorAll('rt').forEach(rt => rt.style.color = rtBaseColor);
@@ -2538,12 +2589,12 @@
             
             [document.getElementById('previewTitle'), document.getElementById('fsTitle')].forEach(el => {
                 if (!el) return;
-                el.innerHTML = compileRubi(s.title || ""); el.style.color = titleBaseColor; el.style.fontSize = finalTitleSize;
+                el.innerHTML = compileRubiWithRecall(s.title || "", recallStage); el.style.color = titleBaseColor; el.style.fontSize = finalTitleSize;
             });
             
             [document.getElementById('previewFooterLeft'), document.getElementById('fsFooterLeft')].forEach(el => {
                 if (!el) return;
-                el.innerHTML = compileRubi(s.bottomLeft || ""); el.style.color = titleBaseColor; el.style.fontSize = finalFooterSize;
+                el.innerHTML = compileRubiWithRecall(s.bottomLeft || "", recallStage); el.style.color = titleBaseColor; el.style.fontSize = finalFooterSize;
             });
             
             [document.getElementById('previewFooterIndex'), document.getElementById('fsFooterIndex')].forEach(el => {
@@ -2825,12 +2876,54 @@
             updatePreview();
         }
 
-        function prevSlide() { if (currentSlideIndex > 0) selectSlide(currentSlideIndex - 1); }
-        function nextSlide() { if (currentSlideIndex < slides.length - 1) selectSlide(currentSlideIndex + 1); }
+        // 暗唱用マーカー（虫食い）：現在のスライドの最大段階を返す
+        function getCurrentSlideMaxRecallStage() {
+            const s = slides[currentSlideIndex];
+            if (!s) return 0;
+            const a = getMaxRecallStage(s.content || "");
+            const b = getMaxRecallStage(s.title || "");
+            const c = getMaxRecallStage(s.bottomLeft || "");
+            return Math.max(a, b, c);
+        }
+
+        function prevSlide() {
+            // 暗唱マーカーが設定されているスライドで、まだ段階が0より大きい場合は
+            // スライド移動の前に「1段階戻す」（消えていた単語を1段階分復活させる）
+            const s = slides[currentSlideIndex];
+            if (s) {
+                const stage = (s.recallStage !== undefined && s.recallStage !== null) ? s.recallStage : 0;
+                if (stage > 0) {
+                    s.recallStage = stage - 1;
+                    updatePreview();
+                    return;
+                }
+            }
+            if (currentSlideIndex > 0) selectSlide(currentSlideIndex - 1);
+        }
+
+        function nextSlide() {
+            // 暗唱マーカーが設定されているスライドで、まだ最大段階に達していない場合は
+            // スライド移動の前に「1段階進める」（指定単語を1段階分消す）
+            const s = slides[currentSlideIndex];
+            if (s) {
+                const maxStage = getCurrentSlideMaxRecallStage();
+                if (maxStage > 0) {
+                    const stage = (s.recallStage !== undefined && s.recallStage !== null) ? s.recallStage : 0;
+                    if (stage < maxStage) {
+                        s.recallStage = stage + 1;
+                        updatePreview();
+                        return;
+                    }
+                }
+            }
+            if (currentSlideIndex < slides.length - 1) selectSlide(currentSlideIndex + 1);
+        }
 
         function startPresentation() { 
             if (slides.length === 0) return;
             isPresenting = true; 
+            // 暗唱用マーカー（虫食い）の段階を全スライドでリセット（前回投影の続きが残らないように）
+            slides.forEach(s => { s.recallStage = 0; });
             if (document.getElementById('presentationBtn')) document.getElementById('presentationBtn').blur();
             if (document.activeElement) document.activeElement.blur();
             const overlay = document.getElementById('presentationOverlay');
@@ -3524,10 +3617,11 @@
         }
 
 
-        // ルビマークアップをプレーンテキストに変換
+        // ルビマークアップ・暗唱用マーカーをプレーンテキストに変換（PDF出力用：単語は残し記号だけ除去）
         function stripRubyMarkup(text) {
             if (!text) return '';
-            return text.replace(/([^\[]+)\[([^\]]+)\]/g, '$1').replace(/\[.*?\]/g, '');
+            const noRecall = text.replace(/〈+([^〈〉]+)〉+/g, '$1');
+            return noRecall.replace(/([^\[]+)\[([^\]]+)\]/g, '$1').replace(/\[.*?\]/g, '');
         }
 
         // Canvasでのテキスト折り返し
