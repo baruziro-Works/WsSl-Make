@@ -56,7 +56,6 @@
             border: 1px solid #e0e0e0;
         }
 
-         Tarsetエリア */
         #dict-area {
             width: 100%;
             height: 180px;
@@ -93,7 +92,6 @@
         button.btn-secondary { background-color: #95a5a6; }
         button.btn-secondary:hover { background-color: #7f8c8d; }
         
-        /* 辞書反映ボタン専用スタイル */
         button.btn-orange { background-color: #e67e22; margin-bottom: 10px; }
         button.btn-orange:hover { background-color: #d35400; }
 
@@ -130,7 +128,6 @@
         .success { background-color: #edf7ed; color: #27ae60; }
         .error { background-color: #fdf2f2; color: #c0392b; }
         
-        /* プレビューテーブルのスタイル */
         .preview-container {
             margin-top: 30px;
             display: none;
@@ -162,7 +159,6 @@
         }
         tr:nth-child(even) { background-color: #fcfdfe; }
         
-        /* 初期状態（未手動修正）の編集可能セル：薄い黄色 */
         .editable-cell {
             background-color: #fffde7;
             border: 2px solid #f1c40f;
@@ -175,7 +171,6 @@
             box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
         }
         
-        /* 手動修正されたセルのスタイル：薄い緑色に変更してロックを明示 */
         .editable-cell.manually-edited {
             background-color: #e8f8f5;
             border: 2px solid #2ecc71;
@@ -262,8 +257,10 @@
     let tokenizer = null;
     let currentFileName = "output";
 
+    // プログラム内埋め込みマスター辞書（ここを自由に変えて初期値を固定化できます）
     const DEFAULT_DICTIONARY = 
-`特定漢字,とくていかんじ
+`主日,しゅじつ
+特定漢字,とくていかんじ
 東雲,しののめ
 日本,にっぽん`;
 
@@ -329,26 +326,55 @@
         return /[\u4E00-\u9FFF\u3400-\u4DBF]/.test(text);
     }
 
+    // ★【大修正】形態素解析の前に、カスタム辞書ワードをプレースホルダー化して保護するロジック
     function applyFurigana(text, customDict) {
         if (!text || typeof text !== 'string') return text;
-        const tokens = tokenizer.tokenize(text);
+
+        // 1. 辞書の単語を文字数が長い順にソート（最長一致の原則を担保）
+        const sortedKeys = Object.keys(customDict).sort((a, b) => b.length - a.length);
+
+        let placeholderText = text;
+        const placeholders = {};
+
+        // 2. 辞書にある単語を一時的に特殊なトークン（__FD_数字__）に置き換えて退避
+        sortedKeys.forEach((key, index) => {
+            if (key.trim() === "") return;
+            // 正規表現用のエスケープ処理
+            const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const regex = new RegExp(escapedKey, 'g');
+            
+            if (regex.test(placeholderText)) {
+                const placeholderId = `__FD_${index}__`;
+                placeholders[placeholderId] = {
+                    word: key,
+                    reading: customDict[key]
+                };
+                placeholderText = placeholderText.replace(regex, placeholderId);
+            }
+        });
+
+        // 3. 退避させたテキストを形態素解析にかける
+        const tokens = tokenizer.tokenize(placeholderText);
         let result = "";
 
         for (let token of tokens) {
             const surface = token.surface_form;
-            if (customDict[surface]) {
-                result += `${surface}[${customDict[surface]}]`;
-                continue;
-            }
-            if (containsKanji(surface) && token.reading && token.reading !== "*") {
-                const hiraganaReading = katakanaToHiragana(token.reading);
-                if (surface === hiraganaReading) {
-                    result += surface;
-                } else {
-                    result += `${surface}[${hiraganaReading}]`;
-                }
+
+            // 退避させたトークンに一致した場合は、辞書の読みを強制適用
+            if (placeholders[surface]) {
+                result += `${placeholders[surface].word}[${placeholders[surface].reading}]`;
             } else {
-                result += surface;
+                // 通常の漢字に対する自動ルビ振り
+                if (containsKanji(surface) && token.reading && token.reading !== "*") {
+                    const hiraganaReading = katakanaToHiragana(token.reading);
+                    if (surface === hiraganaReading) {
+                        result += surface;
+                    } else {
+                        result += `${surface}[${hiraganaReading}]`;
+                    }
+                } else {
+                    result += surface;
+                }
             }
         }
         return result;
@@ -419,13 +445,13 @@
                     td.className = "editable-cell";
                     td.contentEditable = "true";
                     
-                    // 【重要】Excelの元の「生テキスト」を隠し属性として保存しておく
+                    // 元のExcelテキストを隠しデータ属性としてセルに埋め込んでおく
                     td.setAttribute('data-raw', cellValue);
                     
-                    // 【重要】ユーザーが直接書き換えたら「手動修正済み」のマークをつける
+                    // ユーザーが手動で編集したことを検知するイベント
                     td.addEventListener('input', () => {
                         td.setAttribute('data-edited', 'true');
-                        td.classList.add('manually-edited'); // 背景を薄緑にする
+                        td.classList.add('manually-edited');
                     });
                 } else {
                     td.innerText = cellValue;
@@ -436,28 +462,25 @@
         });
     }
 
-    // 【新機能】上の辞書エリアの変更をプレビュー表に一括反映する処理
     function applyLatestDictToPreview() {
         if (!previewTable.querySelector('tbody tr')) return;
         
         const customDict = parseCustomDictionary();
-        // プレビュー表の中の、B列のセルをすべて取得
         const cells = previewTable.querySelectorAll('tbody .editable-cell');
         
         let updateCount = 0;
         cells.forEach(td => {
-            // ★手動で修正されたマーク（data-edited="true"）が「ついていない」セルだけを処理する
+            // 手動編集（data-edited）のロックがかかっていないセルだけを最新の辞書で再計算
             if (!td.getAttribute('data-edited')) {
-                const rawValue = td.getAttribute('data-raw'); // 保存しておいた元の文字
+                const rawValue = td.getAttribute('data-raw');
                 if (rawValue) {
-                    // 最新の辞書を適用して中身を上書き
                     td.innerText = applyFurigana(rawValue, customDict);
                     updateCount++;
                 }
             }
         });
         
-        showStatus('success', `辞書の新しい内容を、未修正のセル（${updateCount}箇所）に一括反映しました！手動で直したセルは維持されています。`);
+        showStatus('success', `辞書の変更を、未修正のセル（${updateCount}箇所）に一括反映しました！手動で直した緑色のセルはそのまま維持されています。`);
     }
 
     function downloadEditedCSV() {
@@ -506,7 +529,6 @@
             dictArea.value = e.target.result;
             localStorage.setItem('furigana_custom_dict', dictArea.value);
             showStatus('success', 'ファイルから辞書を読み込みました！');
-            // ファイルロード時にも自動でプレビューに反映させる
             applyLatestDictToPreview();
         };
         reader.readAsText(input.files[0]);
