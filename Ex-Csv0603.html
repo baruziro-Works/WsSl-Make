@@ -257,7 +257,7 @@
     let tokenizer = null;
     let currentFileName = "output";
 
-    // プログラム内埋め込みマスター辞書（ここを自由に変えて初期値を固定化できます）
+    // プログラム内埋め込みマスター辞書の初期値
     const DEFAULT_DICTIONARY = 
 `主日,しゅじつ
 特定漢字,とくていかんじ
@@ -326,57 +326,76 @@
         return /[\u4E00-\u9FFF\u3400-\u4DBF]/.test(text);
     }
 
-    // ★【大修正】形態素解析の前に、カスタム辞書ワードをプレースホルダー化して保護するロジック
+    // 🌟【大修正】保護用記号を使わず、テキストを安全に「分割」して解析する新方式
     function applyFurigana(text, customDict) {
         if (!text || typeof text !== 'string') return text;
 
-        // 1. 辞書の単語を文字数が長い順にソート（最長一致の原則を担保）
+        // 1. 辞書の単語を文字数が長い順にソート（最長一致）
         const sortedKeys = Object.keys(customDict).sort((a, b) => b.length - a.length);
 
-        let placeholderText = text;
-        const placeholders = {};
+        // 2. テキストを辞書単語に基づいてセグメント（配列）に分解する
+        let segments = [text];
 
-        // 2. 辞書にある単語を一時的に特殊なトークン（__FD_数字__）に置き換えて退避
-        sortedKeys.forEach((key, index) => {
+        sortedKeys.forEach(key => {
             if (key.trim() === "") return;
-            // 正規表現用のエスケープ処理
-            const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-            const regex = new RegExp(escapedKey, 'g');
             
-            if (regex.test(placeholderText)) {
-                const placeholderId = `__FD_${index}__`;
-                placeholders[placeholderId] = {
-                    word: key,
-                    reading: customDict[key]
-                };
-                placeholderText = placeholderText.replace(regex, placeholderId);
+            let newSegments = [];
+            segments.forEach(seg => {
+                // すでに辞書にヒットしてオブジェクト化しているセグメントはスルー
+                if (typeof seg !== 'string') {
+                    newSegments.push(seg);
+                    return;
+                }
+
+                // まだ未処理の文字列の部分から、該当する単語を探して分割
+                let currentIndex = 0;
+                let matchIndex = seg.indexOf(key);
+
+                while (matchIndex !== -1) {
+                    if (matchIndex > currentIndex) {
+                        newSegments.push(seg.substring(currentIndex, matchIndex));
+                    }
+                    // ヒットした単語は、あらかじめ「漢字」と「読み」をセットにしたオブジェクトにして保護
+                    newSegments.push({
+                        word: key,
+                        reading: customDict[key]
+                    });
+                    currentIndex = matchIndex + key.length;
+                    matchIndex = seg.indexOf(key, currentIndex);
+                }
+
+                if (currentIndex < seg.length) {
+                    newSegments.push(seg.substring(currentIndex));
+                }
+            });
+            segments = newSegments;
+        });
+
+        // 3. 各セグメントを結合（文字列セグメントだけをAIに通す）
+        let result = "";
+        segments.forEach(seg => {
+            if (typeof seg !== 'string') {
+                // 辞書で保護された単語 ➔ AIに触れさせず、指定の読みを強制適用
+                result += `${seg.word}[${seg.reading}]`;
+            } else {
+                // 辞書に該当しなかった前後の地続きテキスト ➔ ここだけをAIに通す
+                const tokens = tokenizer.tokenize(seg);
+                for (let token of tokens) {
+                    const surface = token.surface_form;
+                    if (containsKanji(surface) && token.reading && token.reading !== "*") {
+                        const hiraganaReading = katakanaToHiragana(token.reading);
+                        if (surface === hiraganaReading) {
+                            result += surface;
+                        } else {
+                            result += `${surface}[${hiraganaReading}]`;
+                        }
+                    } else {
+                        result += surface;
+                    }
+                }
             }
         });
 
-        // 3. 退避させたテキストを形態素解析にかける
-        const tokens = tokenizer.tokenize(placeholderText);
-        let result = "";
-
-        for (let token of tokens) {
-            const surface = token.surface_form;
-
-            // 退避させたトークンに一致した場合は、辞書の読みを強制適用
-            if (placeholders[surface]) {
-                result += `${placeholders[surface].word}[${placeholders[surface].reading}]`;
-            } else {
-                // 通常の漢字に対する自動ルビ振り
-                if (containsKanji(surface) && token.reading && token.reading !== "*") {
-                    const hiraganaReading = katakanaToHiragana(token.reading);
-                    if (surface === hiraganaReading) {
-                        result += surface;
-                    } else {
-                        result += `${surface}[${hiraganaReading}]`;
-                    }
-                } else {
-                    result += surface;
-                }
-            }
-        }
         return result;
     }
 
@@ -445,10 +464,10 @@
                     td.className = "editable-cell";
                     td.contentEditable = "true";
                     
-                    // 元のExcelテキストを隠しデータ属性としてセルに埋め込んでおく
+                    // 元の生データを隠し属性として保存
                     td.setAttribute('data-raw', cellValue);
                     
-                    // ユーザーが手動で編集したことを検知するイベント
+                    // 手動編集されたらロック状態（data-edited="true"）にする
                     td.addEventListener('input', () => {
                         td.setAttribute('data-edited', 'true');
                         td.classList.add('manually-edited');
@@ -470,7 +489,7 @@
         
         let updateCount = 0;
         cells.forEach(td => {
-            // 手動編集（data-edited）のロックがかかっていないセルだけを最新の辞書で再計算
+            // 手動編集のロックがかかっていないセルだけを更新
             if (!td.getAttribute('data-edited')) {
                 const rawValue = td.getAttribute('data-raw');
                 if (rawValue) {
