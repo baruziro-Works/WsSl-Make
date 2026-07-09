@@ -89,6 +89,33 @@
             padding-bottom: 0.1em;
             text-align: center !important; /* 中書きを確実に強制 */
         }
+
+        /* ===== 暗唱用マーカー（虫食い）表示 ===== */
+        /* プレゼン投影中：段階が進むとopacity:0が付与され、ふわっと透明になる */
+        ._recall-word {
+            transition: opacity 0.5s ease;
+        }
+        /* 編集プレビュー中（プレゼン開始前）：どの単語が消える対象かを点線下線＋段数バッジで示す */
+        ._recall-mark {
+            border-bottom: 2px dashed #f59e0b;
+            cursor: help;
+            position: relative;
+        }
+        ._recall-mark::after {
+            content: attr(data-recall-depth) "段";
+            position: absolute;
+            top: -1.3em;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.55em;
+            color: #f59e0b;
+            background: rgba(0,0,0,0.75);
+            padding: 1px 4px;
+            border-radius: 3px;
+            white-space: nowrap;
+            pointer-events: none;
+            line-height: 1.4;
+        }
     </style>
     <!-- jsPDF: スライドPDF書き出し用 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
@@ -147,7 +174,7 @@
                 </button>
                 <!-- 折りたたみ本体 -->
                 <div id="programPanelBody" class="px-3 pb-3 space-y-2">
-                    <textarea id="programInput" onkeydown="handleInputKeydown(event)" oninput="handleProgramInputChanged(this.value)" class="w-full h-28 bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-sky-500 text-slate-200" placeholder="ここにプログラムを貼り付け..."></textarea>
+                    <textarea id="programInput" oninput="handleProgramInputChanged(this.value)" class="w-full h-28 bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-sky-500 text-slate-200" placeholder="ここにプログラムを貼り付け..."></textarea>
                     <div class="flex gap-2 justify-end flex-wrap">
                         <button onclick="loadSample('june7')" class="text-xs bg-slate-700 hover:bg-slate-650 px-2.5 py-1 rounded">サンプル読込</button>
                         <button onclick="saveCurrentSlidesAsSample()" class="text-xs bg-sky-700 hover:bg-sky-600 px-2.5 py-1 rounded flex items-center gap-1" title="現在のスライド一覧をサンプルとして保存します（次回起動時に自動読込）"><i data-lucide="bookmark" class="w-3 h-3"></i> 現在をサンプル保存</button>
@@ -208,17 +235,31 @@
                             </div>
                         </div>
                         <div>
-                            <div class="flex items-center justify-between mb-0.5">
-                                <label class="text-[9px] text-slate-400 font-bold">本文 <span class="text-slate-600 font-normal">（漢字[かんじ] でルビ／〈語〉〈〈語〉〉で暗唱用の虫食い）</span></label>
-                                <button onclick="insertTwoColumn()" title="カーソル位置に2段組区切り「|col|」を挿入"
-                                    class="text-[8px] bg-purple-800 hover:bg-purple-700 text-purple-200 font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 transition border border-purple-600">
-                                    <i data-lucide="columns-2" class="w-2.5 h-2.5"></i> ２段組
-                                </button>
+                            <div class="flex items-center justify-between mb-0.5 flex-wrap gap-y-1">
+                                <label class="text-[9px] text-slate-400 font-bold">本文 <span class="text-slate-600 font-normal">（漢字[かんじ] でルビ）</span></label>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="insertTwoColumn()" title="カーソル位置に2段組区切り「|col|」を挿入"
+                                        class="text-[8px] bg-purple-800 hover:bg-purple-700 text-purple-200 font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 transition border border-purple-600">
+                                        <i data-lucide="columns-2" class="w-2.5 h-2.5"></i> ２段組
+                                    </button>
+                                    <button onclick="insertRecallMarker(1)" title="選択した単語を暗唱1回目で透明化「〈単語〉」を挿入"
+                                        class="text-[8px] bg-amber-800 hover:bg-amber-700 text-amber-200 font-bold px-1.5 py-0.5 rounded transition border border-amber-600">
+                                        〈〉1
+                                    </button>
+                                    <button onclick="insertRecallMarker(2)" title="選択した単語を暗唱2回目で透明化「〈〈単語〉〉」を挿入"
+                                        class="text-[8px] bg-amber-800 hover:bg-amber-700 text-amber-200 font-bold px-1.5 py-0.5 rounded transition border border-amber-600">
+                                        〈〉2
+                                    </button>
+                                    <button onclick="insertRecallMarker(3)" title="選択した単語を暗唱3回目で透明化「〈〈〈単語〉〉〉」を挿入"
+                                        class="text-[8px] bg-amber-800 hover:bg-amber-700 text-amber-200 font-bold px-1.5 py-0.5 rounded transition border border-amber-600">
+                                        〈〉3
+                                    </button>
+                                </div>
                             </div>
                             <textarea id="editSlideContent" oninput="updateSelectedSlide()" rows="4"
                                 class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-[11px] text-slate-200 focus:ring-1 focus:ring-sky-500 focus:outline-none resize-none font-mono"
                                 placeholder="本文…　複数段落は空行で区切り、2段組は |col| で区切る"></textarea>
-                            <p class="text-[7px] text-slate-600 mt-0.5">2段組：左の文章を書いて「２段組」ボタン→右の文章を書く／暗唱：〈語〉=1回目で消える　〈〈語〉〉=2回目で消える（投影中に「次へ」操作で段階が進みます）</p>
+                            <p class="text-[7px] text-slate-600 mt-0.5">2段組：左の文章を書いて「２段組」ボタン→右の文章を書く／暗唱の虫食い：単語を選択して「〈〉1」等のボタン（数字＝何回目の斉唱で消えるか）</p>
                         </div>
                     </div>
                     <!-- 画像スライド -->
@@ -344,7 +385,7 @@
                     <div id="previewInnerFrame" class="border-[1.2cqw] border-white border-opacity-90 rounded-[3cqw] w-full h-full flex flex-col justify-between relative z-10 box-border bg-white/5 backdrop-blur-[1px] shadow-inner transition-all duration-150">
                         <div id="previewTitle" class="worship-font-bold dynamic-title text-center"></div>
                         <div id="previewContentContainer" class="flex-1 flex items-center justify-center text-center w-full overflow-visible my-1 relative">
-                            <div id="previewBody" class="worship-font-bold text-center dynamic-body px-[4%] text-left"></div>
+                            <div id="previewBody" class="worship-font-bold text-center dynamic-body text-left"></div>
                             <img id="previewImage" class="hidden h-full object-contain max-h-full">
                             
                             <!-- YouTubeスライド用のプレビューiframe & ローカル時エラー153回避レイヤー -->
@@ -414,27 +455,33 @@
                                 <div>
                                     <span class="block text-[8px] text-slate-300 font-bold mb-1 text-center">本文</span>
                                     <div class="flex items-center bg-slate-900 rounded overflow-hidden">
-                                        <button onclick="adjustFontSize('fontSize', -10)" class="bg-rose-700 hover:bg-rose-600 text-white font-bold w-5 py-0.5 text-xs leading-none shrink-0">−</button>
+                                        <button onclick="adjustFontSize('fontSize', -10)" title="-10%" class="bg-rose-700 hover:bg-rose-600 text-white font-bold w-4 py-0.5 text-[9px] leading-none shrink-0">−</button>
+                                        <button onclick="adjustFontSize('fontSize', -2)" title="-2%" class="bg-rose-900 hover:bg-rose-800 text-rose-200 font-bold w-3.5 py-0.5 text-[7px] leading-none shrink-0">−</button>
                                         <span id="fontSizeDisplay" class="text-[8px] font-mono font-bold text-sky-300 px-0.5 text-center flex-1 truncate">100%</span>
-                                        <button onclick="adjustFontSize('fontSize', 10)" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold w-5 py-0.5 text-xs leading-none shrink-0">+</button>
+                                        <button onclick="adjustFontSize('fontSize', 2)" title="+2%" class="bg-emerald-900 hover:bg-emerald-800 text-emerald-200 font-bold w-3.5 py-0.5 text-[7px] leading-none shrink-0">+</button>
+                                        <button onclick="adjustFontSize('fontSize', 10)" title="+10%" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold w-4 py-0.5 text-[9px] leading-none shrink-0">+</button>
                                     </div>
                                 </div>
                                 <!-- 見出しサイズ -->
                                 <div>
                                     <span class="block text-[8px] text-slate-300 font-bold mb-1 text-center">見出し</span>
                                     <div class="flex items-center bg-slate-900 rounded overflow-hidden">
-                                        <button onclick="adjustFontSize('titleFontSize', -10)" class="bg-rose-700 hover:bg-rose-600 text-white font-bold w-5 py-0.5 text-xs leading-none shrink-0">−</button>
+                                        <button onclick="adjustFontSize('titleFontSize', -10)" title="-10%" class="bg-rose-700 hover:bg-rose-600 text-white font-bold w-4 py-0.5 text-[9px] leading-none shrink-0">−</button>
+                                        <button onclick="adjustFontSize('titleFontSize', -2)" title="-2%" class="bg-rose-900 hover:bg-rose-800 text-rose-200 font-bold w-3.5 py-0.5 text-[7px] leading-none shrink-0">−</button>
                                         <span id="titleFontSizeDisplay" class="text-[8px] font-mono font-bold text-sky-300 px-0.5 text-center flex-1 truncate">100%</span>
-                                        <button onclick="adjustFontSize('titleFontSize', 10)" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold w-5 py-0.5 text-xs leading-none shrink-0">+</button>
+                                        <button onclick="adjustFontSize('titleFontSize', 2)" title="+2%" class="bg-emerald-900 hover:bg-emerald-800 text-emerald-200 font-bold w-3.5 py-0.5 text-[7px] leading-none shrink-0">+</button>
+                                        <button onclick="adjustFontSize('titleFontSize', 10)" title="+10%" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold w-4 py-0.5 text-[9px] leading-none shrink-0">+</button>
                                     </div>
                                 </div>
                                 <!-- フッターサイズ -->
                                 <div>
                                     <span class="block text-[8px] text-slate-300 font-bold mb-1 text-center">フッター</span>
                                     <div class="flex items-center bg-slate-900 rounded overflow-hidden">
-                                        <button onclick="adjustFontSize('footerFontSize', -10)" class="bg-rose-700 hover:bg-rose-600 text-white font-bold w-5 py-0.5 text-xs leading-none shrink-0">−</button>
+                                        <button onclick="adjustFontSize('footerFontSize', -10)" title="-10%" class="bg-rose-700 hover:bg-rose-600 text-white font-bold w-4 py-0.5 text-[9px] leading-none shrink-0">−</button>
+                                        <button onclick="adjustFontSize('footerFontSize', -2)" title="-2%" class="bg-rose-900 hover:bg-rose-800 text-rose-200 font-bold w-3.5 py-0.5 text-[7px] leading-none shrink-0">−</button>
                                         <span id="footerFontSizeDisplay" class="text-[8px] font-mono font-bold text-sky-300 px-0.5 text-center flex-1 truncate">100%</span>
-                                        <button onclick="adjustFontSize('footerFontSize', 10)" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold w-5 py-0.5 text-xs leading-none shrink-0">+</button>
+                                        <button onclick="adjustFontSize('footerFontSize', 2)" title="+2%" class="bg-emerald-900 hover:bg-emerald-800 text-emerald-200 font-bold w-3.5 py-0.5 text-[7px] leading-none shrink-0">+</button>
+                                        <button onclick="adjustFontSize('footerFontSize', 10)" title="+10%" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold w-4 py-0.5 text-[9px] leading-none shrink-0">+</button>
                                     </div>
                                 </div>
                             </div>
@@ -471,7 +518,7 @@
                     </div>
 
                     <!-- タブ4：上下余白 -->
-                    <div id="vpadding-tab" class="hidden">
+                    <div id="vpadding-tab" class="hidden space-y-1.5">
                         <div class="border border-slate-500 rounded-lg p-2 bg-slate-950/50">
                             <span class="block text-[8px] text-slate-300 font-bold mb-1">上下余白</span>
                             <div class="flex rounded bg-slate-900 p-0.5 gap-0.5">
@@ -481,6 +528,8 @@
                                 <button onclick="setVerticalPadding('wide')" id="vpad-wide" class="flex-1 text-[7px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">広</button>
                             </div>
                         </div>
+                        <div class="border border-slate-500 rounded-lg p-2 bg-slate-950/50 space-y-2">
+                            <div>
                                 <span class="block text-[9px] text-slate-400 font-bold mb-0.5">縦位置</span>
                                 <div class="flex rounded bg-slate-900 p-0.5 gap-0.5">
                                     <button onclick="setVerticalAlign('top')" id="valign-top" class="flex-1 text-[8px] py-0.5 rounded font-bold transition text-slate-400 hover:text-white">上詰</button>
@@ -495,7 +544,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
                     <!-- タブ5：枠サイズ -->
                     <div id="frame-tab" class="hidden space-y-1.5">
@@ -570,7 +618,7 @@
             <div id="fsInnerFrame" class="border-[1.2cqw] border-white border-opacity-95 rounded-[3cqw] w-full h-full flex flex-col justify-between relative z-10 box-border transition-all duration-150">
                 <div id="fsTitle" class="worship-font-bold dynamic-title text-center"></div>
                 <div id="fsContentContainer" class="flex-1 flex items-center justify-center text-center w-full overflow-visible my-1 relative">
-                    <div id="fsBody" class="worship-font-bold text-center dynamic-body px-[4%] text-left"></div>
+                    <div id="fsBody" class="worship-font-bold text-center dynamic-body text-left"></div>
                     <img id="fsImage" class="hidden h-full object-contain max-h-full">
                     
                     <!-- YouTubeスライド用のフルスクリーンiframe & ローカル時エラー153回避レイヤー -->
@@ -676,11 +724,12 @@
                 <p class="text-xs text-slate-300">パワーポイントスライド等からコピーした歌詞テキストをペーストし、データベースに即時登録できます。</p>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-[10px] text-slate-400 font-bold mb-1">讃美歌番号 (例: LP99, 讃美歌300)</label>
-                        <input type="text" id="importKey" placeholder="例：LP78" class="w-full bg-slate-900 border border-slate-650 rounded px-2.5 py-1.5 text-xs text-white">
+                        <label class="block text-[10px] text-slate-400 font-bold mb-1">プログラム検索キーワード（登録キー）</label>
+                        <input type="text" id="importKey" placeholder="例：LP78、テーマ聖句" class="w-full bg-slate-900 border border-slate-650 rounded px-2.5 py-1.5 text-xs text-white">
+                        <p class="text-[9px] text-amber-400/90 mt-0.5">★ プログラム入力欄でこの文字列（または数字）を検出するとスライド化されます。</p>
                     </div>
                     <div>
-                        <label class="block text-[10px] text-slate-400 font-bold mb-1">曲タイトル</label>
+                        <label class="block text-[10px] text-slate-400 font-bold mb-1">曲名・項目名（表示用ラベル）</label>
                         <input type="text" id="importTitle" placeholder="聖霊の神よ" class="w-full bg-slate-900 border border-slate-650 rounded px-2.5 py-1.5 text-xs text-white">
                     </div>
                 </div>
@@ -729,6 +778,10 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
+                    <button onclick="triggerDatabaseCsvImport()" class="bg-slate-700 hover:bg-slate-650 text-slate-200 font-bold px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1" title="CSVファイルからデータベースへ新規追加・上書き更新（マージ）します">
+                        <i data-lucide="upload" class="w-3.5 h-3.5"></i> CSVインポート(マージ)
+                    </button>
+                    <input type="file" id="dbCsvImportInput" class="hidden" accept=".csv" onchange="importDatabaseFromCSV(event)">
                     <button onclick="exportDatabaseToCSV()" class="bg-slate-700 hover:bg-slate-650 text-slate-200 font-bold px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1">
                         <i data-lucide="download" class="w-3.5 h-3.5"></i> CSVエクスポート
                     </button>
@@ -759,14 +812,33 @@
 
                     <div id="dbEditPanel" class="hidden space-y-3 flex-1 flex flex-col justify-between">
                         <div class="space-y-3">
+                            <div id="dbPresetNotice" class="hidden bg-sky-950/40 border border-sky-800/60 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-300 flex items-center justify-between gap-2">
+                                <span>これはプリセット（標準搭載）データです。保存すると教会独自の内容で上書きされます。</span>
+                                <button onclick="revertPresetToDefault()" id="dbRevertBtn" class="hidden shrink-0 bg-sky-800/60 hover:bg-sky-800 text-sky-100 font-bold px-2 py-1 rounded text-[10px] whitespace-nowrap">初期状態に戻す</button>
+                            </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
-                                    <label class="block text-[10px] text-slate-400 font-bold mb-1">讃美歌番号 (登録キー)</label>
-                                    <input type="text" id="dbSongKey" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-orange-500" placeholder="例：LP78">
+                                    <label class="block text-[10px] text-slate-400 font-bold mb-1">プログラム検索キーワード（登録キー）</label>
+                                    <input type="text" id="dbSongKey" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-orange-500" placeholder="例：LP78、テーマ聖句">
+                                    <p class="text-[9px] text-amber-400/90 mt-0.5">★ 礼拝プログラム入力欄で、この文字列（または含まれる数字）を検出すると、このデータが自動でスライド化されます。</p>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] text-slate-400 font-bold mb-1">曲のタイトル</label>
+                                    <label class="block text-[10px] text-slate-400 font-bold mb-1">曲名・項目名（表示用ラベル）</label>
                                     <input type="text" id="dbSongTitle" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none" placeholder="聖霊の神よ">
+                                    <p class="text-[9px] text-slate-500 mt-0.5">一覧表示や、右の見出し・出典の自動生成に使う名称です。プログラム入力欄の検索には使われません。</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 border-t border-slate-800 pt-2">
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 font-bold mb-1">スライド見出し（画面上部の文言）</label>
+                                    <input type="text" id="dbSongHeading" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none" placeholder="例：招[まね]きのことば、賛美 (曲名)">
+                                    <p class="text-[9px] text-slate-500 mt-0.5">空欄の場合は「賛美 (タイトル)」が自動で使われます。</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 font-bold mb-1">左下出典表示</label>
+                                    <input type="text" id="dbSongBottomLeft" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none" placeholder="例：詩篇 105:1-2">
+                                    <p class="text-[9px] text-slate-500 mt-0.5">空欄の場合は「タイトル 登録キー」が自動で使われます。</p>
                                 </div>
                             </div>
 
@@ -802,7 +874,7 @@
         // 1. 定数・プリセットデータベース
         // ==========================================
         const WORSHIP_DICTIONARY = {
-            "2026聖句": [
+            "テーマ聖句": [
                 { 
                     title: "2026年度テーマ聖句", 
                     content: "私[わたくし]たちは見[み]えるものによらず、\n信仰[しんこう]によって歩[あゆ]んでいます。\n\nコリント人[じん]への手紙[てがみ]第二\n5章[しょう]7節[せつ]", 
@@ -918,6 +990,26 @@
         let liturgyDatabase = JSON.parse(safeStorage.getItem('worship_liturgy_db') || JSON.stringify(DEFAULT_LITURGIES)); 
         let activeBgTheme = safeStorage.getItem('worship_bg_theme') || 'sky';
         let customBgImage = safeStorage.getItem('worship_custom_bg_img') || '';
+
+        // 歌詞データベース管理マネージャー用：登録キーとは独立してタイトル・見出し・出典を保持するメタ情報
+        // ※ customDictionary[key] は従来通り「スライド配列」のまま保つ（他の処理箇所との互換性維持のため）
+        let dbMeta = JSON.parse(safeStorage.getItem('worship_db_meta') || '{}');
+        // プリセット（WORSHIP_DICTIONARY / BIBLE_PRESETS）のうち、ユーザーが「削除」した登録キー一覧
+        let deletedPresetKeys = JSON.parse(safeStorage.getItem('worship_deleted_presets') || '[]');
+
+        // 曲名・登録キーから簡易的にタイトルを推測するフォールバック（メタ情報が無い古いデータ・プリセット用）
+        function deriveTitleFromKey(key) {
+            const stripped = key.replace(/LP\d+|教会福音讃美歌\d+|讃美歌\d+|賛美歌\d+/gi, "").trim();
+            return stripped || key;
+        }
+
+        // 歌詞データベース：プリセット（WORSHIP_DICTIONARY・BIBLE_PRESETS）とカスタム登録を統合した辞書を返す
+        // customDictionary の同名キーが常にプリセットを上書きするため、プリセットの編集・削除もこの仕組みで実現する
+        function getFullDictionary() {
+            const base = { ...WORSHIP_DICTIONARY, ...BIBLE_PRESETS };
+            deletedPresetKeys.forEach(k => { delete base[k]; });
+            return { ...base, ...customDictionary };
+        }
 
         let selectedDBSongKey = null; 
 
@@ -1074,7 +1166,9 @@
             } else {
                 customDictionary[key] = [targetSlide];
             }
+            if (!dbMeta[key]) dbMeta[key] = { title: songTitle, heading: targetSlide.title, bottomLeftTemplate: targetSlide.bottomLeft };
             safeSaveToLocalStorage('worship_custom_dict', JSON.stringify(customDictionary));
+            safeSaveToLocalStorage('worship_db_meta', JSON.stringify(dbMeta));
             showNotification(`📥 歌詞データベース【${key}】に正常に登録保存しました！`);
         }
 
@@ -1123,9 +1217,11 @@
             const data = { 
                 customDictionary: customDictionary, 
                 liturgyDatabase: liturgyDatabase, 
+                dbMeta: dbMeta,                        // 歌詞DBのタイトル/見出し/出典メタ情報
+                deletedPresetKeys: deletedPresetKeys,   // 削除済みプリセット一覧
                 slides: slides, 
                 audioTracks: audioTracks,  // 🔊 音声トラックも保存
-                version: "1.0" 
+                version: "1.1" 
             };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -1151,10 +1247,14 @@
                     const data = JSON.parse(e.target.result);
                     if (data.customDictionary) customDictionary = data.customDictionary;
                     if (data.liturgyDatabase) liturgyDatabase = data.liturgyDatabase;
-                    if (data.slides) { slides = data.slides; currentSlideIndex = 0; }
+                    if (data.dbMeta) dbMeta = data.dbMeta;
+                    if (data.deletedPresetKeys) deletedPresetKeys = data.deletedPresetKeys;
+                    if (data.slides) { slides = data.slides; currentSlideIndex = 0; slides.forEach(s => { s.recallStage = 0; }); }
                     if (data.audioTracks) { audioTracks = data.audioTracks; }  // 🔊 音声トラックも復元
                     safeSaveToLocalStorage('worship_custom_dict', JSON.stringify(customDictionary));
                     safeSaveToLocalStorage('worship_liturgy_db', JSON.stringify(liturgyDatabase));
+                    safeSaveToLocalStorage('worship_db_meta', JSON.stringify(dbMeta));
+                    safeSaveToLocalStorage('worship_deleted_presets', JSON.stringify(deletedPresetKeys));
                     renderSlideList(); updatePreview(); renderAudioTracksList();
                     showNotification("データの読み込みに成功しました！");
                 } catch (err) {
@@ -1164,18 +1264,98 @@
             reader.readAsText(file);
         }
 
+        // 歌詞データベース全体（プリセット＋カスタム、削除済みプリセットを除く）をCSVでエクスポート
+        // 登録キー・曲タイトル・スライド見出し・左下出典テンプレート・歌詞本文の5列形式
         function exportDatabaseToCSV() {
-            let csvContent = "曲名,歌詞\n";
-            for (let key in customDictionary) {
-                const song = customDictionary[key];
-                const content = song.map(s => s.content.replace(/\n/g, "\\n")).join("\\n\\n");
-                csvContent += `"${key}","${content}"\n`;
+            const fullDict = getFullDictionary();
+            const esc = (s) => `"${String(s || "").replace(/"/g, '""')}"`;
+            let csvContent = "登録キー,曲タイトル,スライド見出し,左下出典テンプレート,歌詞\n";
+            for (let key in fullDict) {
+                const meta = dbMeta[key];
+                const songSlides = fullDict[key];
+                const firstSlide = songSlides[0] || {};
+                const title = meta ? (meta.title || "") : deriveTitleFromKey(key);
+                const heading = meta ? (meta.heading || "") : (firstSlide.title || "");
+                const bottomLeftTemplate = meta ? (meta.bottomLeftTemplate || "") : (firstSlide.bottomLeft || "");
+                const content = songSlides.map(s => s.content).join("\n\n");
+                csvContent += [esc(key), esc(title), esc(heading), esc(bottomLeftTemplate), esc(content)].join(",") + "\n";
             }
             const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' }); 
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = "worship_database.csv";
+            const dateStr = new Date().toISOString().slice(0, 10);
+            link.download = `worship_database_${dateStr}.csv`;
             link.click();
+            showNotification("歌詞データベースをCSVでエクスポートしました。");
+        }
+
+        function triggerDatabaseCsvImport() {
+            const inp = document.getElementById('dbCsvImportInput');
+            if (inp) inp.click();
+        }
+
+        // 歌詞データベース専用CSVインポーター：既存キーは上書き更新、新規キーは追加登録する「マージ」方式
+        // 列構成は exportDatabaseToCSV と同一（登録キー,曲タイトル,スライド見出し,左下出典テンプレート,歌詞）
+        function importDatabaseFromCSV(event) {
+            const file = event.target.files[0];
+            if (!file) { return; }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const text = e.target.result;
+                    const rows = parseCSVOrTSV(text, ',');
+                    if (!rows || rows.length === 0) {
+                        showNotification("CSVに有効なデータが見つかりませんでした。");
+                        return;
+                    }
+                    // 1行目がヘッダー行（「登録キー」等を含む）ならスキップ
+                    let startIdx = 0;
+                    if (rows[0][0] && /登録キー|key/i.test(rows[0][0])) startIdx = 1;
+
+                    let addedCount = 0, updatedCount = 0, skippedCount = 0;
+                    for (let i = startIdx; i < rows.length; i++) {
+                        const cols = rows[i];
+                        const key = (cols[0] || "").trim();
+                        if (!key) { continue; }
+                        const title = (cols[1] || "").trim();
+                        const heading = (cols[2] || "").trim();
+                        const bottomLeftTemplate = (cols[3] || "").trim();
+                        const contentRaw = (cols[4] || "").trim();
+
+                        const blocks = contentRaw ? contentRaw.split(/\n\s*\n/) : [];
+                        const parsedSlides = [];
+                        blocks.forEach(block => {
+                            const trimmed = block.trim();
+                            if (!trimmed) return;
+                            parsedSlides.push({ title: heading, content: trimmed, bottomLeft: bottomLeftTemplate, fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
+                        });
+                        // 歌詞本文が空欄の行も、意図的な「空の登録」として取り込む（skipせず保存する）
+
+                        const existedBefore = customDictionary.hasOwnProperty(key) || !!WORSHIP_DICTIONARY[key] || !!BIBLE_PRESETS[key];
+                        customDictionary[key] = parsedSlides;
+                        dbMeta[key] = { title: title, heading: heading, bottomLeftTemplate: bottomLeftTemplate };
+                        const dIdx = deletedPresetKeys.indexOf(key);
+                        if (dIdx !== -1) deletedPresetKeys.splice(dIdx, 1); // 削除済みプリセットに同キーで再登録された場合は復活扱い
+
+                        if (existedBefore) updatedCount++; else addedCount++;
+                    }
+
+                    safeSaveToLocalStorage('worship_custom_dict', JSON.stringify(customDictionary));
+                    safeSaveToLocalStorage('worship_db_meta', JSON.stringify(dbMeta));
+                    safeSaveToLocalStorage('worship_deleted_presets', JSON.stringify(deletedPresetKeys));
+                    filterDatabaseList();
+                    const modal = document.getElementById('manageDatabaseModal');
+                    if (modal && modal.classList.contains('hidden')) toggleManageDatabaseModal();
+                    showNotification(`CSVマージ完了：新規${addedCount}件・更新${updatedCount}件${skippedCount ? `（${skippedCount}件は歌詞本文が空のためスキップ）` : ""}`);
+                    const programInputEl = document.getElementById('programInput');
+                    if (programInputEl) parseProgramText(programInputEl.value);
+                } catch (err) {
+                    console.error(err);
+                    showNotification("CSVの読み込みに失敗しました。書式をご確認ください。");
+                }
+            };
+            reader.readAsText(file, 'utf-8');
+            event.target.value = "";
         }
 
         function toggleImportModal() {
@@ -1319,6 +1499,32 @@
             return compileRecallMarkup(afterRubi, currentStage);
         }
 
+        // 暗唱用マーカー（虫食い）：現在のスライドの最大段階を返す
+        function getCurrentSlideMaxRecallStage() {
+            const s = slides[currentSlideIndex];
+            if (!s) return 0;
+            const a = getMaxRecallStage(s.content || "");
+            const b = getMaxRecallStage(s.title || "");
+            const c = getMaxRecallStage(s.bottomLeft || "");
+            return Math.max(a, b, c);
+        }
+
+        // 本文入力欄のカーソル位置（または選択範囲）に暗唱マーカーを挿入する
+        function insertRecallMarker(depth) {
+            const ta = document.getElementById('editSlideContent');
+            if (!ta) return;
+            const open = '〈'.repeat(depth);
+            const close = '〉'.repeat(depth);
+            const start = ta.selectionStart;
+            const end = ta.selectionEnd;
+            const selected = ta.value.substring(start, end) || '単語';
+            ta.value = ta.value.substring(0, start) + open + selected + close + ta.value.substring(end);
+            ta.focus();
+            ta.selectionStart = start + open.length;
+            ta.selectionEnd = start + open.length + selected.length;
+            updateSelectedSlide();
+        }
+
         // 2段組レンダリング：|col| マーカーで左右に分割
         function compileTwoColumn(text, currentStage) {
             if (!text) return { isTwoCol: false, html: "" };
@@ -1455,7 +1661,7 @@
         async function handleCsvProcessing(file) {
             const encoding = document.getElementById('csvEncodingSelect').value || 'utf-8';
             const reader = new FileReader();
-            const fullDict = { ...WORSHIP_DICTIONARY, ...customDictionary };
+            const fullDict = getFullDictionary();
             
             showNotification("ファイルを読み込み中です...");
 
@@ -1576,6 +1782,7 @@
                         for (let row of validRows) {
                             const title = row.title;
                             const key = title || `曲_${Math.floor(Math.random() * 10000)}`;
+                            const heading = `賛美 (${title || key})`;
                             const contentToSplit = row.formattedContent || row.content || "";
                             const blocks = contentToSplit.split(/\n\s*\n/);
                             const generatedSlides = [];
@@ -1584,7 +1791,7 @@
                                 const trimmed = block.trim();
                                 if (!trimmed) return;
                                 generatedSlides.push({
-                                    title: `賛美 (${title || key})`,
+                                    title: heading,
                                     content: trimmed,
                                     bottomLeft: title, 
                                     fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false
@@ -1593,12 +1800,14 @@
 
                             if (generatedSlides.length > 0) {
                                 customDictionary[key] = generatedSlides;
+                                dbMeta[key] = { title: title, heading: heading, bottomLeftTemplate: title };
                                 lastKey = key;
                                 count++;
                             }
                         }
 
                         safeSaveToLocalStorage('worship_custom_dict', JSON.stringify(customDictionary));
+                        safeSaveToLocalStorage('worship_db_meta', JSON.stringify(dbMeta));
                         toggleImportModal();
                         if (lastKey) {
                             const modal = document.getElementById('manageDatabaseModal');
@@ -1625,7 +1834,7 @@
         function parseProgramText(text) {
             slides = [];
             const lines = text.split('\n');
-            const fullDict = { ...WORSHIP_DICTIONARY, ...customDictionary };
+            const fullDict = getFullDictionary();
             let inLiturgyLyrBlock = false;
             let currentInlineLyricsText = "";
             let currentInlineTitle = "賛美";
@@ -1682,21 +1891,49 @@
 
                 // 固定辞書（主の祈り・使徒信条など）を最優先でチェック（liturgyDatabaseより先）
                 if (normalizedLine.includes("招詞") || normalizedLine.includes("招きのことば") || normalizedLine.includes("まねき")) {
-                    if (normalizedLine.includes("95")) slides.push(...JSON.parse(JSON.stringify(BIBLE_PRESETS["詩篇95篇1-2節"])));
-                    else slides.push(...JSON.parse(JSON.stringify(BIBLE_PRESETS["詩篇100篇1-2節"])));
+                    // 「招詞」行に番号が含まれる場合は、まずカスタム登録済み・プリセットDB内から
+                    // 番号が一致する項目を探す（例：招詞 詩篇105篇1-2節 → 登録済みの詩篇105篇を優先使用）
+                    let matchedInvocationKey = null;
+                    const invocationNumbers = normalizedLine.match(/\d+/g);
+                    if (invocationNumbers) {
+                        for (let num of invocationNumbers) {
+                            for (let key in fullDict) {
+                                const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
+                                if (normKey.includes(num)) { matchedInvocationKey = key; break; }
+                            }
+                            if (matchedInvocationKey) break;
+                        }
+                    }
+                    if (matchedInvocationKey) {
+                        slides.push(...JSON.parse(JSON.stringify(fullDict[matchedInvocationKey])));
+                    } else if (normalizedLine.includes("95")) {
+                        slides.push(...JSON.parse(JSON.stringify(fullDict["詩篇95篇1-2節"] || BIBLE_PRESETS["詩篇95篇1-2節"])));
+                    } else {
+                        // 何も一致しない場合のみ、従来通り詩篇100篇をデフォルトとして使用
+                        slides.push(...JSON.parse(JSON.stringify(fullDict["詩篇100篇1-2節"] || BIBLE_PRESETS["詩篇100篇1-2節"])));
+                    }
                     lastPulledFromDB = true; continue;
                 }
                 else if (normalizedLine.includes("主の祈り") || normalizedLine.includes("主のいのり")) {
-                    slides.push(...JSON.parse(JSON.stringify(fullDict["主の祈り"])));
-                    lastPulledFromDB = true; continue;
+                    if (fullDict["主の祈り"]) {
+                        slides.push(...JSON.parse(JSON.stringify(fullDict["主の祈り"])));
+                        lastPulledFromDB = true; continue;
+                    }
+                    // 登録キーがリネーム・削除されている場合はここで止めず、下の汎用検索に処理を続ける
                 }
                 else if (normalizedLine.includes("2026") || (normalizedLine.includes("コリント") && normalizedLine.includes("5") && normalizedLine.includes("7"))) {
-                    slides.push(...JSON.parse(JSON.stringify(fullDict["2026聖句"])));
-                    lastPulledFromDB = true; continue;
+                    if (fullDict["テーマ聖句"] || fullDict["2026聖句"]) {
+                        slides.push(...JSON.parse(JSON.stringify(fullDict["テーマ聖句"] || fullDict["2026聖句"])));
+                        lastPulledFromDB = true; continue;
+                    }
+                    // 登録キーがリネーム・削除されている場合はここで止めず、下の汎用検索に処理を続ける
                 }
                 else if (normalizedLine.includes("使徒信条") || normalizedLine.includes("信仰告白")) {
-                    slides.push(...JSON.parse(JSON.stringify(fullDict["使徒信条"])));
-                    lastPulledFromDB = true; continue;
+                    if (fullDict["使徒信条"]) {
+                        slides.push(...JSON.parse(JSON.stringify(fullDict["使徒信条"])));
+                        lastPulledFromDB = true; continue;
+                    }
+                    // 登録キーがリネーム・削除されている場合はここで止めず、下の汎用検索に処理を続ける
                 }
 
                 // 次に典礼項目データベースをチェック
@@ -1742,6 +1979,17 @@
                                 }
                             }
                             if (foundKeyForThisNum) matchedKeys.push(foundKeyForThisNum);
+                        }
+                    }
+
+                    // 数字でマッチしなかった場合、数字を含まない登録キー（例：テーマ聖句、主の祈り等）との
+                    // 文字列一致もチェックする（プログラム入力の行に登録キーの文字列が含まれていれば一致とみなす）
+                    if (matchedKeys.length === 0) {
+                        for (let key in fullDict) {
+                            const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
+                            if (!normKey || normKey.length < 2) continue;
+                            if (/\d/.test(normKey)) continue; // 数字を含むキーは上の数字一致ロジックが担当
+                            if (normalizedLine.includes(normKey)) { matchedKeys.push(key); break; }
                         }
                     }
 
@@ -1852,7 +2100,7 @@
             if (hideFooterToggle) hideFooterToggle.checked = !!slide.hideFooter;
 
             // 枠余白ボタンのアクティブ状態
-            const fp = slide.framePadding || "standard";
+            const fp = slide.framePadding || "small";
             ["none","tiny","small","standard","large"].forEach(v => {
                 const btn = document.getElementById(`frame-${v}`);
                 if (btn) btn.className = v === fp
@@ -2242,9 +2490,6 @@
             const isYt = !!ytId;
             const isImg = !isYt && !!s.image;
 
-            // 暗唱用マーカー（虫食い）の現在の段階。スライドごとに保持。未設定なら0（何も消えていない）。
-            const recallStage = (s.recallStage !== undefined && s.recallStage !== null) ? s.recallStage : 0;
-
             const isDarkBackground = activeBgTheme === "dark" || activeBgTheme === "green";
             // テキスト色の決定（スライド個別設定 > 背景テーマ自動）
             const textColorKey = s.textColor || "auto";
@@ -2278,6 +2523,13 @@
             const finalFooterSize = (3.2 * footerMultiplier) + "cqw";
 
             const isHideFooter = !!s.hideFooter;
+
+            // 暗唱用マーカー（虫食い）：現在の段階を取り出す（未設定なら0＝何も消えていない状態）
+            // 編集中（プレゼン開始前）でまだ段階0のときは currentStage=undefined を渡し、
+            // どの単語が暗唱マーカー対象かを点線ハイライトで示す（実際には消さない）。
+            // プレゼン中、または編集中でも段階を進めた後は、実際の段階数を渡して単語を透明化する。
+            const rawRecallStage = (s.recallStage !== undefined && s.recallStage !== null) ? s.recallStage : 0;
+            const recallStage = (!isPresenting && rawRecallStage === 0) ? undefined : rawRecallStage;
 
             // 2段組・行間はスコープ外で宣言（画像/YouTube時もvAlign処理で参照するため）
             const lineH = s.lineHeight || 1.8;
@@ -2397,7 +2649,7 @@
                 };
                 const vPad = s.verticalPadding || "standard";
                 const vPaddingMap = {
-                    "none":   "py-[0.5%]",
+                    "none":   "py-[0%]",
                     "tight":  "py-[2%]",
                     "standard": "py-[5%]",
                     "wide":   "py-[9%]"
@@ -2413,7 +2665,7 @@
                     "standard": "4%",
                     "large":    "6%"
                 };
-                const framePadVal = framePadMap[s.framePadding || "standard"];
+                const framePadVal = framePadMap[s.framePadding || "small"];
                 [pScreen, fScreen].forEach(el => {
                     if (el) el.style.padding = framePadVal;
                 });
@@ -2876,16 +3128,6 @@
             updatePreview();
         }
 
-        // 暗唱用マーカー（虫食い）：現在のスライドの最大段階を返す
-        function getCurrentSlideMaxRecallStage() {
-            const s = slides[currentSlideIndex];
-            if (!s) return 0;
-            const a = getMaxRecallStage(s.content || "");
-            const b = getMaxRecallStage(s.title || "");
-            const c = getMaxRecallStage(s.bottomLeft || "");
-            return Math.max(a, b, c);
-        }
-
         function prevSlide() {
             // 暗唱マーカーが設定されているスライドで、まだ段階が0より大きい場合は
             // スライド移動の前に「1段階戻す」（消えていた単語を1段階分復活させる）
@@ -2945,10 +3187,6 @@
             const overlay = document.getElementById('presentationOverlay');
             if (overlay) overlay.classList.add('hidden');
             renderSlideList(); scrollSelectedSlideIntoView(); updatePreview();
-        }
-
-        function handleInputKeydown(event) {
-            if (event.key === 'Enter' && !event.shiftKey) { event.target.blur(); showNotification("編集を確定しました。"); }
         }
 
         window.addEventListener('keydown', e => {
@@ -3018,21 +3256,33 @@
             const listEl = document.getElementById('dbLyricsList');
             if (!listEl) return;
             listEl.innerHTML = "";
-            const fullDict = { ...WORSHIP_DICTIONARY, ...customDictionary };
+            const fullDict = getFullDictionary();
             let hasResults = false;
 
             for (let key in fullDict) {
-                const songTitle = key.replace(/LP\d+|教会福音讃美歌\d+/g, "").trim();
+                const meta = dbMeta[key];
+                const songTitle = (meta && meta.title) || deriveTitleFromKey(key);
                 const textToSearch = `${key} ${songTitle}`.toUpperCase();
                 if (!query || textToSearch.includes(query)) {
                     hasResults = true;
-                    const isCustom = customDictionary[key] !== undefined;
-                    const badgeColor = isCustom ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-slate-800 text-slate-400 border-slate-700/60";
-                    const badgeText = isCustom ? "カスタム" : "プリセット";
+                    const isBasePreset = !!WORSHIP_DICTIONARY[key] || !!BIBLE_PRESETS[key];
+                    const isOverridden = customDictionary.hasOwnProperty(key);
+                    let badgeColor, badgeText;
+                    if (isBasePreset && isOverridden) {
+                        badgeColor = "bg-sky-500/10 text-sky-400 border-sky-500/20";
+                        badgeText = "プリセット(編集済)";
+                    } else if (isBasePreset) {
+                        badgeColor = "bg-slate-800 text-slate-400 border-slate-700/60";
+                        badgeText = "プリセット";
+                    } else {
+                        badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                        badgeText = "カスタム";
+                    }
                     const activeClass = selectedDBSongKey === key ? "border-orange-500 bg-orange-500/10 text-orange-300" : "border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800";
+                    const safeKeyForOnclick = key.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 
                     listEl.innerHTML += `
-                        <div onclick="selectDBSong('${key}')" class="p-2.5 rounded-lg border cursor-pointer transition flex items-center justify-between ${activeClass}">
+                        <div onclick="selectDBSong('${safeKeyForOnclick}')" class="p-2.5 rounded-lg border cursor-pointer transition flex items-center justify-between ${activeClass}">
                             <div class="truncate pr-2">
                                 <span class="text-[10px] font-mono text-slate-400">${key}</span>
                                 <p class="text-xs font-bold truncate">${songTitle || key}</p>
@@ -3047,8 +3297,9 @@
         // データベースの曲選択
         function selectDBSong(key) {
             selectedDBSongKey = key; filterDatabaseList(); 
-            const fullDict = { ...WORSHIP_DICTIONARY, ...customDictionary };
+            const fullDict = getFullDictionary();
             const songSlides = fullDict[key];
+            if (!songSlides) return;
             const emptyState = document.getElementById('dbEditEmptyState');
             if (emptyState) emptyState.classList.add('hidden');
             const editPanel = document.getElementById('dbEditPanel');
@@ -3056,16 +3307,35 @@
             
             const songKeyInput = document.getElementById('dbSongKey');
             const songTitleInput = document.getElementById('dbSongTitle');
+            const songHeadingInput = document.getElementById('dbSongHeading');
+            const songBottomLeftInput = document.getElementById('dbSongBottomLeft');
             const songContentInput = document.getElementById('dbSongContent');
-            
+
+            const meta = dbMeta[key];
+            const firstSlide = songSlides[0] || {};
+            // dbMetaに保存済み（一度でも保存操作を経た）場合は、そこに入っている値をそのまま使う（空欄なら空欄のまま）。
+            // プリセットのまま一度も保存されていない場合のみ、キーやスライドから推測した初期値を表示する。
+            const derivedTitle = meta ? (meta.title || "") : deriveTitleFromKey(key);
+            const derivedHeading = meta ? (meta.heading || "") : (firstSlide.title || "");
+            const derivedBottomLeft = meta ? (meta.bottomLeftTemplate || "") : (firstSlide.bottomLeft || "");
+
             if (songKeyInput) songKeyInput.value = key;
-            const songTitle = key.replace(/LP\d+|教会福音讃美歌\d+/g, "").trim();
-            if (songTitleInput) songTitleInput.value = songTitle || key;
+            if (songTitleInput) songTitleInput.value = derivedTitle;
+            if (songHeadingInput) songHeadingInput.value = derivedHeading;
+            if (songBottomLeftInput) songBottomLeftInput.value = derivedBottomLeft;
             if (songContentInput) songContentInput.value = songSlides.map(s => s.content).join("\n\n");
+
+            // プリセット由来かどうかで注意書き・復元ボタンを切り替え
+            const isBasePreset = !!WORSHIP_DICTIONARY[key] || !!BIBLE_PRESETS[key];
+            const isOverridden = customDictionary.hasOwnProperty(key);
+            const presetNotice = document.getElementById('dbPresetNotice');
+            const revertBtn = document.getElementById('dbRevertBtn');
+            if (presetNotice) presetNotice.classList.toggle('hidden', !isBasePreset);
+            if (revertBtn) revertBtn.classList.toggle('hidden', !(isBasePreset && isOverridden));
         }
 
         function createNewDBSong() {
-            selectedDBSongKey = "NEW_SONG_" + Math.floor(Math.random() * 1000);
+            selectedDBSongKey = null; // 未保存の新規曲
             const emptyState = document.getElementById('dbEditEmptyState');
             if (emptyState) emptyState.classList.add('hidden');
             const editPanel = document.getElementById('dbEditPanel');
@@ -3073,64 +3343,119 @@
             
             const songKeyInput = document.getElementById('dbSongKey');
             const songTitleInput = document.getElementById('dbSongTitle');
+            const songHeadingInput = document.getElementById('dbSongHeading');
+            const songBottomLeftInput = document.getElementById('dbSongBottomLeft');
             const songContentInput = document.getElementById('dbSongContent');
             
             if (songKeyInput) {
-                songKeyInput.value = "LP";
+                songKeyInput.value = "";
                 songKeyInput.focus();
             }
             if (songTitleInput) songTitleInput.value = "";
+            if (songHeadingInput) songHeadingInput.value = "";
+            if (songBottomLeftInput) songBottomLeftInput.value = "";
             if (songContentInput) songContentInput.value = "1枚目の歌詞[かし]を入力[にゅうりょく]してください。\n\n2枚目の歌詞。空行を入れると自動でページが分割されます。";
+
+            const presetNotice = document.getElementById('dbPresetNotice');
+            if (presetNotice) presetNotice.classList.add('hidden');
             
             filterDatabaseList();
         }
 
-        // 歌詞の修正をデータベースへ保存
+        // 歌詞の修正をデータベースへ保存（登録キーとタイトルは常に別々の項目として保存する）
+        // ※ 登録キー以外（曲名・見出し・出典・歌詞本文）はすべて空欄のまま保存可能。自動生成による強制上書きは行わない。
         function saveSongToDatabase() {
             const keyInput = document.getElementById('dbSongKey');
             const titleInput = document.getElementById('dbSongTitle');
+            const headingInput = document.getElementById('dbSongHeading');
+            const bottomLeftInput = document.getElementById('dbSongBottomLeft');
             const contentInput = document.getElementById('dbSongContent');
             
             const rawKey = keyInput ? keyInput.value.trim() : "";
             const rawTitle = titleInput ? titleInput.value.trim() : "";
+            const heading = headingInput ? headingInput.value.trim() : "";
+            const bottomLeftTemplate = bottomLeftInput ? bottomLeftInput.value.trim() : "";
             const content = contentInput ? contentInput.value.trim() : "";
             
-            if (!rawKey || !content) return showNotification("登録キーと本文は必須です。");
+            if (!rawKey) return showNotification("プログラム検索キーワード（登録キー）は必須です。");
 
-            let formattedKey = rawKey;
-            if (rawTitle && !rawKey.includes(rawTitle)) formattedKey = rawKey + " " + rawTitle;
-            const blocks = content.split(/\n\s*\n/);
+            // 歌詞本文が空欄でも保存可能（「該当キーを検出したら何も表示しない」という空の登録もできるようにする）
+            const blocks = content ? content.split(/\n\s*\n/) : [];
             const parsedSlides = [];
             blocks.forEach(block => {
                 const trimmed = block.trim();
                 if (!trimmed) return;
-                parsedSlides.push({ title: `賛美 (${rawTitle || rawKey})`, content: trimmed, bottomLeft: `${rawTitle || rawKey} ${rawKey}`, fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
+                parsedSlides.push({ title: heading, content: trimmed, bottomLeft: bottomLeftTemplate, fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
             });
 
-            if (selectedDBSongKey && selectedDBSongKey !== formattedKey) delete customDictionary[selectedDBSongKey];
-            customDictionary[formattedKey] = parsedSlides;
-            selectedDBSongKey = formattedKey;
+            const oldKey = selectedDBSongKey;
+            if (oldKey && oldKey !== rawKey) {
+                // キー名を変更した場合：旧キーがプリセット由来なら「削除済み」として扱う
+                if (WORSHIP_DICTIONARY[oldKey] || BIBLE_PRESETS[oldKey]) {
+                    if (!deletedPresetKeys.includes(oldKey)) deletedPresetKeys.push(oldKey);
+                    safeSaveToLocalStorage('worship_deleted_presets', JSON.stringify(deletedPresetKeys));
+                }
+                delete customDictionary[oldKey];
+                delete dbMeta[oldKey];
+            }
+
+            customDictionary[rawKey] = parsedSlides;
+            dbMeta[rawKey] = { title: rawTitle, heading: heading, bottomLeftTemplate: bottomLeftTemplate };
+            selectedDBSongKey = rawKey;
 
             safeSaveToLocalStorage('worship_custom_dict', JSON.stringify(customDictionary));
-            filterDatabaseList(); showNotification(`【${formattedKey}】を正常に保存しました！`);
+            safeSaveToLocalStorage('worship_db_meta', JSON.stringify(dbMeta));
+            filterDatabaseList();
+            selectDBSong(rawKey);
+            showNotification(`【${rawKey}】を正常に保存しました！`);
             const programInputEl = document.getElementById('programInput');
             if (programInputEl) {
                 parseProgramText(programInputEl.value);
             }
         }
 
+        // プリセット曲を編集前の初期状態に戻す
+        function revertPresetToDefault() {
+            const key = selectedDBSongKey;
+            if (!key || !(WORSHIP_DICTIONARY[key] || BIBLE_PRESETS[key])) return;
+            delete customDictionary[key];
+            delete dbMeta[key];
+            const idx = deletedPresetKeys.indexOf(key);
+            if (idx !== -1) deletedPresetKeys.splice(idx, 1);
+            safeSaveToLocalStorage('worship_custom_dict', JSON.stringify(customDictionary));
+            safeSaveToLocalStorage('worship_db_meta', JSON.stringify(dbMeta));
+            safeSaveToLocalStorage('worship_deleted_presets', JSON.stringify(deletedPresetKeys));
+            filterDatabaseList();
+            selectDBSong(key);
+            showNotification("プリセットを初期状態に戻しました。");
+            const programInputEl = document.getElementById('programInput');
+            if (programInputEl) parseProgramText(programInputEl.value);
+        }
+
+        // プリセットも含めて、選択中の曲をデータベースから削除する
+        // プリセットの場合は「削除済みプリセット」として記録し、いつでも「初期状態に戻す」で復元可能
         function deleteSongFromDatabase() {
             if (!selectedDBSongKey) return;
-            if (WORSHIP_DICTIONARY[selectedDBSongKey]) return showNotification("プリセット曲は削除できません。");
-            delete customDictionary[selectedDBSongKey]; selectedDBSongKey = null;
+            const key = selectedDBSongKey;
+            const isBasePreset = !!WORSHIP_DICTIONARY[key] || !!BIBLE_PRESETS[key];
+
+            if (isBasePreset) {
+                if (!deletedPresetKeys.includes(key)) deletedPresetKeys.push(key);
+                safeSaveToLocalStorage('worship_deleted_presets', JSON.stringify(deletedPresetKeys));
+            }
+            delete customDictionary[key];
+            delete dbMeta[key];
+            selectedDBSongKey = null;
             safeSaveToLocalStorage('worship_custom_dict', JSON.stringify(customDictionary));
+            safeSaveToLocalStorage('worship_db_meta', JSON.stringify(dbMeta));
             
             const emptyState = document.getElementById('dbEditEmptyState');
             if (emptyState) emptyState.classList.remove('hidden');
             const editPanel = document.getElementById('dbEditPanel');
             if (editPanel) editPanel.classList.add('hidden');
             
-            filterDatabaseList(); showNotification("曲を削除しました。");
+            filterDatabaseList();
+            showNotification(isBasePreset ? "プリセット曲を削除しました。" : "曲を削除しました。");
             const programInputEl = document.getElementById('programInput');
             if (programInputEl) {
                 parseProgramText(programInputEl.value);
@@ -3164,11 +3489,15 @@
                     if (progressArea) progressArea.innerHTML += `<p class="text-slate-300">・【${file.name}】のパース中...</p>`;
                     const slidesText = await extractTextFromPptx(file);
                     if (slidesText && slidesText.length > 0) {
+                        const heading = `賛美 (${title})`;
+                        const bottomLeftTemplate = `${title} ${key}`;
                         const generatedSlides = [];
                         slidesText.forEach(slideContent => {
-                            generatedSlides.push({ title: `賛美 (${title})`, content: slideContent, bottomLeft: `${title} ${key}`, fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
+                            generatedSlides.push({ title: heading, content: slideContent, bottomLeft: bottomLeftTemplate, fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
                         });
-                        customDictionary[key] = generatedSlides; successCount++;
+                        customDictionary[key] = generatedSlides;
+                        dbMeta[key] = { title: title, heading: heading, bottomLeftTemplate: bottomLeftTemplate };
+                        successCount++;
                         if (progressArea) progressArea.innerHTML += `<p class="text-emerald-400 ml-3">⇒ 抽出完了: 曲名 ${title} (全${generatedSlides.length}枚)</p>`;
                     } else if (progressArea) progressArea.innerHTML += `<p class="text-amber-400 ml-3">⚠️ テキスト未検出</p>`;
                 } catch (err) {
@@ -3176,6 +3505,7 @@
                 }
             }
             safeSaveToLocalStorage('worship_custom_dict', JSON.stringify(customDictionary));
+            safeSaveToLocalStorage('worship_db_meta', JSON.stringify(dbMeta));
             if (progressArea) progressArea.innerHTML += `<p class="text-emerald-300 font-bold mt-2">✔ 抽出完了：${successCount} 曲のデータを保存しました！</p>`;
             showNotification("PowerPointから一括取り込みが完了しました。");
             const programInputEl = document.getElementById('programInput');
@@ -3211,14 +3541,18 @@
             
             if(!key || !rawText) return showNotification("登録キーと歌詞本文を入力してください。");
             
+            const heading = `賛美 (${title || key})`;
+            const bottomLeftTemplate = `${title || key} ${key}`.trim();
             const blocks = rawText.split(/\n\s*\n/);
             const generatedSlides = [];
             blocks.forEach(block => {
                 const trimmed = block.trim();
-                if(trimmed) generatedSlides.push({ title: `賛美 (${title || key})`, content: trimmed, bottomLeft: `${title} ${key}`.trim(), fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
+                if(trimmed) generatedSlides.push({ title: heading, content: trimmed, bottomLeft: bottomLeftTemplate, fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
             });
             customDictionary[key] = generatedSlides;
+            dbMeta[key] = { title: title, heading: heading, bottomLeftTemplate: bottomLeftTemplate };
             safeSaveToLocalStorage('worship_custom_dict', JSON.stringify(customDictionary));
+            safeSaveToLocalStorage('worship_db_meta', JSON.stringify(dbMeta));
             
             if (importKeyEl) importKeyEl.value = "";
             if (importTitleEl) importTitleEl.value = "";
@@ -3478,7 +3812,7 @@
             // ── 枠線 ──
             const framePadPx   = { 'none':0,'tiny':10,'small':19,'standard':Math.round(width*0.04),'large':Math.round(width*0.06) };
             const borderWidthPx = { 'none':0,'thin':Math.round(width*0.004),'standard':Math.round(width*0.011),'thick':Math.round(width*0.024) };
-            const fp = framePadPx[s.framePadding || 'standard'];
+            const fp = framePadPx[s.framePadding || 'small'];
             const bw = borderWidthPx[s.frameBorder || 'standard'];
             if (bw > 0) {
                 ctx.save();
@@ -3504,7 +3838,7 @@
 
             // ── 余白計算 ──
             const hPadPx = { 'zero':0,'extra-narrow':Math.round(width*0.015),'narrow':Math.round(width*0.035),'standard':Math.round(width*0.07),'wide':Math.round(width*0.13) };
-            const vPadPx = { 'none':Math.round(height*0.007),'tight':Math.round(height*0.02),'standard':Math.round(height*0.05),'wide':Math.round(height*0.09) };
+            const vPadPx = { 'none':0,'tight':Math.round(height*0.02),'standard':Math.round(height*0.05),'wide':Math.round(height*0.09) };
             const hPad = hPadPx[s.padding || 'standard'] + fp + bw;
             const vPad = vPadPx[s.verticalPadding || 'standard'] + fp + bw;
             const innerW = width - hPad * 2;
@@ -3617,10 +3951,10 @@
         }
 
 
-        // ルビマークアップ・暗唱用マーカーをプレーンテキストに変換（PDF出力用：単語は残し記号だけ除去）
+        // ルビマークアップをプレーンテキストに変換（暗唱マーカーの記号も除去し、単語は残す）
         function stripRubyMarkup(text) {
             if (!text) return '';
-            const noRecall = text.replace(/〈+([^〈〉]+)〉+/g, '$1');
+            const noRecall = stripRecallMarkup(text);
             return noRecall.replace(/([^\[]+)\[([^\]]+)\]/g, '$1').replace(/\[.*?\]/g, '');
         }
 
