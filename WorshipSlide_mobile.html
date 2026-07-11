@@ -17,6 +17,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 
 <style>
     html, body { height: 100%; overflow: hidden; overscroll-behavior: none; margin: 0; }
@@ -55,12 +56,17 @@
         font-size: 0.55em; color: #f59e0b; background: rgba(0,0,0,0.75); padding: 1px 4px; border-radius: 3px; white-space: nowrap; line-height: 1.4;
     }
 
-    /* タップ領域を広く取るための共通ボタンスタイル */
+    /* タップ領域を広く取るための共通ボタンスタイル。
+       touch-actionはChrome等で連続タップ時に発生する「画面がズームしてしまう」誤動作を防ぐ */
+    .btn, .chip, button, select, input[type=range] { touch-action: manipulation; }
     .btn { min-height: 40px; }
     .chip { min-height: 38px; }
     input[type=range] { height: 34px; }
 
-    /* 書式タブ：選択中カテゴリだけを表示する */
+    /* テキスト入力中はタブバーをコンパクト表示にして縦幅を節約する */
+    .tabbar.compact .tabbtn i { display: none; }
+    .tabbar.compact .tabbtn { padding-top: 6px; padding-bottom: 6px; }
+    .tabbar .tabbtn { transition: padding .15s ease; }
     .formatcat { display: none; }
     .formatcat.active { display: block; }
     .formatcatbtn { background: #0f172a; border-color: #334155; color: #94a3b8; }
@@ -76,8 +82,8 @@
 
     <!-- ヘッダー -->
     <header id="appHeader" class="bg-slate-800 border-b border-slate-700 px-3 py-2 flex items-center justify-between shrink-0">
-        <button onclick="openDrawer()" class="btn flex items-center gap-1 px-2 rounded-lg hover:bg-slate-700 text-sm font-bold text-sky-300">
-            <i data-lucide="list" class="w-5 h-5"></i>一覧
+        <button onclick="openDrawer()" title="項目名だけのクイックジャンプ一覧" class="btn flex items-center gap-1 px-2 rounded-lg hover:bg-slate-700 text-sm font-bold text-sky-300">
+            <i data-lucide="list" class="w-5 h-5"></i>目次
         </button>
         <span class="text-xs font-bold text-slate-400">WorshipSlide AI <span class="text-slate-600">mobile</span></span>
         <div class="flex items-center gap-1">
@@ -87,11 +93,12 @@
         <input type="file" id="wslideImportInput" class="hidden" accept=".wslide">
     </header>
 
-    <!-- プレビュー（折りたたみ可能） -->
+    <!-- プレビュー（折りたたみ可能・縮小可能） -->
     <div id="previewSection" class="shrink-0 border-b border-slate-700 bg-slate-950/40">
-        <div class="flex items-center justify-between px-3 pt-2 pb-1">
-            <span class="text-[11px] font-bold text-slate-400">プレビュー <span id="previewSlideCounter" class="text-slate-600">0 / 0</span></span>
-            <div class="flex items-center gap-3">
+        <div class="flex items-center justify-between px-3 pt-2 pb-1 gap-2">
+            <span class="text-[11px] font-bold text-slate-400 shrink-0">プレビュー <span id="previewSlideCounter" class="text-slate-600">0 / 0</span></span>
+            <div class="flex items-center gap-2.5 flex-wrap justify-end">
+                <button id="previewSizeBtn" onclick="togglePreviewSize()" class="text-[11px] text-slate-400 flex items-center gap-1"><i data-lucide="minimize-2" class="w-3.5 h-3.5"></i>小さく</button>
                 <button id="expandPreviewBtn" onclick="toggleExpandPreview()" class="text-[11px] text-slate-400 flex items-center gap-1"><i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>拡大</button>
                 <button id="prevToggleBtn" onclick="togglePreviewHidden()" class="text-[11px] text-slate-400 flex items-center gap-1"></button>
             </div>
@@ -124,6 +131,9 @@
         </button>
         <button class="tabbtn flex-1 py-2 flex flex-col items-center gap-0.5 text-[11px] font-bold border-b-2" data-tab="format" onclick="switchTab('format')">
             <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>書式
+        </button>
+        <button class="tabbtn flex-1 py-2 flex flex-col items-center gap-0.5 text-[11px] font-bold border-b-2" data-tab="list" onclick="switchTab('list')">
+            <i data-lucide="layout-grid" class="w-5 h-5"></i>一覧
         </button>
     </div>
 
@@ -274,10 +284,10 @@
                 <div class="formatcat border border-slate-700 rounded-xl p-3 bg-slate-800/50" data-cat="lineheight">
                     <p class="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5"><i data-lucide="align-justify" class="w-4 h-4 text-slate-400"></i>行間</p>
                     <div class="flex items-center gap-2">
-                        <button onclick="adjustLineHeight(-0.1)" class="btn w-11 bg-rose-700 hover:bg-rose-600 rounded-lg font-bold">−</button>
-                        <input type="range" id="lineHeightSlider" min="0.9" max="2.6" step="0.1" oninput="setLineHeight(this.value)" class="flex-1">
-                        <span id="lineHeightDisplay" class="text-sm font-mono font-bold text-sky-300 w-10 text-center">1.8</span>
-                        <button onclick="adjustLineHeight(0.1)" class="btn w-11 bg-emerald-700 hover:bg-emerald-600 rounded-lg font-bold">＋</button>
+                        <button onclick="adjustLineHeight(-0.1)" class="btn shrink-0 w-11 bg-rose-700 hover:bg-rose-600 rounded-lg font-bold">−</button>
+                        <input type="range" id="lineHeightSlider" min="0.9" max="2.6" step="0.1" oninput="setLineHeight(this.value)" class="flex-1 min-w-0">
+                        <span id="lineHeightDisplay" class="text-sm font-mono font-bold text-sky-300 w-10 text-center shrink-0">1.8</span>
+                        <button onclick="adjustLineHeight(0.1)" class="btn shrink-0 w-11 bg-emerald-700 hover:bg-emerald-600 rounded-lg font-bold">＋</button>
                     </div>
                 </div>
 
@@ -299,6 +309,23 @@
                 <button onclick="applySettingsToAllSlides()" class="flex-1 bg-indigo-700 hover:bg-indigo-600 text-indigo-100 font-bold px-2 py-2.5 rounded-lg text-[11px] flex items-center justify-center gap-1"><i data-lucide="layers" class="w-3.5 h-3.5"></i>全スライドに適用</button>
             </div>
         </section>
+
+        <!-- ④ 一覧パネル（並び替え・複数選択） -->
+        <section class="tabpanel" data-panel="list">
+            <div class="flex items-center justify-between gap-1.5 mb-2">
+                <button onclick="addNewSlide()" class="btn shrink-0 bg-emerald-700 hover:bg-emerald-600 rounded-lg px-3 flex items-center gap-1 text-xs font-bold"><i data-lucide="plus" class="w-4 h-4"></i>追加</button>
+                <p class="text-[10px] text-slate-500 flex items-center gap-1 flex-1 justify-center"><i data-lucide="move" class="w-3 h-3 shrink-0"></i>右端のハンドルをドラッグで並び替え</p>
+                <button id="listSelectModeBtn" onclick="toggleListSelectMode()" class="btn shrink-0 bg-slate-700 hover:bg-slate-600 rounded-lg px-3 flex items-center gap-1 text-xs font-bold"><i data-lucide="check-square" class="w-4 h-4"></i>選択</button>
+            </div>
+            <div id="listSelectBar" class="hidden items-center justify-between bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 mb-2 text-xs">
+                <span id="listSelectCount" class="text-slate-300 font-bold">0件選択中</span>
+                <div class="flex gap-1.5">
+                    <button onclick="swapSelectedSlides()" class="chip px-2.5 bg-indigo-700 hover:bg-indigo-600 rounded-lg font-bold">入れ替え（2件）</button>
+                    <button onclick="deleteSelectedFromList()" class="chip px-2.5 bg-rose-800 hover:bg-rose-700 rounded-lg font-bold">削除</button>
+                </div>
+            </div>
+            <div id="slideListContainer" class="space-y-2"></div>
+        </section>
     </main>
 </div>
 
@@ -307,7 +334,7 @@
     <div class="absolute inset-0 bg-black/60" onclick="closeDrawer()"></div>
     <div class="absolute top-0 left-0 bottom-0 w-[78%] max-w-xs bg-slate-800 shadow-2xl flex flex-col">
         <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700 shrink-0">
-            <span class="font-bold text-sm text-slate-200">スライド一覧</span>
+            <span class="font-bold text-sm text-slate-200">目次（タップでジャンプ）</span>
             <button onclick="closeDrawer()" class="p-1"><i data-lucide="x" class="w-5 h-5 text-slate-400"></i></button>
         </div>
         <div id="drawerList" class="flex-1 overflow-y-auto"></div>
@@ -475,6 +502,13 @@ function insertTwoColumn() {
 }
 
 // ----- 4. プログラム解析（PC版のparseProgramTextを踏襲。YouTube専用処理はモバイル版では省略） -----
+// 辞書キーに含まれる数字の並び（「LP254」→["254"]、「詩篇95篇1-2節」→["95","12"]）を取り出す。
+// 部分一致（"5"が"95"に含まれる、等）による誤マッチを防ぐため、番号マッチングは必ずこれで
+// 取り出した数字と「完全一致」するかどうかで判定する。
+function digitGroupsOfKey(key) {
+    const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
+    return normKey.match(/\d+/g) || [];
+}
 function parseProgramText(text) {
     slides = [];
     const lines = text.split('\n');
@@ -523,7 +557,7 @@ function parseProgramText(text) {
             const nums = normalizedLine.match(/\d+/g);
             if (nums) {
                 for (let num of nums) {
-                    for (let key in fullDict) { if (key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase().includes(num)) { matchedKey = key; break; } }
+                    for (let key in fullDict) { if (digitGroupsOfKey(key).includes(num)) { matchedKey = key; break; } }
                     if (matchedKey) break;
                 }
             }
@@ -558,8 +592,7 @@ function parseProgramText(text) {
         if (numbers) {
             for (let num of numbers) {
                 for (let key in fullDict) {
-                    const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
-                    if (normKey.includes(num)) { matchedKeys.push(key); break; }
+                    if (digitGroupsOfKey(key).includes(num)) { matchedKeys.push(key); break; }
                 }
             }
         }
@@ -789,9 +822,9 @@ function renderFontSizeRows() {
         <div>
             <div class="flex items-center justify-between mb-1"><span class="text-[11px] text-slate-400">${label}</span><span id="fsval-${prop}" class="text-xs font-mono font-bold text-sky-300">100%</span></div>
             <div class="flex items-center gap-2">
-                <button onclick="nudgeFontSize('${prop}',-10)" class="btn w-9 bg-rose-700 hover:bg-rose-600 rounded-lg font-bold text-sm">−</button>
-                <input type="range" min="40" max="200" step="2" oninput="setFontSizeValue('${prop}', this.value)" id="fsrange-${prop}" class="flex-1">
-                <button onclick="nudgeFontSize('${prop}',10)" class="btn w-9 bg-emerald-700 hover:bg-emerald-600 rounded-lg font-bold text-sm">＋</button>
+                <button onclick="nudgeFontSize('${prop}',-10)" class="btn shrink-0 w-9 bg-rose-700 hover:bg-rose-600 rounded-lg font-bold text-sm">−</button>
+                <input type="range" min="40" max="200" step="2" oninput="setFontSizeValue('${prop}', this.value)" id="fsrange-${prop}" class="flex-1 min-w-0">
+                <button onclick="nudgeFontSize('${prop}',10)" class="btn shrink-0 w-9 bg-emerald-700 hover:bg-emerald-600 rounded-lg font-bold text-sm">＋</button>
             </div>
         </div>`).join('');
 }
@@ -867,6 +900,92 @@ function renderDrawerList() {
 function renderDrawerListLight() { if (!document.getElementById('slideDrawer').classList.contains('hidden')) renderDrawerList(); }
 function jumpToSlideFromDrawer(i) { currentSlideIndex = i; closeDrawer(); switchTab('edit'); renderAll(); }
 
+// ----- 10.5 一覧タブ（並び替え・複数選択） -----
+let listSelectMode = false;
+let listSelectedIndices = new Set();
+let listSortableInstance = null;
+
+function renderSlideListTab() {
+    const wrap = document.getElementById('slideListContainer');
+    if (!wrap) return;
+    if (!slides.length) { wrap.innerHTML = '<p class="text-xs text-slate-500 py-10 text-center">スライドがありません。「追加」から作成するか、「入力」タブでプログラムを入力してください。</p>'; return; }
+    wrap.innerHTML = slides.map((s, i) => {
+        const title = stripRubyMarkup(s.title || '').trim();
+        const bodyPreview = stripRubyMarkup((s.content || '').split('\n')[0] || '').slice(0, 32);
+        const checked = listSelectedIndices.has(i);
+        const isCurrent = i === currentSlideIndex;
+        return `
+        <div class="slide-card flex items-center gap-2 bg-slate-800 border ${isCurrent ? 'border-sky-500' : 'border-slate-700'} rounded-xl p-2.5" data-index="${i}">
+            ${listSelectMode ? `<input type="checkbox" class="w-5 h-5 shrink-0" ${checked ? 'checked' : ''} onchange="toggleListSelect(${i}, this.checked)">` : ''}
+            <div class="flex-1 min-w-0" ${listSelectMode ? '' : `onclick="jumpToSlideFromList(${i})"`}>
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] text-slate-500 shrink-0">${i + 1}</span>
+                    <span class="text-sm font-bold text-slate-200 truncate">${title || '(無題)'}</span>
+                </div>
+                <div class="text-[11px] text-slate-500 truncate">${bodyPreview}</div>
+            </div>
+            <div class="drag-handle shrink-0 text-slate-500 p-2 -mr-1" style="touch-action:none;"><i data-lucide="grip-vertical" class="w-5 h-5"></i></div>
+        </div>`;
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+    setupListSortable();
+}
+
+function setupListSortable() {
+    const el = document.getElementById('slideListContainer');
+    if (!el || typeof Sortable === 'undefined') return;
+    if (listSortableInstance) { listSortableInstance.destroy(); listSortableInstance = null; }
+    listSortableInstance = Sortable.create(el, {
+        handle: '.drag-handle',
+        animation: 150,
+        onEnd: function () {
+            const newOrder = Array.from(el.children).map(c => parseInt(c.getAttribute('data-index'), 10));
+            const currentRef = slides[currentSlideIndex];
+            slides = newOrder.map(i => slides[i]);
+            const newIdx = slides.indexOf(currentRef);
+            currentSlideIndex = newIdx >= 0 ? newIdx : 0;
+            listSelectedIndices.clear();
+            autosaveSlides();
+            renderAll();
+        }
+    });
+}
+function jumpToSlideFromList(i) { currentSlideIndex = i; switchTab('edit'); renderAll(); }
+function toggleListSelectMode() {
+    listSelectMode = !listSelectMode;
+    listSelectedIndices.clear();
+    const bar = document.getElementById('listSelectBar');
+    bar.classList.toggle('hidden', !listSelectMode);
+    bar.classList.toggle('flex', listSelectMode);
+    document.getElementById('listSelectCount').textContent = '0件選択中';
+    const btn = document.getElementById('listSelectModeBtn');
+    btn.innerHTML = listSelectMode ? '<i data-lucide="x" class="w-4 h-4"></i>完了' : '<i data-lucide="check-square" class="w-4 h-4"></i>選択';
+    renderSlideListTab();
+    if (window.lucide) lucide.createIcons();
+}
+function toggleListSelect(i, checked) {
+    if (checked) listSelectedIndices.add(i); else listSelectedIndices.delete(i);
+    document.getElementById('listSelectCount').textContent = `${listSelectedIndices.size}件選択中`;
+}
+function swapSelectedSlides() {
+    if (listSelectedIndices.size !== 2) { showToast("入れ替えは、ちょうど2件選択してください"); return; }
+    const [a, b] = Array.from(listSelectedIndices);
+    [slides[a], slides[b]] = [slides[b], slides[a]];
+    listSelectedIndices.clear();
+    autosaveSlides(); renderSlideListTab();
+    document.getElementById('listSelectCount').textContent = '0件選択中';
+    showToast("入れ替えました");
+}
+function deleteSelectedFromList() {
+    if (listSelectedIndices.size === 0) { showToast("削除する項目にチェックを入れてください"); return; }
+    if (!confirm(`選択した${listSelectedIndices.size}件のスライドを削除します。よろしいですか？`)) return;
+    const toDelete = Array.from(listSelectedIndices).sort((a, b) => b - a);
+    toDelete.forEach(i => slides.splice(i, 1));
+    listSelectedIndices.clear();
+    if (currentSlideIndex >= slides.length) currentSlideIndex = Math.max(0, slides.length - 1);
+    autosaveSlides(); renderAll();
+}
+
 // ----- 11. タブ・プレビュー開閉 -----
 function switchTab(name) {
     currentTab = name;
@@ -897,6 +1016,16 @@ function togglePreviewHidden() {
     if (currentTab === 'format') return;
     previewHidden = !previewHidden;
     applyPreviewVisibility();
+}
+let previewSmall = false;
+function togglePreviewSize() {
+    previewSmall = !previewSmall;
+    document.getElementById('projectorScreen').style.maxWidth = previewSmall ? '190px' : '520px';
+    const btn = document.getElementById('previewSizeBtn');
+    btn.innerHTML = previewSmall
+        ? '<i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>大きく'
+        : '<i data-lucide="minimize-2" class="w-3.5 h-3.5"></i>小さく';
+    if (window.lucide) lucide.createIcons();
 }
 function toggleExpandPreview() {
     // DOM要素は移動させず、#appにクラスを付け外しするだけでプレビューを拡大する。
@@ -986,10 +1115,26 @@ function renderAll() {
     syncEditForm();
     syncFormatControls();
     renderDrawerListLight();
+    renderSlideListTab();
     if (window.lucide) lucide.createIcons();
 }
 
-// ----- 15. プレビューエリアの左右スワイプでスライド送り -----
+// ----- 15. テキスト入力中はタブバーをコンパクト化（アイコンを消して縦幅を節約） -----
+function isTextField(el) {
+    if (!el) return false;
+    if (el.tagName === 'TEXTAREA') return true;
+    if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === undefined)) return true;
+    return false;
+}
+document.addEventListener('focusin', (e) => {
+    if (isTextField(e.target)) document.querySelector('.tabbar').classList.add('compact');
+});
+document.addEventListener('focusout', (e) => {
+    if (!isTextField(e.target)) return;
+    setTimeout(() => { if (!isTextField(document.activeElement)) document.querySelector('.tabbar').classList.remove('compact'); }, 60);
+});
+
+// ----- 16. プレビューエリアの左右スワイプでスライド送り -----
 function setupPreviewSwipe() {
     const el = document.getElementById('previewWrap');
     if (!el) return;
@@ -1009,7 +1154,7 @@ function setupPreviewSwipe() {
     }, { passive: true });
 }
 
-// ----- 16. 初期化 -----
+// ----- 17. 初期化 -----
 window.addEventListener('load', () => {
     lucide.createIcons();
     renderFontSizeRows();
