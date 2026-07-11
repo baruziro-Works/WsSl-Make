@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta http-equiv="Permissions-Policy" content="autoplay=*, fullscreen=*">
+<title>WorshipSlide AI モバイル - スライド作成</title>
+
+<script>
+    // Tailwind CDN版の「本番環境で使うな」という警告を非表示にする（PC版と同じ対応）
+    const _origWarn = console.warn.bind(console);
+    console.warn = (...args) => {
+        if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+        _origWarn(...args);
+    };
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
+
+<style>
+    html, body { height: 100%; overflow: hidden; overscroll-behavior: none; margin: 0; }
+    body { font-family: 'BIZ UDGothic', 'Noto Sans JP', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .worship-font-bold { font-weight: 900; }
+    textarea, input[type=text] { font-family: inherit; }
+
+    /* #appを画面ぴったりの高さに固定し、<main>だけが内部スクロールする（プレビューが常に見える状態を保証） */
+    #app { height: 100vh; height: 100dvh; }
+    main { min-height: 0; -webkit-overflow-scrolling: touch; }
+
+    /* プロジェクター投影エリア（PC版と同じcqw単位でのスケーラブルフォント方式を踏襲。
+       サイズが変わってもcqw単位は常にコンテナ幅に対する割合なので、文字・余白の"比率"は
+       小プレビューでも拡大表示でも変わらない。拡大時はDOM移動をせず、CSSクラス切替のみで
+       箱を大きくすることで、レイアウト計算のブレを防いでいる） */
+    #projectorScreen { aspect-ratio: 4 / 3; container-type: inline-size; container-name: slide-view; overflow: hidden; background-size: cover; background-position: center; }
+
+    /* プレビュー拡大モード：ヘッダー・タブ・メインを隠し、プレビューだけを画面いっぱいに表示 */
+    #app.preview-expanded #appHeader,
+    #app.preview-expanded .tabbar,
+    #app.preview-expanded main { display: none !important; }
+    #app.preview-expanded #previewSection { flex: 1 1 auto; display: flex; flex-direction: column; border-bottom: none; }
+    #app.preview-expanded #previewWrap { flex: 1 1 auto; display: flex !important; align-items: center; justify-content: center; padding: 16px; }
+    #app.preview-expanded #projectorScreen { max-width: min(94vw, 130vh) !important; }
+    .dynamic-title { font-size: 4.2cqw; margin-bottom: 1cqw; color: inherit; }
+    .dynamic-body { font-size: 5.2cqw; line-height: 1.8; word-wrap: break-word; word-break: break-all; line-break: strict; color: inherit; text-align: left !important; display: inline-block; }
+    .dynamic-footer-left, .dynamic-footer-right { font-size: 3.2cqw; color: inherit; }
+
+    ruby { ruby-position: over; ruby-align: center; }
+    rt { font-size: 0.32em !important; color: inherit !important; opacity: 0.95; font-weight: 700; line-height: 1.1; padding-bottom: 0.1em; text-align: center !important; }
+
+    ._recall-word { transition: opacity 0.5s ease; }
+    ._recall-mark { border-bottom: 2px dashed #f59e0b; position: relative; }
+    ._recall-mark::after {
+        content: attr(data-recall-depth) "段"; position: absolute; top: -1.3em; left: 50%; transform: translateX(-50%);
+        font-size: 0.55em; color: #f59e0b; background: rgba(0,0,0,0.75); padding: 1px 4px; border-radius: 3px; white-space: nowrap; line-height: 1.4;
+    }
+
+    /* タップ領域を広く取るための共通ボタンスタイル */
+    .btn { min-height: 40px; }
+    .chip { min-height: 38px; }
+    input[type=range] { height: 34px; }
+
+    /* 書式タブ：選択中カテゴリだけを表示する */
+    .formatcat { display: none; }
+    .formatcat.active { display: block; }
+    .formatcatbtn { background: #0f172a; border-color: #334155; color: #94a3b8; }
+    .formatcatbtn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+</style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+<div id="app" class="max-w-lg mx-auto min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header id="appHeader" class="bg-slate-800 border-b border-slate-700 px-3 py-2 flex items-center justify-between shrink-0">
+        <button onclick="openDrawer()" class="btn flex items-center gap-1 px-2 rounded-lg hover:bg-slate-700 text-sm font-bold text-sky-300">
+            <i data-lucide="list" class="w-5 h-5"></i>一覧
+        </button>
+        <span class="text-xs font-bold text-slate-400">WorshipSlide AI <span class="text-slate-600">mobile</span></span>
+        <div class="flex items-center gap-1">
+            <button onclick="triggerWslideImport()" title="PCで書き出した.wslideを読み込み" class="btn px-2 rounded-lg hover:bg-slate-700 text-emerald-300"><i data-lucide="folder-open" class="w-5 h-5"></i></button>
+            <button onclick="exportWslide()" title="現在のデータを.wslideとして保存" class="btn px-2 rounded-lg hover:bg-slate-700 text-sky-300"><i data-lucide="save" class="w-5 h-5"></i></button>
+        </div>
+        <input type="file" id="wslideImportInput" class="hidden" accept=".wslide">
+    </header>
+
+    <!-- プレビュー（折りたたみ可能） -->
+    <div id="previewSection" class="shrink-0 border-b border-slate-700 bg-slate-950/40">
+        <div class="flex items-center justify-between px-3 pt-2 pb-1">
+            <span class="text-[11px] font-bold text-slate-400">プレビュー <span id="previewSlideCounter" class="text-slate-600">0 / 0</span></span>
+            <div class="flex items-center gap-3">
+                <button id="expandPreviewBtn" onclick="toggleExpandPreview()" class="text-[11px] text-slate-400 flex items-center gap-1"><i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>拡大</button>
+                <button id="prevToggleBtn" onclick="togglePreviewHidden()" class="text-[11px] text-slate-400 flex items-center gap-1"></button>
+            </div>
+        </div>
+        <div id="previewWrap" class="px-3 pb-3">
+            <div id="projectorScreen" class="rounded-xl border-2 border-slate-700 shadow relative flex flex-col justify-between p-[4%]" style="width:100%;max-width:520px;margin:0 auto;">
+                <div id="previewInnerFrame" class="border-white border-opacity-90 rounded-[3cqw] w-full h-full flex flex-col justify-between relative z-10 box-border bg-white/5 backdrop-blur-[1px] shadow-inner">
+                    <div id="previewTitle" class="worship-font-bold dynamic-title text-center"></div>
+                    <div id="previewContentContainer" class="flex-1 flex items-center justify-center text-center w-full overflow-visible my-1 relative">
+                        <div id="previewBody" class="worship-font-bold text-center dynamic-body text-left"></div>
+                    </div>
+                    <div id="previewFooterFrame" class="flex justify-between items-end w-full border-t border-sky-900/10 pt-[2%]">
+                        <div id="previewFooterLeft" class="worship-font-bold dynamic-footer-left truncate max-w-[70%]"></div>
+                        <div class="flex items-center worship-font-bold dynamic-footer-right">
+                            <span id="previewFooterIndex">1/1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- タブバー -->
+    <div class="tabbar flex border-b border-slate-700 bg-slate-800 shrink-0">
+        <button class="tabbtn flex-1 py-2 flex flex-col items-center gap-0.5 text-[11px] font-bold border-b-2" data-tab="input" onclick="switchTab('input')">
+            <i data-lucide="text-cursor-input" class="w-5 h-5"></i>入力
+        </button>
+        <button class="tabbtn flex-1 py-2 flex flex-col items-center gap-0.5 text-[11px] font-bold border-b-2" data-tab="edit" onclick="switchTab('edit')">
+            <i data-lucide="edit-3" class="w-5 h-5"></i>編集
+        </button>
+        <button class="tabbtn flex-1 py-2 flex flex-col items-center gap-0.5 text-[11px] font-bold border-b-2" data-tab="format" onclick="switchTab('format')">
+            <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>書式
+        </button>
+    </div>
+
+    <!-- コンテンツ -->
+    <main class="flex-1 overflow-y-auto p-3 space-y-3">
+
+        <!-- ① 入力パネル -->
+        <section class="tabpanel" data-panel="input">
+            <textarea id="programInput" oninput="handleProgramInputChanged(this.value)"
+                class="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-sm focus:ring-2 focus:ring-sky-500 text-slate-200 resize-none transition-all"
+                style="height:clamp(180px, 36vh, 320px)" placeholder="ここに礼拝プログラムを入力…&#10;例）&#10;招詞　詩篇100篇&#10;讃美　LP254&#10;主の祈り&#10;説教&#10;使徒信条&#10;献金&#10;祝祷"></textarea>
+            <div class="mt-2 flex items-start gap-2 text-[11px] text-slate-400">
+                <i data-lucide="database" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
+                <span>1行ごとに自動でスライド化されます。データベースに登録済みのキーワード（招詞・主の祈り・使徒信条・テーマ聖句・讃美歌番号など）を含む行は、自動でその内容に置き換わります。</span>
+            </div>
+            <div class="mt-3 flex justify-end">
+                <button onclick="confirmClearProgram()" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-700">入力をクリア</button>
+            </div>
+        </section>
+
+        <!-- ② 編集パネル -->
+        <section class="tabpanel" data-panel="edit">
+            <!-- スライド移動・件数 -->
+            <div class="flex items-center justify-between bg-slate-800/60 rounded-lg p-1.5 mb-2">
+                <button onclick="selectPrevSlide()" class="btn px-3 rounded-lg hover:bg-slate-700"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                <span id="editSlideCounter" class="text-sm font-bold text-slate-300">0 / 0</span>
+                <button onclick="selectNextSlide()" class="btn px-3 rounded-lg hover:bg-slate-700"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+            </div>
+            <!-- スライド操作ツールバー -->
+            <div class="flex gap-1.5 mb-3">
+                <button onclick="addNewSlide()" title="新規スライド追加" class="btn flex-1 bg-emerald-700 hover:bg-emerald-600 rounded-lg flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                <button onclick="duplicateSelectedSlide()" title="複製" class="btn flex-1 bg-cyan-700 hover:bg-cyan-600 rounded-lg flex items-center justify-center"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                <button onclick="moveSlide(-1)" title="1つ前へ移動" class="btn flex-1 bg-slate-700 hover:bg-slate-600 rounded-lg flex items-center justify-center"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
+                <button onclick="moveSlide(1)" title="1つ後ろへ移動" class="btn flex-1 bg-slate-700 hover:bg-slate-600 rounded-lg flex items-center justify-center"><i data-lucide="arrow-down" class="w-4 h-4"></i></button>
+                <button onclick="deleteSelectedSlide()" title="このスライドを削除" class="btn flex-1 bg-rose-800 hover:bg-rose-700 rounded-lg flex items-center justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+
+            <div id="editEmptyState" class="hidden text-center text-slate-500 text-xs py-10">
+                スライドがありません。「入力」タブでプログラムを入力するか、＋ボタンで新規追加してください。
+            </div>
+
+            <div id="editForm" class="space-y-3">
+                <div>
+                    <label class="text-[11px] text-slate-400 font-bold block mb-1">見出し</label>
+                    <input type="text" id="editSlideTitle" oninput="updateSelectedSlide()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="見出し（空白でもOK）">
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 font-bold block mb-1">左下出典</label>
+                    <input type="text" id="editSlideBottomLeft" oninput="updateSelectedSlide()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="出典・フッター">
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[11px] text-slate-400 font-bold">本文 <span class="text-slate-600 font-normal">（漢字[かんじ]でルビ）</span></label>
+                    </div>
+                    <textarea id="editSlideContent" oninput="updateSelectedSlide()"
+                        class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-sky-500 focus:outline-none resize-none font-mono transition-all"
+                        style="height:clamp(120px, 22vh, 220px)" placeholder="本文…　空行で段落分け／|col|で2段組"></textarea>
+                    <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        <button onclick="insertTwoColumn()" class="chip text-[11px] bg-purple-800 hover:bg-purple-700 text-purple-200 font-bold px-2.5 rounded-lg border border-purple-600 flex items-center gap-1"><i data-lucide="columns-2" class="w-3.5 h-3.5"></i>2段組</button>
+                        <button onclick="insertRecallMarker(1)" class="chip text-[11px] bg-amber-800 hover:bg-amber-700 text-amber-200 font-bold px-2.5 rounded-lg border border-amber-600">〈〉1</button>
+                        <button onclick="insertRecallMarker(2)" class="chip text-[11px] bg-amber-800 hover:bg-amber-700 text-amber-200 font-bold px-2.5 rounded-lg border border-amber-600">〈〉2</button>
+                        <button onclick="insertRecallMarker(3)" class="chip text-[11px] bg-amber-800 hover:bg-amber-700 text-amber-200 font-bold px-2.5 rounded-lg border border-amber-600">〈〉3</button>
+                    </div>
+                    <p class="text-[10px] text-slate-600 mt-1">〈〉数字＝暗唱で消える回数。選択した単語を囲みます（未選択時は「単語」が挿入されます）</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ③ 書式パネル -->
+        <section class="tabpanel" data-panel="format">
+            <!-- スライド移動（書式を見ながら前後のスライドにも切り替えられるように） -->
+            <div class="flex items-center justify-between bg-slate-800/60 rounded-lg p-1.5 mb-2">
+                <button onclick="selectPrevSlide()" class="btn px-3 rounded-lg hover:bg-slate-700"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                <span id="formatSlideCounter" class="text-sm font-bold text-slate-300">0 / 0</span>
+                <button onclick="selectNextSlide()" class="btn px-3 rounded-lg hover:bg-slate-700"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+            </div>
+
+            <!-- カテゴリ切替ボタン（横スクロール）：1つだけ選んで、その設定項目だけを下に表示する -->
+            <div class="flex gap-1.5 overflow-x-auto pb-1 mb-3 -mx-3 px-3">
+                <button class="formatcatbtn chip shrink-0 px-3 text-[11px] font-bold rounded-lg border" data-cat="fontsize" onclick="switchFormatCategory('fontsize')">文字サイズ</button>
+                <button class="formatcatbtn chip shrink-0 px-3 text-[11px] font-bold rounded-lg border" data-cat="color" onclick="switchFormatCategory('color')">文字色</button>
+                <button class="formatcatbtn chip shrink-0 px-3 text-[11px] font-bold rounded-lg border" data-cat="hpad" onclick="switchFormatCategory('hpad')">左右余白</button>
+                <button class="formatcatbtn chip shrink-0 px-3 text-[11px] font-bold rounded-lg border" data-cat="vpad" onclick="switchFormatCategory('vpad')">上下余白</button>
+                <button class="formatcatbtn chip shrink-0 px-3 text-[11px] font-bold rounded-lg border" data-cat="valign" onclick="switchFormatCategory('valign')">縦位置</button>
+                <button class="formatcatbtn chip shrink-0 px-3 text-[11px] font-bold rounded-lg border" data-cat="frame" onclick="switchFormatCategory('frame')">白枠</button>
+                <button class="formatcatbtn chip shrink-0 px-3 text-[11px] font-bold rounded-lg border" data-cat="lineheight" onclick="switchFormatCategory('lineheight')">行間</button>
+                <button class="formatcatbtn chip shrink-0 px-3 text-[11px] font-bold rounded-lg border" data-cat="theme" onclick="switchFormatCategory('theme')">テーマ</button>
+            </div>
+
+            <div id="formatCatContent">
+
+                <!-- 文字サイズ -->
+                <div class="formatcat border border-slate-700 rounded-xl p-3 bg-slate-800/50" data-cat="fontsize">
+                    <p class="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5"><i data-lucide="type" class="w-4 h-4 text-sky-400"></i>文字サイズ</p>
+                    <div id="fontSizeRows" class="space-y-2.5"></div>
+                </div>
+
+                <!-- 文字色 -->
+                <div class="formatcat border border-slate-700 rounded-xl p-3 bg-slate-800/50" data-cat="color">
+                    <p class="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5"><i data-lucide="palette" class="w-4 h-4 text-amber-400"></i>文字色</p>
+                    <select id="textColorSelect" onchange="setTextColor(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm py-2 px-2">
+                        <option value="auto">自動（背景に合わせる）</option>
+                        <option value="white">白</option>
+                        <option value="black">黒</option>
+                        <option value="yellow">黄色</option>
+                        <option value="lightblue">水色</option>
+                        <option value="gold">ゴールド</option>
+                    </select>
+                </div>
+
+                <!-- 左右余白 -->
+                <div class="formatcat border border-slate-700 rounded-xl p-3 bg-slate-800/50" data-cat="hpad">
+                    <p class="text-xs font-bold text-slate-300 mb-2">左右余白</p>
+                    <div id="hPaddingChips" class="grid grid-cols-5 gap-1.5"></div>
+                </div>
+
+                <!-- 上下余白 -->
+                <div class="formatcat border border-slate-700 rounded-xl p-3 bg-slate-800/50" data-cat="vpad">
+                    <p class="text-xs font-bold text-slate-300 mb-2">上下余白</p>
+                    <div id="vPaddingChips" class="grid grid-cols-4 gap-1.5"></div>
+                </div>
+
+                <!-- 縦位置 -->
+                <div class="formatcat border border-slate-700 rounded-xl p-3 bg-slate-800/50 space-y-3" data-cat="valign">
+                    <div>
+                        <p class="text-xs font-bold text-slate-300 mb-2">縦位置</p>
+                        <div id="vAlignChips" class="grid grid-cols-2 gap-1.5"></div>
+                    </div>
+                    <label class="flex items-center gap-2 text-xs text-slate-300">
+                        <input type="checkbox" id="hideFooterToggle" onchange="toggleHideFooter(this.checked)" class="w-4 h-4">
+                        フッターを非表示にする
+                    </label>
+                </div>
+
+                <!-- 白枠 -->
+                <div class="formatcat border border-slate-700 rounded-xl p-3 bg-slate-800/50 space-y-3" data-cat="frame">
+                    <div>
+                        <p class="text-xs font-bold text-slate-300 mb-2">白枠の外側余白</p>
+                        <div id="framePadChips" class="grid grid-cols-5 gap-1.5"></div>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-300 mb-2">白枠の太さ</p>
+                        <div id="frameBorderChips" class="grid grid-cols-4 gap-1.5"></div>
+                    </div>
+                </div>
+
+                <!-- 行間 -->
+                <div class="formatcat border border-slate-700 rounded-xl p-3 bg-slate-800/50" data-cat="lineheight">
+                    <p class="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5"><i data-lucide="align-justify" class="w-4 h-4 text-slate-400"></i>行間</p>
+                    <div class="flex items-center gap-2">
+                        <button onclick="adjustLineHeight(-0.1)" class="btn w-11 bg-rose-700 hover:bg-rose-600 rounded-lg font-bold">−</button>
+                        <input type="range" id="lineHeightSlider" min="0.9" max="2.6" step="0.1" oninput="setLineHeight(this.value)" class="flex-1">
+                        <span id="lineHeightDisplay" class="text-sm font-mono font-bold text-sky-300 w-10 text-center">1.8</span>
+                        <button onclick="adjustLineHeight(0.1)" class="btn w-11 bg-emerald-700 hover:bg-emerald-600 rounded-lg font-bold">＋</button>
+                    </div>
+                </div>
+
+                <!-- 背景テーマ -->
+                <div class="formatcat border border-slate-700 rounded-xl p-3 bg-slate-800/50" data-cat="theme">
+                    <p class="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5"><i data-lucide="image" class="w-4 h-4 text-slate-400"></i>背景テーマ（全スライド共通）</p>
+                    <select id="bgThemeSelect" onchange="changeBgTheme(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm py-2 px-2">
+                        <option value="sky">青空 (Worship Blue)</option>
+                        <option value="sunrise">朝焼け (Sunrise Gold)</option>
+                        <option value="green">恵みの緑 (Grace Green)</option>
+                        <option value="dark">厳粛な闇 (Solemn Dark)</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="flex gap-1.5 pt-3">
+                <button onclick="copySettingsFromPrevSlide()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold px-2 py-2.5 rounded-lg text-[11px] flex items-center justify-center gap-1"><i data-lucide="copy-check" class="w-3.5 h-3.5 text-sky-400"></i>前と同じ書式</button>
+                <button onclick="applySettingsToAllSlides()" class="flex-1 bg-indigo-700 hover:bg-indigo-600 text-indigo-100 font-bold px-2 py-2.5 rounded-lg text-[11px] flex items-center justify-center gap-1"><i data-lucide="layers" class="w-3.5 h-3.5"></i>全スライドに適用</button>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- 項目名一覧ドロワー -->
+<div id="slideDrawer" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-black/60" onclick="closeDrawer()"></div>
+    <div class="absolute top-0 left-0 bottom-0 w-[78%] max-w-xs bg-slate-800 shadow-2xl flex flex-col">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700 shrink-0">
+            <span class="font-bold text-sm text-slate-200">スライド一覧</span>
+            <button onclick="closeDrawer()" class="p-1"><i data-lucide="x" class="w-5 h-5 text-slate-400"></i></button>
+        </div>
+        <div id="drawerList" class="flex-1 overflow-y-auto"></div>
+    </div>
+</div>
+
+<!-- 通知トースト -->
+<div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-950 text-slate-100 text-sm px-4 py-2.5 rounded-2xl shadow-2xl border border-slate-700 z-[60] max-w-[88vw] text-center leading-snug"></div>
+
+<script>
+// ==========================================================================
+// WorshipSlide AI モバイル版
+// PC版 index.html のロジック（辞書統合・ルビ/暗唱処理・プログラム解析）を移植。
+// 音声/YouTube投影/PDF出力/歌詞DB管理マネージャーはフェーズ1では非対応。
+// ==========================================================================
+
+// ----- 1. 固定辞書・プリセット（PC版と同一内容） -----
+const WORSHIP_DICTIONARY = {
+    "テーマ聖句": [
+        { title: "2026年度テーマ聖句", content: "私[わたくし]たちは見[み]えるものによらず、\n信仰[しんこう]によって歩[あゆ]んでいます。\n\nコリント人[じん]への手紙[てがみ]第二\n5章[しょう]7節[せつ]", bottomLeft: "2026年度テーマ聖句", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "narrow", verticalAlign: "center", hideFooter: false }
+    ],
+    "主の祈り": [
+        { title: "主[しゅ]の祈[いの]り", content: "天[てん]にまします我[われ]らの父[ちち]よ。\n願[ねが]わくは御名[みな]をあがめさせたまえ。\n御国[みくに]を来[き]たらせたまえ。", bottomLeft: "主の祈り 1/3", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "主[しゅ]の祈[いの]り", content: "御心[みこころ]の天[てん]になるごとく、地[ち]にもなさせたまえ。\n我[われ]らの日用[にちよう]の糧[かて]を今日[きょう]も与[あた]えたまえ。\n我[われ]らに罪[つみ]を犯[おか]す者[もの]を、\n我[われ]らが許[ゆる]すごとく、我[われ]らの罪[つみ]をも許[ゆる]したまえ。", bottomLeft: "主の祈り 2/3", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "主[しゅ]の祈[いの]り", content: "我[われ]らを試[こころ]みに合わせず、\n悪[あく]より救[すく]い出したまえ。\n国[くに]と、力[ちから]と、栄[さか]えとは、\n限[かぎ]りなく汝[なんじ]のものなればなり。\nアーメン。", bottomLeft: "主の祈り 3/3", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }
+    ],
+    "使徒信条": [
+        { title: "信仰告白 (使徒信条)", content: "我[われ]は天地[てんち]の造[つく]り主[ぬし]、全能[ぜんのう]の父[ちち]なる神[かみ]を信[しん]ず。\n我[われ]はその独[ひと]り子[ご]、我[われ]らの主[しゅ]、イエス・キリストを信[しん]ず。\n主[しゅ]は聖霊[せいれい]によりて宿[やど]り、処女[おとめ]マリアより生[う]まれ、", bottomLeft: "信仰告白", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "信仰告白 (使徒信条)", content: "ポンテオ・ピラトのもとに苦[くる]しみを受け、十字架[じゅうじか]に付けられ、\n死[し]に、葬[ほう]むられ、陰府[よみ]に下[くだ]り, \n三日[みっか]目[め]に死人[しにん]の内[うち]よりよみがえり、天[てん]に昇[のぼ]り, \n全能[ぜんのう]の父[ちち]なる神[かみ]の右[みぎ]に座[ざ]したまえり、", bottomLeft: "信仰告白", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "信仰告白 (使徒信条)", content: "かしこより来[き]たりて、生[い]ける者[もの]と死[し]にたる者[もの]とを審[さば]きたまわん。\n我[われ]は聖霊[せいれい]を信[しん]ず、\n聖[きよ]なる公同[こうどう]の教会[きょうかい]、\n聖徒[せいと]の交[まじ]わり、罪[つみ]の許[ゆる]し、\n身体[からだ]のよみがえり、\n限りなき命[いのち]を信[しん]ず. アーメン。", bottomLeft: "信仰告白", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }
+    ]
+};
+const BIBLE_PRESETS = {
+    "詩篇95篇1-2節": [
+        { title: "招[まね]きのことば", content: "さあ, 主[しゅ]に歌[うた]おう。\n救[すく]いの岩[いわ]に向[む]かって\n喜びの叫[さけ]びをあげよう。", bottomLeft: "詩篇[しへん] 95:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "招[まね]きのことば", content: "感謝[かんしゃ]の歌[うた]をもって み前に進[すす]み行き、\n賛美[さんび]の歌[うた]をもって\n主に向かって喜びの叫びをあげよう。", bottomLeft: "詩篇[しへん] 95:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }
+    ],
+    "詩篇100篇1-2節": [
+        { title: "招[まね]きのことば", content: "全地[ぜんち]よ、主[しゅ]に向[む]かって\n喜びの叫[さけ]びをあげよ。\n喜びをもって主に仕[つか]えよ。\n喜びの歌[うた]をもって み前に進[すす]み入れ。", bottomLeft: "詩篇[しへん] 100:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }
+    ]
+};
+const DEFAULT_LITURGIES = {
+    "祝祷": { splitType: 1, content: "祝祷[しゅくとう]" },
+    "献金": { splitType: 1, content: "感謝[かんしゃ]と喜びをもって\n真[まこと]のささげものを主にささげましょう。\n\n「おのおの、強[し]いられてではなく、\n自ら心[こころ]に決[き]めたとおりにしなさい。」" }
+};
+const BG_THEMES = {
+    "sky":     "linear-gradient(180deg, #5bb4e5 0%, #a1d1eb 40%, #eef6fa 100%)",
+    "sunrise": "linear-gradient(180deg, #f59e0b 0%, #f43f5e 50%, #fef2f2 100%)",
+    "green":   "linear-gradient(180deg, #15803d 0%, #a3e635 60%, #f7fee7 100%)",
+    "dark":    "linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #334155 100%)"
+};
+
+// ----- 2. 状態変数 -----
+let slides = [];
+let currentSlideIndex = 0;
+let activeBgTheme = 'sky';
+let currentTab = 'input';
+let previewHidden = false;
+let expandedPreview = false;
+
+// LocalStorage安全ラッパー（PC版と同じ設計。使えない環境ではメモリにフォールバック）
+let safeStorage = {
+    available: false, memory: {},
+    init: function () {
+        try { localStorage.setItem('__t__', '1'); localStorage.removeItem('__t__'); this.available = true; }
+        catch (e) { this.available = false; }
+    },
+    getItem: function (key) { return this.available ? localStorage.getItem(key) : (this.memory[key] || null); },
+    setItem: function (key, val) { if (this.available) { try { localStorage.setItem(key, val); } catch (e) {} } this.memory[key] = val; }
+};
+safeStorage.init();
+function saveLS(key, val) { safeStorage.setItem(key, val); }
+
+// 歌詞データベース（PCの.wslideを読み込むと自動的にここへ格納・以後自動で使われる）
+let customDictionary = JSON.parse(safeStorage.getItem('worship_custom_dict') || '{}');
+let liturgyDatabase = JSON.parse(safeStorage.getItem('worship_liturgy_db') || JSON.stringify(DEFAULT_LITURGIES));
+let dbMeta = JSON.parse(safeStorage.getItem('worship_db_meta') || '{}');
+let deletedPresetKeys = JSON.parse(safeStorage.getItem('worship_deleted_presets') || '[]');
+
+function getFullDictionary() {
+    const base = { ...WORSHIP_DICTIONARY, ...BIBLE_PRESETS };
+    deletedPresetKeys.forEach(k => { delete base[k]; });
+    return { ...base, ...customDictionary };
+}
+
+// ----- 3. ルビ・暗唱・2段組（PC版と同一ロジック） -----
+function splitOkurigana(surface, furigana) {
+    let s = surface, r = furigana, tail = "";
+    while (s.length > 0 && r.length > 0) {
+        const sL = s.slice(-1), rL = r.slice(-1);
+        if (sL === rL && /[\u3040-\u309F]/.test(sL)) { tail = sL + tail; s = s.slice(0, -1); r = r.slice(0, -1); } else break;
+    }
+    let head = "";
+    while (s.length > 0 && r.length > 0) {
+        const sF = s.charAt(0), rF = r.charAt(0);
+        if (sF === rF && /[\u3040-\u309F]/.test(sF)) { head += sF; s = s.slice(1); r = r.slice(1); } else break;
+    }
+    if (s.length > 0 && /[\u4E00-\u9FFF\u3400-\u4DBF々〇]/.test(s)) return { head, kanji: s, rubi: r, tail, success: true };
+    return { success: false };
+}
+function compileRubi(text) {
+    if (!text) return "";
+    let clean = text.replace(/\\n/g, "\n");
+    let compiled = clean.replace(/([々〇\u3400-\u9FFF][々〇\u3400-\u9FFF\u3040-\u309F\u30A0-\u30FF]*)\[([^\]\s]+)\]/g, function (m, surface, furigana) {
+        if (/[々〇\u3400-\u9FFF]/.test(surface)) {
+            const sp = splitOkurigana(surface, furigana);
+            if (sp.success) return `${sp.head}<ruby>${sp.kanji}<rt>${sp.rubi}</rt></ruby>${sp.tail}`;
+            return `<ruby>${surface}<rt>${furigana}</rt></ruby>`;
+        }
+        return m;
+    });
+    return compiled.replace(/\n/g, '<br>');
+}
+function getMaxRecallStage(text) {
+    if (!text) return 0;
+    let max = 0; const re = /(〈+)[^〈〉]+(〉+)/g; let m;
+    while ((m = re.exec(text)) !== null) { const d = Math.min(m[1].length, m[2].length); if (d > max) max = d; }
+    return max;
+}
+function compileRecallMarkup(text, currentStage) {
+    if (!text) return "";
+    const re = /(〈+)([^〈〉]+)(〉+)/g;
+    return text.replace(re, function (m, openBr, word, closeBr) {
+        const depth = Math.min(openBr.length, closeBr.length);
+        if (currentStage === undefined || currentStage === null) return `<span class="_recall-mark" data-recall-depth="${depth}">${word}</span>`;
+        const hidden = depth <= currentStage;
+        return `<span class="_recall-word" data-recall-depth="${depth}" style="${hidden ? 'opacity:0;' : ''}">${word}</span>`;
+    });
+}
+function stripRecallMarkup(text) { return text ? text.replace(/〈+([^〈〉]+)〉+/g, '$1') : ''; }
+function compileRubiWithRecall(text, currentStage) { return text ? compileRecallMarkup(compileRubi(text), currentStage) : ""; }
+function stripRubyMarkup(text) {
+    if (!text) return '';
+    const noRecall = stripRecallMarkup(text);
+    return noRecall.replace(/([^\[]+)\[([^\]]+)\]/g, '$1').replace(/\[.*?\]/g, '');
+}
+function compileTwoColumn(text, currentStage) {
+    if (!text) return { isTwoCol: false, html: "" };
+    const parts = text.split(/\r?\n\|col\|\r?\n|\|col\|/);
+    if (parts.length < 2) return { isTwoCol: false, html: compileRubiWithRecall(text, currentStage) };
+    const leftHtml = compileRubiWithRecall(parts[0].trim(), currentStage);
+    const rightHtml = compileRubiWithRecall(parts.slice(1).join('\n').trim(), currentStage);
+    return {
+        isTwoCol: true, html: `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;width:100%;align-items:start;word-break:break-all;">
+            <div style="border-right:0.25cqw solid rgba(255,255,255,0.4);padding-right:2cqw;padding-left:0.5cqw;">${leftHtml}</div>
+            <div style="padding-left:2cqw;padding-right:0.5cqw;">${rightHtml}</div></div>`
+    };
+}
+function insertRecallMarker(depth) {
+    const ta = document.getElementById('editSlideContent');
+    if (!ta) return;
+    const open = '〈'.repeat(depth), close = '〉'.repeat(depth);
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    const selected = ta.value.substring(start, end) || '単語';
+    ta.value = ta.value.substring(0, start) + open + selected + close + ta.value.substring(end);
+    ta.focus(); ta.selectionStart = start + open.length; ta.selectionEnd = start + open.length + selected.length;
+    updateSelectedSlide();
+}
+function insertTwoColumn() {
+    const ta = document.getElementById('editSlideContent');
+    if (!ta) return;
+    const start = ta.selectionStart;
+    ta.value = ta.value.substring(0, start) + "\n|col|\n" + ta.value.substring(start);
+    ta.focus(); updateSelectedSlide();
+}
+
+// ----- 4. プログラム解析（PC版のparseProgramTextを踏襲。YouTube専用処理はモバイル版では省略） -----
+function parseProgramText(text) {
+    slides = [];
+    const lines = text.split('\n');
+    const fullDict = getFullDictionary();
+    let inLiturgyLyrBlock = false, currentInlineLyricsText = "", currentInlineTitle = "賛美", lastPulledFromDB = false;
+
+    for (let i = 0; i < lines.length; i++) {
+        const cleanLine = lines[i].trim();
+        if (!cleanLine) continue;
+        const normalizedLine = cleanLine
+            .replace(/[\s　・=「」“”：:_-]/g, "")
+            .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+            .replace(/[Ａ-Ｚａ-ｚ]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+            .toUpperCase();
+
+        if (inLiturgyLyrBlock) {
+            const isNext = cleanLine.includes("聖句") || cleanLine.includes("説教") || cleanLine.includes("祈") || cleanLine.includes("招詞") || cleanLine.includes("告白") || cleanLine.includes("祝祷") || cleanLine.includes("献金");
+            if (isNext || i === lines.length - 1) {
+                if (!lastPulledFromDB) {
+                    if (i === lines.length - 1 && cleanLine && !cleanLine.startsWith("[")) currentInlineLyricsText += cleanLine + "\n";
+                    currentInlineLyricsText.split(/\n\s*\n/).forEach(block => {
+                        const trimmed = block.trim();
+                        if (!trimmed) return;
+                        slides.push({ title: currentInlineTitle, content: trimmed, bottomLeft: "", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
+                    });
+                }
+                inLiturgyLyrBlock = false; currentInlineLyricsText = "";
+                if (!isNext) continue;
+            } else {
+                if (!lastPulledFromDB && !cleanLine.startsWith("[歌詞]")) currentInlineLyricsText += lines[i] + "\n";
+                continue;
+            }
+        }
+
+        if (cleanLine.startsWith("[歌詞]")) {
+            inLiturgyLyrBlock = true;
+            if (!lastPulledFromDB && slides.length > 0) {
+                const last = slides[slides.length - 1];
+                if (last.title.includes("賛美") || last.title === "礼拝プログラム") { currentInlineTitle = last.title + " " + last.content.substring(0, 15); slides.pop(); }
+            }
+            continue;
+        }
+
+        if (normalizedLine.includes("招詞") || normalizedLine.includes("招きのことば") || normalizedLine.includes("まねき")) {
+            let matchedKey = null;
+            const nums = normalizedLine.match(/\d+/g);
+            if (nums) {
+                for (let num of nums) {
+                    for (let key in fullDict) { if (key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase().includes(num)) { matchedKey = key; break; } }
+                    if (matchedKey) break;
+                }
+            }
+            if (matchedKey) slides.push(...JSON.parse(JSON.stringify(fullDict[matchedKey])));
+            else if (normalizedLine.includes("95")) slides.push(...JSON.parse(JSON.stringify(fullDict["詩篇95篇1-2節"] || BIBLE_PRESETS["詩篇95篇1-2節"])));
+            else slides.push(...JSON.parse(JSON.stringify(fullDict["詩篇100篇1-2節"] || BIBLE_PRESETS["詩篇100篇1-2節"])));
+            lastPulledFromDB = true; continue;
+        } else if (normalizedLine.includes("主の祈り") || normalizedLine.includes("主のいのり")) {
+            if (fullDict["主の祈り"]) { slides.push(...JSON.parse(JSON.stringify(fullDict["主の祈り"]))); lastPulledFromDB = true; continue; }
+        } else if (normalizedLine.includes("2026") || (normalizedLine.includes("コリント") && normalizedLine.includes("5") && normalizedLine.includes("7"))) {
+            if (fullDict["テーマ聖句"] || fullDict["2026聖句"]) { slides.push(...JSON.parse(JSON.stringify(fullDict["テーマ聖句"] || fullDict["2026聖句"]))); lastPulledFromDB = true; continue; }
+        } else if (normalizedLine.includes("使徒信条") || normalizedLine.includes("信仰告白")) {
+            if (fullDict["使徒信条"]) { slides.push(...JSON.parse(JSON.stringify(fullDict["使徒信条"]))); lastPulledFromDB = true; continue; }
+        }
+
+        let foundLiturgy = false;
+        for (let key in liturgyDatabase) {
+            if (cleanLine.includes(key)) {
+                const lit = liturgyDatabase[key];
+                if (lit.splitType === 1) {
+                    slides.push({ title: key, content: lit.content, bottomLeft: "", fontSize: 90, titleFontSize: 100, footerFontSize: 100, padding: "narrow", verticalAlign: "center", hideFooter: false });
+                } else {
+                    lit.content.split(/\n\s*\n/).forEach(b => slides.push({ title: key, content: b.trim(), bottomLeft: "", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }));
+                }
+                foundLiturgy = true; lastPulledFromDB = true; break;
+            }
+        }
+        if (foundLiturgy) continue;
+
+        let matchedKeys = [];
+        const numbers = normalizedLine.match(/\d+/g);
+        if (numbers) {
+            for (let num of numbers) {
+                for (let key in fullDict) {
+                    const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
+                    if (normKey.includes(num)) { matchedKeys.push(key); break; }
+                }
+            }
+        }
+        if (matchedKeys.length === 0) {
+            for (let key in fullDict) {
+                const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
+                if (!normKey || normKey.length < 2 || /\d/.test(normKey)) continue;
+                if (normalizedLine.includes(normKey)) { matchedKeys.push(key); break; }
+            }
+        }
+        if (matchedKeys.length > 0) {
+            matchedKeys.forEach(key => slides.push(...JSON.parse(JSON.stringify(fullDict[key]))));
+            lastPulledFromDB = true;
+        } else {
+            let title = "礼拝プログラム", content = cleanLine;
+            if (cleanLine.includes("説教")) title = "説教[せっきょう]";
+            else if (cleanLine.includes("聖書")) { title = "聖書[せいしょ]朗読[ろうどく]"; content = cleanLine + "\n\n(朗読される聖句を表示します)"; }
+            slides.push({ title, content, bottomLeft: "", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
+            lastPulledFromDB = false;
+        }
+    }
+    if (currentSlideIndex >= slides.length) currentSlideIndex = Math.max(0, slides.length - 1);
+    autosaveSlides();
+    renderAll();
+}
+
+// ----- 5. 自動保存（モバイルはブラウザが閉じられやすいため、スライド状態も都度保存） -----
+let autosaveTimer = null;
+function autosaveSlides() {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => { saveLS('worship_mobile_slides', JSON.stringify(slides)); }, 300);
+}
+function handleProgramInputChanged(value) {
+    saveLS('worship_program_input', value);
+    clearTimeout(window._parseDebounce);
+    window._parseDebounce = setTimeout(() => parseProgramText(value), 250);
+}
+function confirmClearProgram() {
+    if (!confirm("入力内容とスライドをすべて消去します。よろしいですか？")) return;
+    document.getElementById('programInput').value = '';
+    saveLS('worship_program_input', '');
+    slides = []; currentSlideIndex = 0;
+    autosaveSlides(); renderAll();
+}
+
+// ----- 6. スライド操作 -----
+function addNewSlide() {
+    const blank = { title: "", content: "", bottomLeft: "", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalPadding: "standard", verticalAlign: "center", hideFooter: false, lineHeight: 1.8, framePadding: "small", frameBorder: "standard" };
+    slides.splice(currentSlideIndex + (slides.length ? 1 : 0), 0, blank);
+    currentSlideIndex = slides.length ? currentSlideIndex + (slides.length > 1 ? 1 : 0) : 0;
+    if (slides.length === 1) currentSlideIndex = 0;
+    autosaveSlides(); renderAll(); switchTab('edit');
+}
+function duplicateSelectedSlide() {
+    if (!slides[currentSlideIndex]) return;
+    const copy = JSON.parse(JSON.stringify(slides[currentSlideIndex]));
+    slides.splice(currentSlideIndex + 1, 0, copy);
+    currentSlideIndex += 1;
+    autosaveSlides(); renderAll();
+}
+function deleteSelectedSlide() {
+    if (!slides[currentSlideIndex]) return;
+    if (!confirm("このスライドを削除しますか？")) return;
+    slides.splice(currentSlideIndex, 1);
+    if (currentSlideIndex >= slides.length) currentSlideIndex = Math.max(0, slides.length - 1);
+    autosaveSlides(); renderAll();
+}
+function moveSlide(dir) {
+    const to = currentSlideIndex + dir;
+    if (to < 0 || to >= slides.length) return;
+    const [item] = slides.splice(currentSlideIndex, 1);
+    slides.splice(to, 0, item);
+    currentSlideIndex = to;
+    autosaveSlides(); renderAll();
+}
+function selectSlide(i) {
+    if (i < 0 || i >= slides.length) return;
+    currentSlideIndex = i;
+    renderAll();
+}
+function selectNextSlide() { if (currentSlideIndex < slides.length - 1) selectSlide(currentSlideIndex + 1); }
+function selectPrevSlide() { if (currentSlideIndex > 0) selectSlide(currentSlideIndex - 1); }
+function updateSelectedSlide() {
+    const s = slides[currentSlideIndex];
+    if (!s) return;
+    s.title = document.getElementById('editSlideTitle').value;
+    s.bottomLeft = document.getElementById('editSlideBottomLeft').value;
+    s.content = document.getElementById('editSlideContent').value;
+    autosaveSlides();
+    renderPreview();
+    renderDrawerListLight();
+}
+function copySettingsFromPrevSlide() {
+    if (currentSlideIndex === 0 || !slides[currentSlideIndex - 1]) { showToast("前のスライドがありません"); return; }
+    const prev = slides[currentSlideIndex - 1];
+    const cur = slides[currentSlideIndex];
+    ['fontSize','titleFontSize','footerFontSize','padding','verticalPadding','verticalAlign','hideFooter','textColor','lineHeight','framePadding','frameBorder'].forEach(k => { if (prev[k] !== undefined) cur[k] = prev[k]; });
+    autosaveSlides(); renderAll();
+    showToast("前のスライドの書式をコピーしました");
+}
+function applySettingsToAllSlides() {
+    const cur = slides[currentSlideIndex];
+    if (!cur) return;
+    if (!confirm("現在のスライドの書式（サイズ・色・余白等）を全スライドに適用します。よろしいですか？")) return;
+    const keys = ['fontSize','titleFontSize','footerFontSize','padding','verticalPadding','verticalAlign','hideFooter','textColor','lineHeight','framePadding','frameBorder'];
+    slides.forEach(s => { keys.forEach(k => { if (cur[k] !== undefined) s[k] = cur[k]; }); });
+    autosaveSlides(); renderAll();
+    showToast("全スライドに書式を適用しました");
+}
+
+// ----- 7. 書式セッター -----
+function currentSlide() { return slides[currentSlideIndex]; }
+function setFontSizeValue(propType, val) {
+    const s = currentSlide(); if (!s) return;
+    val = Math.max(20, Math.min(300, Math.round(val)));
+    s[propType] = val; autosaveSlides(); renderPreview(); syncFormatControls();
+}
+function nudgeFontSize(propType, delta) {
+    const s = currentSlide(); if (!s) return;
+    const cur = s[propType] !== undefined ? s[propType] : 100;
+    setFontSizeValue(propType, cur + delta);
+}
+function setTextColor(val) { const s = currentSlide(); if (!s) return; s.textColor = val; autosaveSlides(); renderPreview(); }
+function setPadding(val) { const s = currentSlide(); if (!s) return; s.padding = val; autosaveSlides(); renderAll(); }
+function setVerticalPadding(val) { const s = currentSlide(); if (!s) return; s.verticalPadding = val; autosaveSlides(); renderAll(); }
+function setVerticalAlign(val) { const s = currentSlide(); if (!s) return; s.verticalAlign = val; autosaveSlides(); renderAll(); }
+function toggleHideFooter(checked) { const s = currentSlide(); if (!s) return; s.hideFooter = checked; autosaveSlides(); renderPreview(); }
+function setFramePadding(val) { const s = currentSlide(); if (!s) return; s.framePadding = val; autosaveSlides(); renderAll(); }
+function setFrameBorder(val) { const s = currentSlide(); if (!s) return; s.frameBorder = val; autosaveSlides(); renderAll(); }
+function setLineHeight(val) { const s = currentSlide(); if (!s) return; s.lineHeight = parseFloat(val); autosaveSlides(); renderPreview(); syncFormatControls(); }
+function adjustLineHeight(delta) {
+    const s = currentSlide(); if (!s) return;
+    let v = Math.round(((s.lineHeight || 1.8) + delta) * 10) / 10;
+    v = Math.max(0.9, Math.min(2.6, v));
+    s.lineHeight = v; autosaveSlides(); renderPreview(); syncFormatControls();
+}
+function changeBgTheme(theme) { activeBgTheme = theme; saveLS('worship_bg_theme', theme); renderPreview(); }
+
+// ----- 8. プレビュー描画（PC版updatePreviewの簡略移植：画像/YouTubeスライドはフェーズ1未対応） -----
+function renderPreview() {
+    const s = slides[currentSlideIndex];
+    const pTitle = document.getElementById('previewTitle');
+    const pBody = document.getElementById('previewBody');
+    const pFooterLeft = document.getElementById('previewFooterLeft');
+    const pFooterIndex = document.getElementById('previewFooterIndex');
+    const pInner = document.getElementById('previewInnerFrame');
+    const pScreen = document.getElementById('projectorScreen');
+    const pFooterFrame = document.getElementById('previewFooterFrame');
+
+    document.getElementById('previewSlideCounter').textContent = slides.length ? `${currentSlideIndex + 1} / ${slides.length}` : '0 / 0';
+
+    if (!s) {
+        pTitle.textContent = ''; pBody.textContent = ''; pFooterLeft.textContent = ''; pFooterIndex.textContent = '';
+        pScreen.style.background = BG_THEMES[activeBgTheme] || BG_THEMES.sky;
+        return;
+    }
+
+    if (s.image) {
+        pTitle.textContent = '';
+        pBody.innerHTML = '<span class="text-white/70 text-sm">[画像スライド：モバイル版では表示のみ対応・編集不可]</span>';
+        pFooterLeft.textContent = ''; pFooterIndex.textContent = `${currentSlideIndex + 1}/${slides.length}`;
+        pScreen.style.background = '#000';
+        return;
+    }
+
+    const isDark = activeBgTheme === 'dark' || activeBgTheme === 'green';
+    const colorMap = { auto: isDark ? '#ffffff' : '#000000', white: '#ffffff', black: '#000000', yellow: '#fef08a', lightblue: '#7dd3fc', gold: '#fbbf24' };
+    const textColor = colorMap[s.textColor || 'auto'] || colorMap.auto;
+
+    const bodyMul = (s.fontSize !== undefined ? s.fontSize : 100) / 100;
+    const titleMul = (s.titleFontSize !== undefined ? s.titleFontSize : 100) / 100;
+    const footerMul = (s.footerFontSize !== undefined ? s.footerFontSize : 100) / 100;
+
+    const plainText = (s.content || '').replace(/\[.*?\]/g, '').replace(/[〈〉]/g, '');
+    let baseCqw = 5.2;
+    if (plainText.length > 120) baseCqw = 3.8; else if (plainText.length > 75) baseCqw = 4.4; else if (plainText.length > 45) baseCqw = 4.8;
+
+    pBody.style.fontSize = (baseCqw * bodyMul) + 'cqw';
+    pTitle.style.fontSize = (4.2 * titleMul) + 'cqw';
+    document.querySelectorAll('.dynamic-footer-left, .dynamic-footer-right').forEach(el => el.style.fontSize = (3.2 * footerMul) + 'cqw');
+
+    pScreen.style.background = BG_THEMES[activeBgTheme] || BG_THEMES.sky;
+    pScreen.style.color = textColor;
+
+    const hPaddingMap = { zero: 'px-[0%]', 'extra-narrow': 'px-[1.5%]', narrow: 'px-[3.5%]', standard: 'px-[7%]', wide: 'px-[13%]' };
+    const vPaddingMap = { none: 'py-[0%]', tight: 'py-[2%]', standard: 'py-[5%]', wide: 'py-[9%]' };
+    const framePadMap = { none: '0%', tiny: '1%', small: '2%', standard: '4%', large: '6%' };
+    const frameBorderMap = { none: '0px', thin: '0.5cqw', standard: '1.2cqw', thick: '2.5cqw' };
+
+    pInner.className = 'border-white border-opacity-90 rounded-[3cqw] w-full h-full flex flex-col box-border bg-white/5 backdrop-blur-[1px] shadow-inner ' +
+        (hPaddingMap[s.padding || 'standard']) + ' ' + (vPaddingMap[s.verticalPadding || 'standard']) + ' ' +
+        (s.verticalAlign === 'top' ? 'justify-start' : 'justify-between');
+    pInner.style.borderWidth = frameBorderMap[s.frameBorder || 'standard'];
+    pInner.style.borderStyle = (s.frameBorder === 'none') ? 'none' : 'solid';
+    pInner.style.color = textColor;
+    pScreen.style.padding = framePadMap[s.framePadding || 'small'];
+
+    pFooterFrame.style.display = s.hideFooter ? 'none' : 'flex';
+
+    const colResult = compileTwoColumn(s.content || '', undefined);
+    if (colResult.isTwoCol) { pBody.innerHTML = colResult.html; }
+    else { pBody.innerHTML = compileRubiWithRecall(s.content || '', undefined); }
+    pBody.style.lineHeight = s.lineHeight || 1.8;
+
+    pTitle.innerHTML = compileRubiWithRecall(s.title || '', undefined);
+    pFooterLeft.innerHTML = compileRubiWithRecall(s.bottomLeft || '', undefined);
+    pFooterIndex.textContent = `${currentSlideIndex + 1}/${slides.length}`;
+}
+
+// ----- 9. 各種UIの同期（フォームへの反映） -----
+function syncEditForm() {
+    const s = slides[currentSlideIndex];
+    document.getElementById('editSlideCounter').textContent = slides.length ? `${currentSlideIndex + 1} / ${slides.length}` : '0 / 0';
+    const emptyState = document.getElementById('editEmptyState');
+    const form = document.getElementById('editForm');
+    if (!s) { emptyState.classList.remove('hidden'); form.classList.add('hidden'); return; }
+    emptyState.classList.add('hidden'); form.classList.remove('hidden');
+    document.getElementById('editSlideTitle').value = s.title || '';
+    document.getElementById('editSlideBottomLeft').value = s.bottomLeft || '';
+    document.getElementById('editSlideContent').value = s.content || '';
+}
+
+const FONT_SIZE_ROWS = [ ['fontSize', '本文'], ['titleFontSize', '見出し'], ['footerFontSize', 'フッター'] ];
+function renderFontSizeRows() {
+    const wrap = document.getElementById('fontSizeRows');
+    wrap.innerHTML = FONT_SIZE_ROWS.map(([prop, label]) => `
+        <div>
+            <div class="flex items-center justify-between mb-1"><span class="text-[11px] text-slate-400">${label}</span><span id="fsval-${prop}" class="text-xs font-mono font-bold text-sky-300">100%</span></div>
+            <div class="flex items-center gap-2">
+                <button onclick="nudgeFontSize('${prop}',-10)" class="btn w-9 bg-rose-700 hover:bg-rose-600 rounded-lg font-bold text-sm">−</button>
+                <input type="range" min="40" max="200" step="2" oninput="setFontSizeValue('${prop}', this.value)" id="fsrange-${prop}" class="flex-1">
+                <button onclick="nudgeFontSize('${prop}',10)" class="btn w-9 bg-emerald-700 hover:bg-emerald-600 rounded-lg font-bold text-sm">＋</button>
+            </div>
+        </div>`).join('');
+}
+
+function chipButton(label, active, onclick, title) {
+    return `<button onclick="${onclick}" title="${title||''}" class="chip text-[11px] font-bold rounded-lg border transition ${active ? 'bg-sky-600 border-sky-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}">${label}</button>`;
+}
+function renderFormatChips() {
+    const s = currentSlide();
+    if (!s) return;
+    document.getElementById('hPaddingChips').innerHTML = [
+        ['zero','0'], ['extra-narrow','極狭'], ['narrow','狭'], ['standard','標'], ['wide','広']
+    ].map(([v,l]) => chipButton(l, (s.padding||'standard')===v, `setPadding('${v}')`)).join('');
+
+    document.getElementById('vPaddingChips').innerHTML = [
+        ['none','無'], ['tight','狭'], ['standard','標'], ['wide','広']
+    ].map(([v,l]) => chipButton(l, (s.verticalPadding||'standard')===v, `setVerticalPadding('${v}')`)).join('');
+
+    document.getElementById('vAlignChips').innerHTML = [
+        ['top','上詰'], ['center','中央']
+    ].map(([v,l]) => chipButton(l, (s.verticalAlign||'center')===v, `setVerticalAlign('${v}')`)).join('');
+
+    document.getElementById('framePadChips').innerHTML = [
+        ['none','0'], ['tiny','極小'], ['small','小'], ['standard','標'], ['large','大']
+    ].map(([v,l]) => chipButton(l, (s.framePadding||'small')===v, `setFramePadding('${v}')`)).join('');
+
+    document.getElementById('frameBorderChips').innerHTML = [
+        ['none','なし'], ['thin','細'], ['standard','標'], ['thick','太']
+    ].map(([v,l]) => chipButton(l, (s.frameBorder||'standard')===v, `setFrameBorder('${v}')`)).join('');
+}
+let currentFormatCat = 'fontsize';
+function switchFormatCategory(cat) {
+    currentFormatCat = cat;
+    document.querySelectorAll('.formatcatbtn').forEach(b => b.classList.toggle('active', b.getAttribute('data-cat') === cat));
+    document.querySelectorAll('.formatcat').forEach(sec => sec.classList.toggle('active', sec.getAttribute('data-cat') === cat));
+}
+function syncFormatControls() {
+    const counter = document.getElementById('formatSlideCounter');
+    if (counter) counter.textContent = slides.length ? `${currentSlideIndex + 1} / ${slides.length}` : '0 / 0';
+    const s = currentSlide();
+    if (!s) return;
+    FONT_SIZE_ROWS.forEach(([prop]) => {
+        const val = s[prop] !== undefined ? s[prop] : 100;
+        const disp = document.getElementById(`fsval-${prop}`);
+        const range = document.getElementById(`fsrange-${prop}`);
+        if (disp) disp.textContent = val + '%';
+        if (range) range.value = val;
+    });
+    document.getElementById('textColorSelect').value = s.textColor || 'auto';
+    document.getElementById('hideFooterToggle').checked = !!s.hideFooter;
+    document.getElementById('lineHeightSlider').value = s.lineHeight || 1.8;
+    document.getElementById('lineHeightDisplay').textContent = (s.lineHeight || 1.8).toFixed(1);
+    document.getElementById('bgThemeSelect').value = activeBgTheme;
+    renderFormatChips();
+    switchFormatCategory(currentFormatCat);
+}
+
+// ----- 10. ドロワー（項目名一覧） -----
+function openDrawer() { renderDrawerList(); document.getElementById('slideDrawer').classList.remove('hidden'); }
+function closeDrawer() { document.getElementById('slideDrawer').classList.add('hidden'); }
+function renderDrawerList() {
+    const wrap = document.getElementById('drawerList');
+    if (!slides.length) { wrap.innerHTML = '<p class="text-xs text-slate-500 p-4">スライドがありません</p>'; return; }
+    wrap.innerHTML = slides.map((s, i) => {
+        const label = stripRubyMarkup(s.title || s.content || '(無題)').split('\n')[0].slice(0, 24) || '(無題)';
+        const active = i === currentSlideIndex;
+        return `<button onclick="jumpToSlideFromDrawer(${i})" class="w-full text-left px-4 py-3 border-b border-slate-750 flex items-center gap-2.5 ${active ? 'bg-sky-900/40' : 'hover:bg-slate-750'}">
+            <span class="text-[11px] text-slate-500 w-5 shrink-0">${i + 1}</span>
+            <span class="text-sm ${active ? 'text-sky-300 font-bold' : 'text-slate-300'} truncate">${label}</span>
+        </button>`;
+    }).join('');
+}
+function renderDrawerListLight() { if (!document.getElementById('slideDrawer').classList.contains('hidden')) renderDrawerList(); }
+function jumpToSlideFromDrawer(i) { currentSlideIndex = i; closeDrawer(); switchTab('edit'); renderAll(); }
+
+// ----- 11. タブ・プレビュー開閉 -----
+function switchTab(name) {
+    currentTab = name;
+    document.querySelectorAll('.tabbtn').forEach(b => {
+        const on = b.getAttribute('data-tab') === name;
+        b.classList.toggle('text-sky-400', on); b.classList.toggle('border-sky-500', on);
+        b.classList.toggle('text-slate-400', !on); b.classList.toggle('border-transparent', !on);
+    });
+    document.querySelectorAll('.tabpanel').forEach(p => p.classList.toggle('hidden', p.getAttribute('data-panel') !== name));
+    if (name === 'edit') syncEditForm();
+    if (name === 'format') syncFormatControls();
+    applyPreviewVisibility();
+}
+function applyPreviewVisibility() {
+    const forced = currentTab === 'format';
+    const visible = forced || !previewHidden;
+    document.getElementById('previewWrap').classList.toggle('hidden', !visible);
+    document.getElementById('prevToggleBtn').style.visibility = forced ? 'hidden' : 'visible';
+    document.getElementById('prevToggleBtn').innerHTML = previewHidden
+        ? '<i data-lucide="eye" class="w-3.5 h-3.5"></i>プレビューを表示'
+        : '<i data-lucide="eye-off" class="w-3.5 h-3.5"></i>プレビューを隠す';
+    document.getElementById('programInput').style.height = (!visible) ? 'clamp(260px, 58vh, 480px)' : 'clamp(180px, 36vh, 320px)';
+    const editCt = document.getElementById('editSlideContent');
+    if (editCt) editCt.style.height = (!visible) ? 'clamp(220px, 44vh, 400px)' : 'clamp(120px, 22vh, 220px)';
+    if (window.lucide) lucide.createIcons();
+}
+function togglePreviewHidden() {
+    if (currentTab === 'format') return;
+    previewHidden = !previewHidden;
+    applyPreviewVisibility();
+}
+function toggleExpandPreview() {
+    // DOM要素は移動させず、#appにクラスを付け外しするだけでプレビューを拡大する。
+    // これにより、小さいプレビューと拡大表示とで文字・余白のcqw比率が完全に一致する。
+    expandedPreview = !expandedPreview;
+    document.getElementById('app').classList.toggle('preview-expanded', expandedPreview);
+    const btn = document.getElementById('expandPreviewBtn');
+    btn.innerHTML = expandedPreview
+        ? '<i data-lucide="minimize-2" class="w-3.5 h-3.5"></i>閉じる'
+        : '<i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>拡大';
+    if (window.lucide) lucide.createIcons();
+}
+
+// ----- 12. 通知トースト -----
+let toastTimer = null;
+function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.classList.remove('hidden');
+    clearTimeout(toastTimer);
+    const dur = Math.min(5500, Math.max(2200, msg.length * 90));
+    toastTimer = setTimeout(() => el.classList.add('hidden'), dur);
+}
+
+// ----- 13. .wslide 読込・書き出し -----
+function triggerWslideImport() { document.getElementById('wslideImportInput').click(); }
+function exportWslide() {
+    const data = { customDictionary, liturgyDatabase, dbMeta, deletedPresetKeys, slides, version: "1.1" };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `worship_data_${new Date().toISOString().slice(0,10)}.wslide`;
+    a.click(); URL.revokeObjectURL(url);
+    showToast("データを書き出しました");
+}
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('wslideImportInput').addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.customDictionary) customDictionary = data.customDictionary;
+                if (data.liturgyDatabase) liturgyDatabase = data.liturgyDatabase;
+                if (data.dbMeta) dbMeta = data.dbMeta;
+                if (data.deletedPresetKeys) deletedPresetKeys = data.deletedPresetKeys;
+                saveLS('worship_custom_dict', JSON.stringify(customDictionary));
+                saveLS('worship_liturgy_db', JSON.stringify(liturgyDatabase));
+                saveLS('worship_db_meta', JSON.stringify(dbMeta));
+                saveLS('worship_deleted_presets', JSON.stringify(deletedPresetKeys));
+                const dictCount = Object.keys(getFullDictionary()).length;
+                let msg = `データベースを読み込みました（登録項目 ${dictCount}件）。`;
+                let replacedSlides = false;
+                if (data.slides && data.slides.length) {
+                    if (confirm("読み込んだファイルにはスライドも含まれています。現在編集中のスライドを、このファイルのスライドに置き換えますか？\n（「キャンセル」を押すとデータベースだけ読み込み、今のスライドはそのまま残ります）")) {
+                        slides = data.slides; currentSlideIndex = 0; autosaveSlides();
+                        msg = `データベース（${dictCount}件）とスライドを読み込みました。`;
+                        replacedSlides = true;
+                    }
+                }
+                if (!replacedSlides) {
+                    // スライドを置き換えなかった場合、今すでに入力されているプログラム文を
+                    // 新しく読み込んだ辞書で再解析し、自動マッチの結果をその場で反映する
+                    const curText = document.getElementById('programInput').value;
+                    if (curText.trim()) {
+                        parseProgramText(curText);
+                        msg += "（現在の入力内容を新しいデータベースで再解析しました）";
+                    } else {
+                        renderAll();
+                    }
+                } else {
+                    renderAll();
+                }
+                showToast(msg);
+            } catch (err) {
+                showToast("読み込みに失敗しました。ファイル形式をご確認ください。");
+            }
+            event.target.value = "";
+        };
+        reader.readAsText(file);
+    });
+});
+
+// ----- 14. 一括再描画 -----
+function renderAll() {
+    renderPreview();
+    syncEditForm();
+    syncFormatControls();
+    renderDrawerListLight();
+    if (window.lucide) lucide.createIcons();
+}
+
+// ----- 15. プレビューエリアの左右スワイプでスライド送り -----
+function setupPreviewSwipe() {
+    const el = document.getElementById('previewWrap');
+    if (!el) return;
+    let sx = null, sy = null;
+    el.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length !== 1) return;
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+    }, { passive: true });
+    el.addEventListener('touchend', (e) => {
+        if (sx === null) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - sx, dy = t.clientY - sy;
+        sx = null;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+            if (dx < 0) selectNextSlide(); else selectPrevSlide();
+        }
+    }, { passive: true });
+}
+
+// ----- 16. 初期化 -----
+window.addEventListener('load', () => {
+    lucide.createIcons();
+    renderFontSizeRows();
+    switchFormatCategory('fontsize');
+    setupPreviewSwipe();
+    activeBgTheme = safeStorage.getItem('worship_bg_theme') || 'sky';
+
+    const savedProgram = safeStorage.getItem('worship_program_input') || '';
+    document.getElementById('programInput').value = savedProgram;
+
+    const savedSlides = safeStorage.getItem('worship_mobile_slides');
+    if (savedSlides) {
+        try { slides = JSON.parse(savedSlides) || []; } catch (e) { slides = []; }
+    }
+    if ((!slides || slides.length === 0) && savedProgram) {
+        parseProgramText(savedProgram);
+    } else {
+        renderAll();
+    }
+
+    switchTab('input');
+});
+</script>
+</body>
+</html>
