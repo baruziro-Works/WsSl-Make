@@ -40,8 +40,8 @@
     #app.preview-expanded .tabbar,
     #app.preview-expanded main { display: none !important; }
     #app.preview-expanded #previewSection { flex: 1 1 auto; display: flex; flex-direction: column; border-bottom: none; }
-    #app.preview-expanded #previewWrap { flex: 1 1 auto; display: flex !important; align-items: center; justify-content: center; padding: 16px; }
-    #app.preview-expanded #projectorScreen { max-width: min(94vw, 130vh) !important; }
+    #app.preview-expanded #previewWrap { flex: 1 1 auto; min-height: 0; display: flex !important; align-items: center; justify-content: center; padding: 12px; }
+    #app.preview-expanded #projectorScreen { max-width: min(92vw, 105vh) !important; }
     .dynamic-title { font-size: 4.2cqw; margin-bottom: 1cqw; color: inherit; }
     .dynamic-body { font-size: 5.2cqw; line-height: 1.8; word-wrap: break-word; word-break: break-all; line-break: strict; color: inherit; text-align: left !important; display: inline-block; }
     .dynamic-footer-left, .dynamic-footer-right { font-size: 3.2cqw; color: inherit; }
@@ -95,7 +95,7 @@
 
     <!-- プレビュー（折りたたみ可能・縮小可能） -->
     <div id="previewSection" class="shrink-0 border-b border-slate-700 bg-slate-950/40">
-        <div class="flex items-center justify-between px-3 pt-2 pb-1 gap-2">
+        <div class="flex items-center justify-between px-3 pt-2 pb-1 gap-2 shrink-0 relative z-10">
             <span class="text-[11px] font-bold text-slate-400 shrink-0">プレビュー <span id="previewSlideCounter" class="text-slate-600">0 / 0</span></span>
             <div class="flex items-center gap-2.5 flex-wrap justify-end">
                 <button id="previewSizeBtn" onclick="togglePreviewSize()" class="text-[11px] text-slate-400 flex items-center gap-1"><i data-lucide="minimize-2" class="w-3.5 h-3.5"></i>小さく</button>
@@ -369,11 +369,28 @@ const WORSHIP_DICTIONARY = {
 };
 const BIBLE_PRESETS = {
     "詩篇95篇1-2節": [
-        { title: "招[まね]きのことば", content: "さあ, 主[しゅ]に歌[うた]おう。\n救[すく]いの岩[いわ]に向[む]かって\n喜びの叫[さけ]びをあげよう。", bottomLeft: "詩篇[しへん] 95:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-        { title: "招[まね]きのことば", content: "感謝[かんしゃ]の歌[うた]をもって み前に進[すす]み行き、\n賛美[さんび]の歌[うた]をもって\n主に向かって喜びの叫びをあげよう。", bottomLeft: "詩篇[しへん] 95:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }
+        { title: "招[まね]きのことば", content: "さあ主[しゅ]に向[む]かって喜[よろこ]び歌[うた]おう。私[わたくし]たちの救[すく]いの岩[いわ]に向[む]かって喜[よろこ]び叫[さけ]ぼう。", bottomLeft: "詩篇[しへん] 95:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "招[まね]きのことば", content: "感謝[かんしゃ]をもって御前[みまえ]に進[すす]み賛美[さんび]をもって主[しゅ]に喜[よろこ]び叫[さけ]ぼう。", bottomLeft: "詩篇[しへん] 95:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
     ],
     "詩篇100篇1-2節": [
-        { title: "招[まね]きのことば", content: "全地[ぜんち]よ、主[しゅ]に向[む]かって\n喜びの叫[さけ]びをあげよ。\n喜びをもって主に仕[つか]えよ。\n喜びの歌[うた]をもって み前に進[すす]み入れ。", bottomLeft: "詩篇[しへん] 100:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }
+        { title: "招[まね]きのことば", content: "全[ぜん]地[ち]よ主[しゅ]に向[む]かって喜[よろこ]びの声[こえ]をあげよ。", bottomLeft: "詩篇[しへん] 100:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "招[まね]きのことば", content: "喜[よろこ]びをもって主[しゅ]に仕[つか]えよ。喜[よろこ]び歌[うた]いつつ御前[みまえ]に来[き]たれ。", bottomLeft: "詩篇[しへん] 100:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+    ],
+    "詩篇103篇1-2節": [
+        { title: "招[まね]きのことば", content: "わがたましいよ主[しゅ]をほめたたえよ。私[わたくし]のうちにあるすべてのものよ聖[せい]なる御名[みな]をほめたたえよ。", bottomLeft: "詩篇[しへん] 103:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "招[まね]きのことば", content: "わがたましいよ主[しゅ]をほめたたえよ。主[しゅ]が良[よ]くしてくださったことを何一[なにひと]つ忘[わす]れるな。", bottomLeft: "詩篇[しへん] 103:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+    ],
+    "詩篇105篇1-2節": [
+        { title: "招[まね]きのことば", content: "主[しゅ]に感謝[かんしゃ]し御名[みな]を呼[よ]び求[もと]めよ。そのみわざを諸国[しょこく]の民[たみ]の間[あいだ]に知[し]らせよ。", bottomLeft: "詩篇[しへん] 105:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "招[まね]きのことば", content: "主[しゅ]に歌[うた]え。主[しゅ]にほめ歌[うた]を歌[うた]え。そのすべての奇[くす]しいみわざを語[かた]れ。", bottomLeft: "詩篇[しへん] 105:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+    ],
+    "詩篇117篇1-2節": [
+        { title: "招[まね]きのことば", content: "すべての国々[くにぐに]よ主[しゅ]をほめたたえよ。すべての国民[くにたみ]よ主[しゅ]をほめ歌[うた]え。", bottomLeft: "詩篇[しへん] 117:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "招[まね]きのことば", content: "主[しゅ]の恵[めぐ]みは私[わたくし]たちに大[おお]きい。主[しゅ]のまことはとこしえまで。ハレルヤ。", bottomLeft: "詩篇[しへん] 117:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+    ],
+    "詩篇150篇1-2節": [
+        { title: "招[まね]きのことば", content: "ハレルヤ。神[かみ]の聖[せい]所[じょ]で神[かみ]をほめたたえよ。御[み]力[ちから]の大空[おおぞら]で神[かみ]をほめたたえよ。", bottomLeft: "詩篇[しへん] 150:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "招[まね]きのことば", content: "その大能[たいおう]のみわざのゆえに神[かみ]をほめたたえよ。その比類[ひるい]なき偉大[いだい]さにふさわしく神[かみ]をほめたたえよ。", bottomLeft: "詩篇[しへん] 150:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
     ]
 };
 const DEFAULT_LITURGIES = {
@@ -561,14 +578,15 @@ function parseProgramText(text) {
                     if (matchedKey) break;
                 }
             }
-            if (matchedKey) slides.push(...JSON.parse(JSON.stringify(fullDict[matchedKey])));
-            else if (normalizedLine.includes("95")) slides.push(...JSON.parse(JSON.stringify(fullDict["詩篇95篇1-2節"] || BIBLE_PRESETS["詩篇95篇1-2節"])));
-            else slides.push(...JSON.parse(JSON.stringify(fullDict["詩篇100篇1-2節"] || BIBLE_PRESETS["詩篇100篇1-2節"])));
+            if (matchedKey) {
+                slides.push(...JSON.parse(JSON.stringify(fullDict[matchedKey])));
+            } else {
+                // 聖書箇所が指定されていない場合は、特定の聖句を自動で補わず、タイトルだけのスライドにする
+                slides.push({ title: "招[まね]きのことば", content: "", bottomLeft: "", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
+            }
             lastPulledFromDB = true; continue;
         } else if (normalizedLine.includes("主の祈り") || normalizedLine.includes("主のいのり")) {
             if (fullDict["主の祈り"]) { slides.push(...JSON.parse(JSON.stringify(fullDict["主の祈り"]))); lastPulledFromDB = true; continue; }
-        } else if (normalizedLine.includes("2026") || (normalizedLine.includes("コリント") && normalizedLine.includes("5") && normalizedLine.includes("7"))) {
-            if (fullDict["テーマ聖句"] || fullDict["2026聖句"]) { slides.push(...JSON.parse(JSON.stringify(fullDict["テーマ聖句"] || fullDict["2026聖句"]))); lastPulledFromDB = true; continue; }
         } else if (normalizedLine.includes("使徒信条") || normalizedLine.includes("信仰告白")) {
             if (fullDict["使徒信条"]) { slides.push(...JSON.parse(JSON.stringify(fullDict["使徒信条"]))); lastPulledFromDB = true; continue; }
         }
@@ -607,9 +625,12 @@ function parseProgramText(text) {
             matchedKeys.forEach(key => slides.push(...JSON.parse(JSON.stringify(fullDict[key]))));
             lastPulledFromDB = true;
         } else {
-            let title = "礼拝プログラム", content = cleanLine;
-            if (cleanLine.includes("説教")) title = "説教[せっきょう]";
-            else if (cleanLine.includes("聖書")) { title = "聖書[せいしょ]朗読[ろうどく]"; content = cleanLine + "\n\n(朗読される聖句を表示します)"; }
+            // データベースに一致しない行は、先頭の空白（半角/全角）より前を「見出し」、
+            // 空白より後ろを「本文」とする（空白が無ければ全体を見出しのみとし、本文は空にする）
+            const sp = cleanLine.search(/\s/);
+            let title, content;
+            if (sp === -1) { title = cleanLine; content = ""; }
+            else { title = cleanLine.slice(0, sp); content = cleanLine.slice(sp).trim(); }
             slides.push({ title, content, bottomLeft: "", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
             lastPulledFromDB = false;
         }
@@ -1150,6 +1171,9 @@ function setupPreviewSwipe() {
         sx = null;
         if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.4) {
             if (dx < 0) selectNextSlide(); else selectPrevSlide();
+        } else if (expandedPreview && Math.abs(dx) < 12 && Math.abs(dy) < 12) {
+            // 拡大表示中は、軽くタップするだけでも閉じられるようにする（ボタンが押しにくい場合の保険）
+            toggleExpandPreview();
         }
     }, { passive: true });
 }
