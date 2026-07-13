@@ -64,7 +64,9 @@
     input[type=range] { height: 34px; }
 
     /* テキスト入力中はタブバーをコンパクト表示にして縦幅を節約する */
-    .tabbar.compact .tabbtn i { display: none; }
+    /* 注意：Lucideアイコンは<i data-lucide>を実際には<svg>要素へ置き換えるため、
+       CSSでは<i>ではなく<svg>を対象にする必要がある */
+    .tabbar.compact .tabbtn svg { display: none; }
     .tabbar.compact .tabbtn { padding-top: 6px; padding-bottom: 6px; }
     .tabbar .tabbtn { transition: padding .15s ease; }
     .formatcat { display: none; }
@@ -357,41 +359,23 @@ const WORSHIP_DICTIONARY = {
         { title: "2026年度テーマ聖句", content: "私[わたくし]たちは見[み]えるものによらず、\n信仰[しんこう]によって歩[あゆ]んでいます。\n\nコリント人[じん]への手紙[てがみ]第二\n5章[しょう]7節[せつ]", bottomLeft: "2026年度テーマ聖句", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "narrow", verticalAlign: "center", hideFooter: false }
     ],
     "主の祈り": [
-        { title: "主[しゅ]の祈[いの]り", content: "天[てん]にまします我[われ]らの父[ちち]よ。\n願[ねが]わくは御名[みな]をあがめさせたまえ。\n御国[みくに]を来[き]たらせたまえ。", bottomLeft: "主の祈り 1/3", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-        { title: "主[しゅ]の祈[いの]り", content: "御心[みこころ]の天[てん]になるごとく、地[ち]にもなさせたまえ。\n我[われ]らの日用[にちよう]の糧[かて]を今日[きょう]も与[あた]えたまえ。\n我[われ]らに罪[つみ]を犯[おか]す者[もの]を、\n我[われ]らが許[ゆる]すごとく、我[われ]らの罪[つみ]をも許[ゆる]したまえ。", bottomLeft: "主の祈り 2/3", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-        { title: "主[しゅ]の祈[いの]り", content: "我[われ]らを試[こころ]みに合わせず、\n悪[あく]より救[すく]い出したまえ。\n国[くに]と、力[ちから]と、栄[さか]えとは、\n限[かぎ]りなく汝[なんじ]のものなればなり。\nアーメン。", bottomLeft: "主の祈り 3/3", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }
+        { title: "", content: "天[てん]にまします我[われ]らの父[ちち]よ。\n願[ねが]わくは御名[みな]をあがめさせたまえ。\n御国[みくに]を来[き]たらせたまえ。", bottomLeft: "主の祈り", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "", content: "御心[みこころ]の天[てん]になるごとく、地[ち]にもなさせたまえ。\n我[われ]らの日用[にちよう]の糧[かて]を今日[きょう]も与[あた]えたまえ。\n我[われ]らに罪[つみ]を犯[おか]す者[もの]を、\n我[われ]らが許[ゆる]すごとく、我[われ]らの罪[つみ]をも許[ゆる]したまえ。", bottomLeft: "主の祈り", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "", content: "我[われ]らを試[こころ]みに合わせず、\n悪[あく]より救[すく]い出したまえ。\n国[くに]と、力[ちから]と、栄[さか]えとは、\n限[かぎ]りなく汝[なんじ]のものなればなり。\nアーメン。", bottomLeft: "主の祈り", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }
     ],
     "使徒信条": [
-        { title: "信仰告白 (使徒信条)", content: "我[われ]は天地[てんち]の造[つく]り主[ぬし]、全能[ぜんのう]の父[ちち]なる神[かみ]を信[しん]ず。\n我[われ]はその独[ひと]り子[ご]、我[われ]らの主[しゅ]、イエス・キリストを信[しん]ず。\n主[しゅ]は聖霊[せいれい]によりて宿[やど]り、処女[おとめ]マリアより生[う]まれ、", bottomLeft: "信仰告白", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-        { title: "信仰告白 (使徒信条)", content: "ポンテオ・ピラトのもとに苦[くる]しみを受け、十字架[じゅうじか]に付けられ、\n死[し]に、葬[ほう]むられ、陰府[よみ]に下[くだ]り, \n三日[みっか]目[め]に死人[しにん]の内[うち]よりよみがえり、天[てん]に昇[のぼ]り, \n全能[ぜんのう]の父[ちち]なる神[かみ]の右[みぎ]に座[ざ]したまえり、", bottomLeft: "信仰告白", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-        { title: "信仰告白 (使徒信条)", content: "かしこより来[き]たりて、生[い]ける者[もの]と死[し]にたる者[もの]とを審[さば]きたまわん。\n我[われ]は聖霊[せいれい]を信[しん]ず、\n聖[きよ]なる公同[こうどう]の教会[きょうかい]、\n聖徒[せいと]の交[まじ]わり、罪[つみ]の許[ゆる]し、\n身体[からだ]のよみがえり、\n限りなき命[いのち]を信[しん]ず. アーメン。", bottomLeft: "信仰告白", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }
+        { title: "", content: "我[われ]は天地[てんち]の造[つく]り主[ぬし]、全能[ぜんのう]の父[ちち]なる神[かみ]を信[しん]ず。\n我[われ]はその独[ひと]り子[ご]、我[われ]らの主[しゅ]、イエス・キリストを信[しん]ず。\n主[しゅ]は聖霊[せいれい]によりて宿[やど]り、処女[おとめ]マリアより生[う]まれ、", bottomLeft: "使徒信条", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "", content: "ポンテオ・ピラトのもとに苦[くる]しみを受け、十字架[じゅうじか]に付けられ、\n死[し]に、葬[ほう]むられ、陰府[よみ]に下[くだ]り, \n三日[みっか]目[め]に死人[しにん]の内[うち]よりよみがえり、天[てん]に昇[のぼ]り, \n全能[ぜんのう]の父[ちち]なる神[かみ]の右[みぎ]に座[ざ]したまえり、", bottomLeft: "使徒信条", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
+        { title: "", content: "かしこより来[き]たりて、生[い]ける者[もの]と死[し]にたる者[もの]とを審[さば]きたまわん。\n我[われ]は聖霊[せいれい]を信[しん]ず、\n聖[きよ]なる公同[こうどう]の教会[きょうかい]、\n聖徒[せいと]の交[まじ]わり、罪[つみ]の許[ゆる]し、\n身体[からだ]のよみがえり、\n限りなき命[いのち]を信[しん]ず. アーメン。", bottomLeft: "使徒信条", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }
     ]
 };
 const BIBLE_PRESETS = {
-    "詩篇95篇1-2節": [
-        { title: "招[まね]きのことば", content: "さあ主[しゅ]に向[む]かって喜[よろこ]び歌[うた]おう。私[わたくし]たちの救[すく]いの岩[いわ]に向[む]かって喜[よろこ]び叫[さけ]ぼう。", bottomLeft: "詩篇[しへん] 95:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-        { title: "招[まね]きのことば", content: "感謝[かんしゃ]をもって御前[みまえ]に進[すす]み賛美[さんび]をもって主[しゅ]に喜[よろこ]び叫[さけ]ぼう。", bottomLeft: "詩篇[しへん] 95:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-    ],
-    "詩篇100篇1-2節": [
-        { title: "招[まね]きのことば", content: "全[ぜん]地[ち]よ主[しゅ]に向[む]かって喜[よろこ]びの声[こえ]をあげよ。", bottomLeft: "詩篇[しへん] 100:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-        { title: "招[まね]きのことば", content: "喜[よろこ]びをもって主[しゅ]に仕[つか]えよ。喜[よろこ]び歌[うた]いつつ御前[みまえ]に来[き]たれ。", bottomLeft: "詩篇[しへん] 100:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-    ],
-    "詩篇103篇1-2節": [
-        { title: "招[まね]きのことば", content: "わがたましいよ主[しゅ]をほめたたえよ。私[わたくし]のうちにあるすべてのものよ聖[せい]なる御名[みな]をほめたたえよ。", bottomLeft: "詩篇[しへん] 103:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-        { title: "招[まね]きのことば", content: "わがたましいよ主[しゅ]をほめたたえよ。主[しゅ]が良[よ]くしてくださったことを何一[なにひと]つ忘[わす]れるな。", bottomLeft: "詩篇[しへん] 103:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-    ],
-    "詩篇105篇1-2節": [
-        { title: "招[まね]きのことば", content: "主[しゅ]に感謝[かんしゃ]し御名[みな]を呼[よ]び求[もと]めよ。そのみわざを諸国[しょこく]の民[たみ]の間[あいだ]に知[し]らせよ。", bottomLeft: "詩篇[しへん] 105:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-        { title: "招[まね]きのことば", content: "主[しゅ]に歌[うた]え。主[しゅ]にほめ歌[うた]を歌[うた]え。そのすべての奇[くす]しいみわざを語[かた]れ。", bottomLeft: "詩篇[しへん] 105:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-    ],
-    "詩篇117篇1-2節": [
-        { title: "招[まね]きのことば", content: "すべての国々[くにぐに]よ主[しゅ]をほめたたえよ。すべての国民[くにたみ]よ主[しゅ]をほめ歌[うた]え。", bottomLeft: "詩篇[しへん] 117:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-        { title: "招[まね]きのことば", content: "主[しゅ]の恵[めぐ]みは私[わたくし]たちに大[おお]きい。主[しゅ]のまことはとこしえまで。ハレルヤ。", bottomLeft: "詩篇[しへん] 117:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-    ],
-    "詩篇150篇1-2節": [
-        { title: "招[まね]きのことば", content: "ハレルヤ。神[かみ]の聖[せい]所[じょ]で神[かみ]をほめたたえよ。御[み]力[ちから]の大空[おおぞら]で神[かみ]をほめたたえよ。", bottomLeft: "詩篇[しへん] 150:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-        { title: "招[まね]きのことば", content: "その大能[たいおう]のみわざのゆえに神[かみ]をほめたたえよ。その比類[ひるい]なき偉大[いだい]さにふさわしく神[かみ]をほめたたえよ。", bottomLeft: "詩篇[しへん] 150:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false },
-    ]
+    "詩篇95篇1-2節": [{ title: "招[まね]きのことば", content: "さあ主[しゅ]に向[む]かって喜[よろこ]び歌[うた]おう。私[わたくし]たちの救[すく]いの岩[いわ]に向[む]かって喜[よろこ]び叫[さけ]ぼう。\n感謝[かんしゃ]をもって御前[みまえ]に進[すす]み賛美[さんび]をもって主[しゅ]に喜[よろこ]び叫[さけ]ぼう。", bottomLeft: "詩篇[しへん] 95:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }],
+    "詩篇100篇1-2節": [{ title: "招[まね]きのことば", content: "全[ぜん]地[ち]よ主[しゅ]に向[む]かって喜[よろこ]びの声[こえ]をあげよ。\n喜[よろこ]びをもって主[しゅ]に仕[つか]えよ。喜[よろこ]び歌[うた]いつつ御前[みまえ]に来[き]たれ。", bottomLeft: "詩篇[しへん] 100:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }],
+    "詩篇103篇1-2節": [{ title: "招[まね]きのことば", content: "わがたましいよ主[しゅ]をほめたたえよ。私[わたくし]のうちにあるすべてのものよ聖[せい]なる御名[みな]をほめたたえよ。\nわがたましいよ主[しゅ]をほめたたえよ。主[しゅ]が良[よ]くしてくださったことを何一[なにひと]つ忘[わす]れるな。", bottomLeft: "詩篇[しへん] 103:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }],
+    "詩篇105篇1-2節": [{ title: "招[まね]きのことば", content: "主[しゅ]に感謝[かんしゃ]し御名[みな]を呼[よ]び求[もと]めよ。そのみわざを諸国[しょこく]の民[たみ]の間[あいだ]に知[し]らせよ。\n主[しゅ]に歌[うた]え。主[しゅ]にほめ歌[うた]を歌[うた]え。そのすべての奇[くす]しいみわざを語[かた]れ。", bottomLeft: "詩篇[しへん] 105:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }],
+    "詩篇117篇1-2節": [{ title: "招[まね]きのことば", content: "すべての国々[くにぐに]よ主[しゅ]をほめたたえよ。すべての国民[くにたみ]よ主[しゅ]をほめ歌[うた]え。\n主[しゅ]の恵[めぐ]みは私[わたくし]たちに大[おお]きい。主[しゅ]のまことはとこしえまで。ハレルヤ。", bottomLeft: "詩篇[しへん] 117:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }],
+    "詩篇150篇1-2節": [{ title: "招[まね]きのことば", content: "ハレルヤ。神[かみ]の聖[せい]所[じょ]で神[かみ]をほめたたえよ。御[み]力[ちから]の大空[おおぞら]で神[かみ]をほめたたえよ。\nその大能[たいおう]のみわざのゆえに神[かみ]をほめたたえよ。その比類[ひるい]なき偉大[いだい]さにふさわしく神[かみ]をほめたたえよ。", bottomLeft: "詩篇[しへん] 150:1-2", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }]
 };
 const DEFAULT_LITURGIES = {
     "祝祷": { splitType: 1, content: "祝祷[しゅくとう]" },
@@ -523,7 +507,12 @@ function insertTwoColumn() {
 // 部分一致（"5"が"95"に含まれる、等）による誤マッチを防ぐため、番号マッチングは必ずこれで
 // 取り出した数字と「完全一致」するかどうかで判定する。
 function digitGroupsOfKey(key) {
-    const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
+    // 「1-2節」のようなハイフンでつながれた検証範囲は、そのまま数字を取り出すと
+    // （ハイフンを除去した結果）「12」という独立した数字に化けてしまい、無関係な
+    // 入力（例:「12」を含む行）が全ての招詞プリセットに誤マッチする原因になる。
+    // そのため、範囲表記はまず丸ごと除去してから数字を取り出す。
+    let normKey = key.replace(/\d+-\d+/g, "");
+    normKey = normKey.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
     return normKey.match(/\d+/g) || [];
 }
 function parseProgramText(text) {
@@ -608,8 +597,12 @@ function parseProgramText(text) {
         let matchedKeys = [];
         const numbers = normalizedLine.match(/\d+/g);
         if (numbers) {
+            // 「招詞」等のキーワードを伴わない、ただの数字だけの一致は、組み込みの聖句プリセット
+            // （詩篇◯◯篇など）には適用しない。章番号がたまたま本文中の無関係な数字
+            // （例：「設立100周年」の「100」）と一致して誤発動するのを防ぐため。
+            // ここでの数字一致は、ユーザー自身が登録した讃美歌番号（customDictionary）のみを対象とする。
             for (let num of numbers) {
-                for (let key in fullDict) {
+                for (let key in customDictionary) {
                     if (digitGroupsOfKey(key).includes(num)) { matchedKeys.push(key); break; }
                 }
             }
@@ -1018,6 +1011,7 @@ function switchTab(name) {
     document.querySelectorAll('.tabpanel').forEach(p => p.classList.toggle('hidden', p.getAttribute('data-panel') !== name));
     if (name === 'edit') syncEditForm();
     if (name === 'format') syncFormatControls();
+    updateTabbarCompact();
     applyPreviewVisibility();
 }
 function applyPreviewVisibility() {
@@ -1140,19 +1134,23 @@ function renderAll() {
     if (window.lucide) lucide.createIcons();
 }
 
-// ----- 15. テキスト入力中はタブバーをコンパクト化（アイコンを消して縦幅を節約） -----
+// ----- 15. テキスト入力中／書式タブ選択中はタブバーをコンパクト化（アイコンを消して縦幅を節約） -----
 function isTextField(el) {
     if (!el) return false;
     if (el.tagName === 'TEXTAREA') return true;
     if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === undefined)) return true;
     return false;
 }
-document.addEventListener('focusin', (e) => {
-    if (isTextField(e.target)) document.querySelector('.tabbar').classList.add('compact');
-});
-document.addEventListener('focusout', (e) => {
-    if (!isTextField(e.target)) return;
-    setTimeout(() => { if (!isTextField(document.activeElement)) document.querySelector('.tabbar').classList.remove('compact'); }, 60);
+function updateTabbarCompact() {
+    const bar = document.querySelector('.tabbar');
+    if (!bar) return;
+    const compact = currentTab === 'format' || isTextField(document.activeElement);
+    bar.classList.toggle('compact', compact);
+}
+document.addEventListener('focusin', () => updateTabbarCompact());
+document.addEventListener('focusout', () => {
+    // フォーカスが別の要素へ移る間に一瞬nullになることがあるため、少し待ってから判定する
+    setTimeout(updateTabbarCompact, 60);
 });
 
 // ----- 16. プレビューエリアの左右スワイプでスライド送り -----
