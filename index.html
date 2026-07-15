@@ -778,6 +778,9 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
+                    <button onclick="confirmResetToStandardDatabase()" class="bg-rose-950/60 hover:bg-rose-900 text-rose-300 font-bold px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1 border border-rose-800/60" title="現在の歌詞データベースをすべて削除し、教会の標準データベース（16項目）に戻します">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 標準データベースにリセット
+                    </button>
                     <button onclick="triggerDatabaseCsvImport()" class="bg-slate-700 hover:bg-slate-650 text-slate-200 font-bold px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1" title="CSVファイルからデータベースへ新規追加・上書き更新（マージ）します">
                         <i data-lucide="upload" class="w-3.5 h-3.5"></i> CSVインポート(マージ)
                     </button>
@@ -819,7 +822,7 @@
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="block text-[10px] text-slate-400 font-bold mb-1">プログラム検索キーワード（登録キー）</label>
-                                    <input type="text" id="dbSongKey" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-orange-500" placeholder="例：LP78、テーマ聖句">
+                                    <input type="text" id="dbSongKey" oninput="handleDbSongKeyInput(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-orange-500" placeholder="例：LP78、テーマ聖句">
                                     <p class="text-[9px] text-amber-400/90 mt-0.5">★ 礼拝プログラム入力欄で、この文字列（または含まれる数字）を検出すると、このデータが自動でスライド化されます。</p>
                                 </div>
                                 <div>
@@ -905,19 +908,19 @@
             "使徒信条": [
                 { 
                     title: "信仰告白 (使徒信条)", 
-                    content: "我[われ]は天地[てんち]の造[つく]り主[ぬし]、全能[ぜんのう]の父[ちち]なる神[かみ]を信[しん]ず。\n我[われ]はその独[ひと]り子[ご]、我[われ]らの主[しゅ]、イエス・キリストを信[しん]ず。\n主[しゅ]は聖霊[せい霊]によりて宿[ядо]り、処女[おとめ]マリアより生[う]まれ、", 
+                    content: "我[われ]は天地[てんち]の造[つく]り主[ぬし]、全能[ぜんのう]の父[ちち]なる神[かみ]を信[しん]ず。\n我[われ]はその独[ひと]り子[ご]、我[われ]らの主[しゅ]、イエス・キリストを信[しん]ず。\n主[しゅ]は聖霊[せいれい]によりて宿[やど]り、処女[おとめ]マリアより生[う]まれ、", 
                     bottomLeft: "信仰告白",
                     fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false
                 },
                 { 
                     title: "信仰告白 (使徒信条)", 
-                    content: "ポンテオ・ピラトのもとに苦[くる]しみを受け、十字架[じゅうじか]に付けられ、\n死[し]に、葬[ほう]むられ、陰府[よみ]に下[くだ]り, \n三日[みっか]目[め]に死人[しにん]の内[うち]よりよみがえり、天[てん]に昇[のぼ]り, \n全能[ぜんのう]の父[ち力]なる神[かみ]の右[みぎ]に座[ざ]したまえり、", 
+                    content: "ポンテオ・ピラトのもとに苦[くる]しみを受け、十字架[じゅうじか]に付けられ、\n死[し]に、葬[ほう]むられ、陰府[よみ]に下[くだ]り, \n三日[みっか]目[め]に死人[しにん]の内[うち]よりよみがえり、天[てん]に昇[のぼ]り, \n全能[ぜんのう]の父[ちち]なる神[かみ]の右[みぎ]に座[ざ]したまえり、", 
                     bottomLeft: "信仰告白",
                     fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false
                 },
                 { 
                     title: "信仰告白 (使徒信条)", 
-                    content: "かしこより来[き]たりて、生[い]ける者[もの]と死[し]にたる者[もの]とを審[さば]きたまわん。\n我[われ]は聖霊[せい霊]を信[しん]ず、\n聖[きよ]なる公同[こうどう]の教会[きょうかい]、\n聖徒[せいと]の交[まじ]わり、罪[つみ]の許[ゆる]し、\n身体[からだ]のよみがえり、\n限りなき命[いのち]を信[しん]ず. アーメン。", 
+                    content: "かしこより来[き]たりて、生[い]ける者[もの]と死[し]にたる者[もの]とを審[さば]きたまわん。\n我[われ]は聖霊[せいれい]を信[しん]ず、\n聖[きよ]なる公同[こうどう]の教会[きょうかい]、\n聖徒[せいと]の交[まじ]わり、罪[つみ]の許[ゆる]し、\n身体[からだ]のよみがえり、\n限りなき命[いのち]を信[しん]ず. アーメン。", 
                     bottomLeft: "信仰告白",
                     fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false
                 }
@@ -938,6 +941,111 @@
             "祝祷": { splitType: 1, content: "祝祷[しゅくとう]" },
             "献金": { splitType: 1, content: "感謝[かんしゃ]と喜びをもって\n真[まこと]のささげものを主にささげましょう。\n\n「おのおの、強[し]いられてではなく、\n自ら心[こころ]に決[き]めたとおりにしなさい。」" }
         };
+
+        // ==========================================
+        // 歌詞データベース「基本データベース案0713」CSV由来の標準セット
+        // 2026-07-14 のチャットで提供されたCSV（検索ワード,曲名･項目名,画面上部,左下,本文）を
+        // そのまま反映したもの。ページ初回読込時に、従来のカスタム登録・プリセット上書きを
+        // すべて削除したうえで、この内容で歌詞データベースを初期化する（applyStandardLyricsSeedIfNeeded参照）。
+        // ==========================================
+        const STANDARD_LYRICS_SEED_20260714 = {
+            "詩篇95篇1-2節": {
+                        "title": "詩篇95篇1-2節",
+                        "heading": "招詞",
+                        "bottomLeftTemplate": "詩篇[しへん] 95:1-2",
+                        "content": "招詞[しょうし]　詩篇[しへん] 95:1-2\n\nさあ主[しゅ]に向[む]かって喜[よろこ]び歌[うた]おう。私[わたくし]たちの救[すく]いの岩[いわ]に向[む]かって喜[よろこ]び叫[さけ]ぼう。 感謝[かんしゃ]をもって御前[みまえ]に進[すす]み賛美[さんび]をもって主[しゅ]に喜[よろこ]び叫[さけ]ぼう。"
+            },
+            "詩篇100篇1-2節": {
+                        "title": "詩篇100篇1-2節",
+                        "heading": "招詞",
+                        "bottomLeftTemplate": "詩篇[しへん] 100:1-2",
+                        "content": "招詞[しょうし]　詩篇[しへん] 100:1-2\n\n全[ぜん]地[ち]よ主[しゅ]に向[む]かって喜[よろこ]びの声[こえ]をあげよ。 喜[よろこ]びをもって主[しゅ]に仕[つか]えよ。喜[よろこ]び歌[うた]いつつ御前[みまえ]に来[き]たれ。"
+            },
+            "詩篇103篇1-2節": {
+                        "title": "詩篇103篇1-2節",
+                        "heading": "招詞",
+                        "bottomLeftTemplate": "詩篇[しへん] 103:1-2",
+                        "content": "招詞[しょうし]　詩篇[しへん] 103:1-2\n\nわがたましいよ主[しゅ]をほめたたえよ。私[わたくし]のうちにあるすべてのものよ聖[せい]なる御名[みな]をほめたたえよ。 わがたましいよ主[しゅ]をほめたたえよ。主[しゅ]が良[よ]くしてくださったことを何一[なにひと]つ忘[わす]れるな。"
+            },
+            "詩篇105篇1-2節": {
+                        "title": "詩篇105篇1-2節",
+                        "heading": "招詞",
+                        "bottomLeftTemplate": "詩篇[しへん] 105:1-2",
+                        "content": "招詞[しょうし]　詩篇[しへん] 105:1-2\n\n主[しゅ]に感謝[かんしゃ]し御名[みな]を呼[よ]び求[もと]めよ。そのみわざを諸国[しょこく]の民[たみ]の間[あいだ]に知[し]らせよ。 主[しゅ]に歌[うた]え。主[しゅ]にほめ歌[うた]を歌[うた]え。そのすべての奇[くす]しいみわざを語[かた]れ。"
+            },
+            "詩篇117篇1-2節": {
+                        "title": "詩篇117篇1-2節",
+                        "heading": "招詞",
+                        "bottomLeftTemplate": "詩篇[しへん] 117:1-2",
+                        "content": "招詞[しょうし]　詩篇[しへん] 117:1-2\n\nすべての国々[くにぐに]よ主[しゅ]をほめたたえよ。すべての国民[くにたみ]よ主[しゅ]をほめ歌[うた]え。 主[しゅ]の恵[めぐ]みは私[わたくし]たちに大[おお]きい。主[しゅ]のまことはとこしえまで。ハレルヤ。"
+            },
+            "詩篇150篇1-2節": {
+                        "title": "詩篇150篇1-2節",
+                        "heading": "招詞",
+                        "bottomLeftTemplate": "詩篇[しへん] 150:1-2",
+                        "content": "招詞[しょうし]　詩篇[しへん] 150:1-2\n\nハレルヤ。神[かみ]の聖[せい]所[じょ]で神[かみ]をほめたたえよ。御[み]力[ちから]の大空[おおぞら]で神[かみ]をほめたたえよ。 その大能[たいおう]のみわざのゆえに神[かみ]をほめたたえよ。その比類[ひるい]なき偉大[いだい]さにふさわしく神[かみ]をほめたたえよ。"
+            },
+            "テーマ聖句": {
+                        "title": "テーマ聖句",
+                        "heading": "2026年度テーマ聖句",
+                        "bottomLeftTemplate": "",
+                        "content": "私[わたくし]たちは見[み]えるものによらず、\n信仰[しんこう]によって歩[あゆ]んでいます。\nコリント人[じん]への手紙[てがみ]第二\n5章[しょう]7節[せつ]"
+            },
+            "主の祈り": {
+                        "title": "主の祈り",
+                        "heading": "祈[いの]り",
+                        "bottomLeftTemplate": "主[しゅ]の祈[いの]り",
+                        "content": "祈り　主[しゅ]の祈[いの]り\n\n天[てん]にまします我[われ]らの父[ちち]よ。\n願[ねが]わくは御名[みな]をあがめさせたまえ。\n御国[みくに]を来[き]たらせたまえ。\n\n御心[みこころ]の天[てん]になるごとく、地[ち]にもなさせたまえ。\n我[われ]らの日用[にちよう]の糧[かて]を今日[きょう]も与[あた]えたまえ。\n我[われ]らに罪[つみ]を犯[おか]す者[もの]を、\n我[われ]らが許[ゆる]すごとく、我[われ]らの罪[つみ]をも許[ゆる]したまえ。\n\n我[われ]らを試[こころ]みに合わせず、\n悪[あく]より救[すく]い出したまえ。\n国[くに]と、力[ちから]と、栄[さか]えとは、\n限[かぎ]りなく汝[なんじ]のものなればなり。\nアーメン。"
+            },
+            "使徒信条": {
+                        "title": "使徒信条",
+                        "heading": "信仰告白[しんこうこくはく]",
+                        "bottomLeftTemplate": "使徒信条[しとしんじょう]",
+                        "content": "信仰告白　使徒信条[しとしんじょう]\n\n使徒信条[しとしんじょう]我[われ]は天地[てんち]の造[つく]り主[ぬし]、全能[ぜんのう]の父[ちち]なる神[かみ]を信[しん]ず。\n我[われ]はその独[ひと]り子[ご]、我[われ]らの主[しゅ]、イエス・キリストを信[しん]ず。\n主[しゅ]は聖霊[せいれい]によりて宿[やど]り、処女[おとめ]マリアより生[う]まれ、\n\nポンテオ・ピラトのもとに苦[くる]しみを受け、十字架[じゅうじか]に付けられ、\n死[し]に、葬[ほう]むられ、陰府[よみ]に下[くだ]り, \n三日[みっか]目[め]に死人[しにん]の内[うち]よりよみがえり、天[てん]に昇[のぼ]り, \n全能[ぜんのう]の父[ちち]なる神[かみ]の右[みぎ]に座[ざ]したまえり、\n\nかしこより来[き]たりて、生[い]ける者[もの]と死[し]にたる者[もの]とを審[さば]きたまわん。\n我[われ]は聖霊[せいれい]を信[しん]ず、\n聖[せい]なる公同[こうどう]の教会[きょうかい]、\n聖徒[せいと]の交[まじ]わり、罪[つみ]の許[ゆる]し、\n身体[からだ]のよみがえり、\n永久[とこしえ]の命[いのち]を信[しん]ず. アーメン。"
+            },
+            "日本同盟基督教団信仰告白": {
+                        "title": "日本同盟基督教団信仰告白",
+                        "heading": "信仰告白[しんこうこくはく]",
+                        "bottomLeftTemplate": "日本[にほん]同盟[どうめい]基督教団[きりすときょうだん]信仰[しんこう]告白[こくはく]",
+                        "content": "信仰告白　日本[にほん]同盟[どうめい]基督教団[きりすときょうだん]信仰[しんこう]告白[こくはく]\n\n「我[われ]らは、聖書[せいしょ]において啓示[けいじ]され、使徒[しと]信[しん]条[じょう]をはじめとする公同[こうどう]の信[しん]条[じょう]が言[い]い表[あらわ]し、宗教[しゅうきょう]改革[かいかく]において鮮明[せんめい]にされた信仰[しんこう]にもとづいて、次[つぎ]のように信[しん]じ、告白[こくはく]する。\n\n１．旧[きゅう]、新約[しんやく]聖書[せいしょ]６６巻[かん]は、すべて神[かみ]の霊[れい]感[かん]によって記[しる]された誤[あやま]りのない神[かみ]のことばであって、神[かみ]の救[すく]いのご計画[けいかく]の全体[ぜんたい]を啓示[けいじ]し、救[すく]い主[ぬし]イエス・キリストを顕[あらわ]し、救[すく]いの道[みち]を教[おし]える信仰[しんこう]と生活[せいかつ]の唯一[ゆいいつ]絶対[ぜったい]の規範[きはん]である。\n\n２．神[かみ]は霊[れい]であり、唯一[ゆいいつ]全能[ぜんのう]の主[しゅ]である。神[かみ]は永遠[えいえん]に父[ちち]と子[こ]と聖霊[せいれい]の三位一体[さんみいったい]であって、その本質[ほんしつ]において同一[どういつ]であり、力[ちから]と栄光[えいこう]とを等[ひと]しくする。\n\n３．神[かみ]は、永遠[えいえん]の御[み]旨[むね]により万物[ばんぶつ]を創造[そうぞう]し、造[つく]られたものを摂理[せつり]によって統[す]べ治[おさ]める絶対[ぜったい]主[しゅ]権[けん]者[しゃ]である。\n\n４．はじめに人[ひと]は、神[かみ]のかたちに創造[そうぞう]され、神[かみ]と正[ただ]しい関係[かんけい]にあった。しかしサタンに誘惑[ゆうわく]され、神[かみ]のいましめに背[そむ]いて罪[つみ]を犯[おか]し、神[かみ]のかたちを毀損[きそん]した。それゆえ、すべての人[ひと]は生[う]まれながら罪[つみ]と悲惨[ひさん]、死[し]の支配[しはい]のもとにあり、思[おも]いと言葉[ことば]と行為[こうい]とにおいて罪[つみ]ある者[もの]である。自分[じぶん]の努力[どりょく]によっては神[かみ]に立[た]ち返[かえ]ることができず、永遠[えいえん]の滅[ほろ]びに至る[いたる]。\n\n５．主[しゅ]イエス・キリストは、父[ちち]なる神[かみ]のひとり子[こ]であって、聖霊[せいれい]によって宿[やど]り、処女[おとめ]マリヤより生[う]まれたまことの神[かみ]にしてまことの人[ひと]である。主[しゅ]は我[われ]らに代[か]わって十字架[じゅうじか]にかかり、死[し]んで葬[ほうむ]られ、よみにくだり、三日[みっか]目[め]に死者[ししゃ]の中[なか]からよみがえり、我[われ]らのために贖[あがな]いを成し遂[なしと]げ、我[われ]らに永遠[えいえん]のいのちを与[あた]えた。主[しゅ]は天[てん]に昇[のぼ]り、父[ちち]なる神[かみ]の右[みぎ]の座[ざ]に着[つ]き、大[だい]祭司[さいし]として今[いま]も我[われ]らのために執[と]り成[な]している。\n\n６．聖霊[せいれい]は、我[われ]らに父[ちち]と子[こ]を示[しめ]し、罪[つみ]を認[みと]めさせ、赦[ゆる]しを与[あた]え、我[われ]らを新[あら]たに生[う]まれさせ、神[かみ]の子[こ]とする。人[ひと]は、自分[じぶん]の行[おこな]いによらず神[かみ]の恵[めぐ]みにより、主[しゅ]イエス・キリストの贖[あがな]いのゆえに、キリストを信[しん]じるただその信仰[しんこう]によって義[ぎ]と認[みと]められる。さらに、聖霊[せいれい]は、助[たす]け主[ぬし]、慰[なぐさ]め主[ぬし]として我[われ]らの中[なか]に住[す]み、我[われ]らを主[しゅ]と同[おな]じかたちに造[つく]りかえ、我[われ]らに御[み]旨[むね]を行[おこな]わせ、世[よ]の終[お]わりまで我[われ]らとともにあり、我[われ]らをキリストとの共同[きょうどう]相続[そうぞく]人[にん]とする。\n\n７．教会[きょうかい]は、聖霊[せいれい]によって召[め]し出[だ]された神[かみ]の民[たみ]、主[しゅ]イエス・キリストをかしらとするからだであり、羊[ひつじ]飼[か]いなる主[しゅ]の御声[みこえ]にのみ聴[き]き従[したが]う羊[ひつじ]の群[む]れである。地上[ちじょう]の教会[きょうかい]は、再[ふたた]び来[こ]られる主[しゅ]を待[ま]ち望[のぞ]みつつ礼拝[れいはい]し、みことばを説教[せっきょう]し、聖[せい]礼典[れいてん]を執行[しっこう]し、戒規[かいき]を重[おも]んじ、聖霊[せいれい]の力[ちから]によって全[ぜん]世界[せかい]に福音[ふくいん]を宣[の]べ伝[つた]える。\n\n８．終[お]わりの時[とき]に、主[しゅ]イエス・キリストはみからだをもって再臨[さいりん]し、生[い]ける者[もの]と死[し]せる者[もの]とを審判[しんぱん]する。主[しゅ]は我[われ]らをからだをもってよみがえらせ、我[われ]らをご自身[じしん]の栄光[えいこう]と同じ[おなじ]姿[すがた]に造[つく]りかえ、万物[ばんぶつ]を新[あら]たにし、神[かみ]の国[くに]を完成[かんせい]する。アーメン。｣"
+            },
+            "献金": {
+                        "title": "献金",
+                        "heading": "献金",
+                        "bottomLeftTemplate": "",
+                        "content": "献金[けんきん]\n\n感謝[かんしゃ]と喜びをもって\n真[まこと]のささげものを主にささげましょう。\n「おのおの、強[し]いられてではなく、\n自ら心[こころ]に決[き]めたとおりにしなさい。」"
+            },
+            "祈りと献金の時": {
+                        "title": "祈りと献金の時",
+                        "heading": "祈[いの]りと献金[けんきん]の時[とき]",
+                        "bottomLeftTemplate": "",
+                        "content": "祈[いの]りと献金[けんきん]の時[とき]\n「　　」のために、祈り、捧げる時を持ちます。\n\n「　　」のために\n祈祷課題"
+            },
+            "祈りと交わりの時": {
+                        "title": "祈りと交わりの時",
+                        "heading": "祈[いの]りと交[まじ]わり",
+                        "bottomLeftTemplate": "",
+                        "content": "祈[いの]りと交[まじ]わり\n\n2〜3人で集まって、近況と、祈り課題を分かち合い\n互いのため、教会のために祈りましょう"
+            },
+            "祝祷": {
+                        "title": "",
+                        "heading": "",
+                        "bottomLeftTemplate": "祝祷[しゅくとう]",
+                        "content": "（牧師[ぼくし]）\n主[しゅ]イエスを信[しん]じなさい。そうすれば、あなたもあなたの家族[かぞく]も救[すく]われます。\n（会衆かいしゅう）\n私[わたくし]と私[わたくし]の家[いえ]は、私[わたくし]たちの神[かみ]、主[しゅ]に仕[つか]え、主[しゅ]の御[み]声[こえ]に聞[きき]従[したが]います。\n\n祝祷[しゅくとう]"
+            },
+            "報告": {
+                        "title": "報告",
+                        "heading": "報告",
+                        "bottomLeftTemplate": "",
+                        "content": "報告"
+            },
+            "ぶんでん": {
+                        "title": "ぶんでん",
+                        "heading": "ぶんでん",
+                        "bottomLeftTemplate": "",
+                        "content": "URL"
+            }
+};
 
         const BG_THEMES = {
             "sky": "linear-gradient(180deg, #5bb4e5 0%, #a1d1eb 40%, #eef6fa 100%)",
@@ -997,16 +1105,104 @@
         // プリセット（WORSHIP_DICTIONARY / BIBLE_PRESETS）のうち、ユーザーが「削除」した登録キー一覧
         let deletedPresetKeys = JSON.parse(safeStorage.getItem('worship_deleted_presets') || '[]');
 
+        // 歌詞データベースを「基本データベース案0713」CSVの内容で完全に置き換える（1回限りのマイグレーション）。
+        // SEED_VERSIONが一致する場合は何もしない＝これ以降にユーザーが行った編集・追加・削除は保持される。
+        // SEED_VERSIONを変えない限り、既存のカスタム登録・プリセット上書きが再度消えることはない。
+        // 本文を空行区切りでスライドに分割する共通ヘルパー。
+        // 2枚以上に分かれる場合、左下の表示に自動で「現在ページ/全ページ」を追加する
+        // （例：「使徒信条[しとしんじょう]」が3枚に分かれる場合 → 「使徒信条[しとしんじょう] 1/3」「...2/3」「...3/3」）。
+        // 1枚だけの場合はページ番号を付けない（従来の「テーマ聖句」等と同じ挙動）。
+        // 歌詞データベース管理マネージャー・CSVインポート・初期データ投入のすべてで、この関数を共通で使う。
+        function buildSlidesFromTemplate(content, heading, bottomLeftTemplate) {
+            const blocks = (content || "").split(/\n\s*\n/);
+            const trimmedBlocks = blocks.map(b => b.trim()).filter(b => b);
+            const total = trimmedBlocks.length;
+            return trimmedBlocks.map((trimmed, i) => {
+                let bottomLeft = bottomLeftTemplate || "";
+                if (total > 1) {
+                    bottomLeft = bottomLeft ? `${bottomLeft} ${i + 1}/${total}` : `${i + 1}/${total}`;
+                }
+                return { title: heading, content: trimmed, bottomLeft, fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false };
+            });
+        }
+
+        // 歌詞データベースを「基本データベース」の内容で完全に置き換える実処理（共通部分）。
+        // ・ページ読込時の自動マイグレーション（applyStandardLyricsSeedIfNeeded）
+        // ・歌詞データベース管理マネージャーの「標準データベースにリセット」ボタン（resetToStandardDatabase）
+        // の両方から呼ばれる。
+        function performStandardLyricsReset() {
+            customDictionary = {};
+            dbMeta = {};
+            deletedPresetKeys = [];
+
+            for (const key in STANDARD_LYRICS_SEED_20260714) {
+                const entry = STANDARD_LYRICS_SEED_20260714[key];
+                customDictionary[key] = buildSlidesFromTemplate(entry.content, entry.heading, entry.bottomLeftTemplate);
+                dbMeta[key] = { title: entry.title, heading: entry.heading, bottomLeftTemplate: entry.bottomLeftTemplate };
+            }
+
+            safeSaveToLocalStorage('worship_custom_dict', JSON.stringify(customDictionary));
+            safeSaveToLocalStorage('worship_db_meta', JSON.stringify(dbMeta));
+            safeSaveToLocalStorage('worship_deleted_presets', JSON.stringify(deletedPresetKeys));
+            safeSaveToLocalStorage('worship_db_seed_version', CURRENT_SEED_VERSION);
+        }
+
+        const CURRENT_SEED_VERSION = "20260714-v3"; // v3：主の祈り・日本同盟基督教団信仰告白のページ構成を修正
+
+        // ページ読込時の自動マイグレーション：バージョンが古い場合のみ実行する
+        function applyStandardLyricsSeedIfNeeded() {
+            const savedVersion = safeStorage.getItem('worship_db_seed_version');
+            if (savedVersion === CURRENT_SEED_VERSION) return;
+            performStandardLyricsReset();
+        }
+
+        // 歌詞データベース管理マネージャーの「標準データベースにリセット」ボタン用：
+        // バージョンに関係なく、いつでも手動で標準データベースへ戻せるようにする。
+        // .wslideの復元等で古いデータが復活してしまった場合の回復手段としても使える。
+        // 「標準データベースにリセット」ボタンの確認ダイアログ
+        function confirmResetToStandardDatabase() {
+            const ok = confirm("現在の歌詞データベースの内容（プリセットも含むすべて）を削除し、教会の標準データベース（16項目）に戻します。\n\nこの操作は元に戻せません。よろしいですか？");
+            if (ok) resetToStandardDatabase();
+        }
+
+        function resetToStandardDatabase() {
+            performStandardLyricsReset();
+            filterDatabaseList();
+            const emptyState = document.getElementById('dbEditEmptyState');
+            if (emptyState) emptyState.classList.remove('hidden');
+            const editPanel = document.getElementById('dbEditPanel');
+            if (editPanel) editPanel.classList.add('hidden');
+            selectedDBSongKey = null;
+            showNotification("歌詞データベースを標準データベースにリセットしました。");
+            const programInputEl = document.getElementById('programInput');
+            if (programInputEl) parseProgramText(programInputEl.value);
+        }
+        applyStandardLyricsSeedIfNeeded();
+
         // 曲名・登録キーから簡易的にタイトルを推測するフォールバック（メタ情報が無い古いデータ・プリセット用）
         function deriveTitleFromKey(key) {
             const stripped = key.replace(/LP\d+|教会福音讃美歌\d+|讃美歌\d+|賛美歌\d+/gi, "").trim();
             return stripped || key;
         }
 
-        // 歌詞データベース：プリセット（WORSHIP_DICTIONARY・BIBLE_PRESETS）とカスタム登録を統合した辞書を返す
+        // 典礼データベース（liturgyDatabase）のエントリ（{splitType, content}形式）を、
+        // 歌詞データベースと同じ「スライド配列」形式に変換する（getFullDictionaryへの統合用）
+        function liturgyEntryToSlides(key, entry) {
+            if (!entry) return [];
+            if (entry.splitType === 1) {
+                return [{ title: key, content: entry.content, bottomLeft: "", fontSize: 90, titleFontSize: 100, footerFontSize: 100, padding: "narrow", verticalAlign: "center", hideFooter: false }];
+            }
+            const blocks = (entry.content || "").split(/\n\s*\n/);
+            return blocks.map(b => ({ title: key, content: b.trim(), bottomLeft: "", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false }));
+        }
+
+        // 歌詞データベース：プリセット（WORSHIP_DICTIONARY・BIBLE_PRESETS・典礼データベース）とカスタム登録を統合した辞書を返す
         // customDictionary の同名キーが常にプリセットを上書きするため、プリセットの編集・削除もこの仕組みで実現する
         function getFullDictionary() {
             const base = { ...WORSHIP_DICTIONARY, ...BIBLE_PRESETS };
+            for (let key in liturgyDatabase) {
+                if (!base.hasOwnProperty(key)) base[key] = liturgyEntryToSlides(key, liturgyDatabase[key]);
+            }
             deletedPresetKeys.forEach(k => { delete base[k]; });
             return { ...base, ...customDictionary };
         }
@@ -1322,16 +1518,10 @@
                         const bottomLeftTemplate = (cols[3] || "").trim();
                         const contentRaw = (cols[4] || "").trim();
 
-                        const blocks = contentRaw ? contentRaw.split(/\n\s*\n/) : [];
-                        const parsedSlides = [];
-                        blocks.forEach(block => {
-                            const trimmed = block.trim();
-                            if (!trimmed) return;
-                            parsedSlides.push({ title: heading, content: trimmed, bottomLeft: bottomLeftTemplate, fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
-                        });
+                        const parsedSlides = buildSlidesFromTemplate(contentRaw, heading, bottomLeftTemplate);
                         // 歌詞本文が空欄の行も、意図的な「空の登録」として取り込む（skipせず保存する）
 
-                        const existedBefore = customDictionary.hasOwnProperty(key) || !!WORSHIP_DICTIONARY[key] || !!BIBLE_PRESETS[key];
+                        const existedBefore = customDictionary.hasOwnProperty(key) || !!WORSHIP_DICTIONARY[key] || !!BIBLE_PRESETS[key] || !!liturgyDatabase[key];
                         customDictionary[key] = parsedSlides;
                         dbMeta[key] = { title: title, heading: heading, bottomLeftTemplate: bottomLeftTemplate };
                         const dIdx = deletedPresetKeys.indexOf(key);
@@ -1394,6 +1584,7 @@
                     const savedProgram = safeStorage.getItem('worship_saved_sample_program') || "";
                     slides = savedSlides;
                     currentSlideIndex = 0;
+                    slides.forEach(s => { s.recallStage = 0; });
                     const programInputEl = document.getElementById('programInput');
                     if (programInputEl) programInputEl.value = savedProgram;
                     renderSlideList(); updatePreview();
@@ -1831,6 +2022,27 @@
         }
 
         // --- 【大改造・表記ゆれ完全救済・複数讃美歌同時自動展開】プログラムパース処理 ---
+        // プログラム入力の行（正規化済み）に、数字を含まない登録キーがどれだけ含まれているかを調べ、
+        // 最も長く（＝最も具体的に）一致するキーを返す。
+        // 例：「祈りと献金の時」という行に対し「献金」と「祈りと献金の時」の両方が登録されている場合、
+        // 短い「献金」ではなく、より具体的な「祈りと献金の時」を優先して返す。
+        // 「信仰告白」等の一般的な語で判定している固定辞書チェックが、より具体的な登録項目
+        // （例：日本同盟基督教団信仰告白）を誤って上書きしてしまう問題を防ぐためのもの。
+        function findBestTextKeyMatch(normalizedLine, fullDict) {
+            let bestKey = null;
+            let bestLen = 0;
+            for (let key in fullDict) {
+                const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
+                if (!normKey || normKey.length < 2) continue;
+                if (/\d/.test(normKey)) continue; // 数字を含むキーは数字一致ロジックが別途担当
+                if (normalizedLine.includes(normKey) && normKey.length > bestLen) {
+                    bestKey = key;
+                    bestLen = normKey.length;
+                }
+            }
+            return bestKey;
+        }
+
         function parseProgramText(text) {
             slides = [];
             const lines = text.split('\n');
@@ -1915,47 +2127,42 @@
                     lastPulledFromDB = true; continue;
                 }
                 else if (normalizedLine.includes("主の祈り") || normalizedLine.includes("主のいのり")) {
-                    if (fullDict["主の祈り"]) {
-                        slides.push(...JSON.parse(JSON.stringify(fullDict["主の祈り"])));
+                    // 「主の祈り」に一致する行でも、より具体的な登録キーがあればそちらを優先する
+                    const bestKey = findBestTextKeyMatch(normalizedLine, fullDict);
+                    const targetKey = (bestKey && fullDict[bestKey]) ? bestKey : "主の祈り";
+                    if (fullDict[targetKey]) {
+                        slides.push(...JSON.parse(JSON.stringify(fullDict[targetKey])));
                         lastPulledFromDB = true; continue;
                     }
                     // 登録キーがリネーム・削除されている場合はここで止めず、下の汎用検索に処理を続ける
                 }
                 else if (normalizedLine.includes("2026") || (normalizedLine.includes("コリント") && normalizedLine.includes("5") && normalizedLine.includes("7"))) {
-                    if (fullDict["テーマ聖句"] || fullDict["2026聖句"]) {
-                        slides.push(...JSON.parse(JSON.stringify(fullDict["テーマ聖句"] || fullDict["2026聖句"])));
+                    const bestKey = findBestTextKeyMatch(normalizedLine, fullDict);
+                    const fallbackKey = fullDict["テーマ聖句"] ? "テーマ聖句" : "2026聖句";
+                    const targetKey = (bestKey && fullDict[bestKey]) ? bestKey : fallbackKey;
+                    if (fullDict[targetKey]) {
+                        slides.push(...JSON.parse(JSON.stringify(fullDict[targetKey])));
                         lastPulledFromDB = true; continue;
                     }
                     // 登録キーがリネーム・削除されている場合はここで止めず、下の汎用検索に処理を続ける
                 }
                 else if (normalizedLine.includes("使徒信条") || normalizedLine.includes("信仰告白")) {
-                    if (fullDict["使徒信条"]) {
-                        slides.push(...JSON.parse(JSON.stringify(fullDict["使徒信条"])));
+                    // 「信仰告白」は他の項目名にも含まれ得る一般的な語のため、まずより具体的な
+                    // 登録キー（例：日本同盟基督教団信仰告白）が無いか調べ、あればそちらを優先する
+                    const bestKey = findBestTextKeyMatch(normalizedLine, fullDict);
+                    const targetKey = (bestKey && fullDict[bestKey]) ? bestKey : "使徒信条";
+                    if (fullDict[targetKey]) {
+                        slides.push(...JSON.parse(JSON.stringify(fullDict[targetKey])));
                         lastPulledFromDB = true; continue;
                     }
                     // 登録キーがリネーム・削除されている場合はここで止めず、下の汎用検索に処理を続ける
                 }
 
-                // 次に典礼項目データベースをチェック
-                let foundLiturgy = false;
-                for (let key in liturgyDatabase) {
-                    if (cleanLine.includes(key)) {
-                        const lit = liturgyDatabase[key];
-                        if (lit.splitType === 1) {
-                            slides.push({ title: key, content: lit.content, bottomLeft: "", fontSize: 90, titleFontSize: 100, footerFontSize: 100, padding: "narrow", verticalAlign: "center", hideFooter: false });
-                        } else {
-                            const blocks = lit.content.split(/\n\s*\n/);
-                            blocks.forEach(b => {
-                                slides.push({ title: key, content: b.trim(), bottomLeft: "", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
-                            });
-                        }
-                        foundLiturgy = true;
-                        lastPulledFromDB = true;
-                        break;
-                    }
-                }
-                if (foundLiturgy) continue;
-                else if (extractYoutubeId(cleanLine)) {
+                // 典礼項目（祝祷・献金等）は liturgyDatabase を getFullDictionary() に統合済みのため、
+                // 下の歌詞データベース汎用照合（fullDict）が自動的に処理する。
+                // ※ 以前はここで liturgyDatabase を直接参照する専用ループがあったが、
+                //   歌詞データベース管理マネージャーでの編集（customDictionaryへの上書き）が反映されない不具合の原因になっていたため撤去した。
+                if (extractYoutubeId(cleanLine)) {
                     const ytId = extractYoutubeId(cleanLine);
                     slides.push({ title: "動画上映 (YouTube)", content: cleanLine, youtubeId: ytId, bottomLeft: "YouTube動画", fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
                     lastPulledFromDB = true;
@@ -1983,14 +2190,10 @@
                     }
 
                     // 数字でマッチしなかった場合、数字を含まない登録キー（例：テーマ聖句、主の祈り等）との
-                    // 文字列一致もチェックする（プログラム入力の行に登録キーの文字列が含まれていれば一致とみなす）
+                    // 文字列一致もチェックする（最も長く具体的に一致するキーを優先する）
                     if (matchedKeys.length === 0) {
-                        for (let key in fullDict) {
-                            const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
-                            if (!normKey || normKey.length < 2) continue;
-                            if (/\d/.test(normKey)) continue; // 数字を含むキーは上の数字一致ロジックが担当
-                            if (normalizedLine.includes(normKey)) { matchedKeys.push(key); break; }
-                        }
+                        const bestKey = findBestTextKeyMatch(normalizedLine, fullDict);
+                        if (bestKey) matchedKeys.push(bestKey);
                     }
 
                     if (matchedKeys.length > 0) {
@@ -3265,10 +3468,17 @@
                 const textToSearch = `${key} ${songTitle}`.toUpperCase();
                 if (!query || textToSearch.includes(query)) {
                     hasResults = true;
-                    const isBasePreset = !!WORSHIP_DICTIONARY[key] || !!BIBLE_PRESETS[key];
+                    const isBasePreset = !!WORSHIP_DICTIONARY[key] || !!BIBLE_PRESETS[key] || !!liturgyDatabase[key];
+                    const isLiturgy = !!liturgyDatabase[key];
                     const isOverridden = customDictionary.hasOwnProperty(key);
                     let badgeColor, badgeText;
-                    if (isBasePreset && isOverridden) {
+                    if (isLiturgy && isOverridden) {
+                        badgeColor = "bg-violet-500/10 text-violet-400 border-violet-500/20";
+                        badgeText = "典礼(編集済)";
+                    } else if (isLiturgy) {
+                        badgeColor = "bg-violet-500/10 text-violet-400 border-violet-500/20";
+                        badgeText = "典礼";
+                    } else if (isBasePreset && isOverridden) {
                         badgeColor = "bg-sky-500/10 text-sky-400 border-sky-500/20";
                         badgeText = "プリセット(編集済)";
                     } else if (isBasePreset) {
@@ -3292,6 +3502,19 @@
                 }
             }
             if (!hasResults) listEl.innerHTML = `<p class="text-center text-slate-500 text-xs py-4">該当曲がありません。</p>`;
+        }
+
+        // 「新規作成」モードで登録キーを手入力しているとき、それが既存の登録キーと完全一致したら
+        // 自動でその項目を読み込む（本文が空の新規ひな形のまま気づかず上書き保存してしまう事故を防ぐ）。
+        // ※ 既存項目を選択してリネーム中（selectedDBSongKeyが設定済み）の場合は発動しない。
+        function handleDbSongKeyInput(typedKey) {
+            if (selectedDBSongKey !== null) return;
+            const key = typedKey.trim();
+            if (!key) return;
+            const fullDict = getFullDictionary();
+            if (fullDict.hasOwnProperty(key)) {
+                selectDBSong(key);
+            }
         }
 
         // データベースの曲選択
@@ -3326,7 +3549,7 @@
             if (songContentInput) songContentInput.value = songSlides.map(s => s.content).join("\n\n");
 
             // プリセット由来かどうかで注意書き・復元ボタンを切り替え
-            const isBasePreset = !!WORSHIP_DICTIONARY[key] || !!BIBLE_PRESETS[key];
+            const isBasePreset = !!WORSHIP_DICTIONARY[key] || !!BIBLE_PRESETS[key] || !!liturgyDatabase[key];
             const isOverridden = customDictionary.hasOwnProperty(key);
             const presetNotice = document.getElementById('dbPresetNotice');
             const revertBtn = document.getElementById('dbRevertBtn');
@@ -3380,18 +3603,13 @@
             if (!rawKey) return showNotification("プログラム検索キーワード（登録キー）は必須です。");
 
             // 歌詞本文が空欄でも保存可能（「該当キーを検出したら何も表示しない」という空の登録もできるようにする）
-            const blocks = content ? content.split(/\n\s*\n/) : [];
-            const parsedSlides = [];
-            blocks.forEach(block => {
-                const trimmed = block.trim();
-                if (!trimmed) return;
-                parsedSlides.push({ title: heading, content: trimmed, bottomLeft: bottomLeftTemplate, fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false });
-            });
+            // 2枚以上のスライドに分かれる場合は、左下に自動でページ番号（1/3等）が付与される
+            const parsedSlides = buildSlidesFromTemplate(content, heading, bottomLeftTemplate);
 
             const oldKey = selectedDBSongKey;
             if (oldKey && oldKey !== rawKey) {
                 // キー名を変更した場合：旧キーがプリセット由来なら「削除済み」として扱う
-                if (WORSHIP_DICTIONARY[oldKey] || BIBLE_PRESETS[oldKey]) {
+                if (WORSHIP_DICTIONARY[oldKey] || BIBLE_PRESETS[oldKey] || liturgyDatabase[oldKey]) {
                     if (!deletedPresetKeys.includes(oldKey)) deletedPresetKeys.push(oldKey);
                     safeSaveToLocalStorage('worship_deleted_presets', JSON.stringify(deletedPresetKeys));
                 }
@@ -3417,7 +3635,7 @@
         // プリセット曲を編集前の初期状態に戻す
         function revertPresetToDefault() {
             const key = selectedDBSongKey;
-            if (!key || !(WORSHIP_DICTIONARY[key] || BIBLE_PRESETS[key])) return;
+            if (!key || !(WORSHIP_DICTIONARY[key] || BIBLE_PRESETS[key] || liturgyDatabase[key])) return;
             delete customDictionary[key];
             delete dbMeta[key];
             const idx = deletedPresetKeys.indexOf(key);
@@ -3437,7 +3655,7 @@
         function deleteSongFromDatabase() {
             if (!selectedDBSongKey) return;
             const key = selectedDBSongKey;
-            const isBasePreset = !!WORSHIP_DICTIONARY[key] || !!BIBLE_PRESETS[key];
+            const isBasePreset = !!WORSHIP_DICTIONARY[key] || !!BIBLE_PRESETS[key] || !!liturgyDatabase[key];
 
             if (isBasePreset) {
                 if (!deletedPresetKeys.includes(key)) deletedPresetKeys.push(key);
@@ -3539,11 +3757,12 @@
             const title = importTitleEl ? importTitleEl.value.trim() : "";
             const rawText = importRawTextEl ? importRawTextEl.value.trim() : "";
             
-            if(!key || !rawText) return showNotification("登録キーと歌詞本文を入力してください。");
+            if(!key) return showNotification("プログラム検索キーワード（登録キー）を入力してください。");
             
-            const heading = `賛美 (${title || key})`;
-            const bottomLeftTemplate = `${title || key} ${key}`.trim();
-            const blocks = rawText.split(/\n\s*\n/);
+            // 見出し・出典はメインのDBマネージャーと同様、未入力なら空欄のまま保存する（強制的な自動生成はしない）
+            const heading = "";
+            const bottomLeftTemplate = "";
+            const blocks = rawText ? rawText.split(/\n\s*\n/) : [];
             const generatedSlides = [];
             blocks.forEach(block => {
                 const trimmed = block.trim();
