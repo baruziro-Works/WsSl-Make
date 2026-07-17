@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excelふりがな編集 ➔ CSV変換システム</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        h2 {
+            font-size: 16px;
+            color: #34495e;
+            border-left: 4px solid #3498db;
+            padding-left: 10px;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .description {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+        
+        .operation-area {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .left-panel, .right-panel {
+            flex: 1;
+            padding: 20px;
+            background-color: #fcfdfe;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        #dict-area {
+            width: 100%;
+            height: 180px;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            background-color: #fafafa;
+        }
+        
+        .flex-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #2980b9; }
+        button.btn-success { background-color: #2ecc71; font-size: 16px; padding: 12px 30px; }
+        button.btn-success:hover { background-color: #27ae60; }
+        button.btn-secondary { background-color: #95a5a6; }
+        button.btn-secondary:hover { background-color: #7f8c8d; }
+        
+        button.btn-orange { background-color: #e67e22; margin-bottom: 10px; }
+        button.btn-orange:hover { background-color: #d35400; }
+
+        #drop-zone {
+            border: 3px dashed #3498db;
+            border-radius: 8px;
+            padding: 50px 20px;
+            text-align: center;
+            font-size: 16px;
+            color: #3498db;
+            background-color: #faffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 150px;
+        }
+        #drop-zone.hover {
+            background-color: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+        #status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .info { background-color: #e8f4fd; color: #2980b9; }
+        .success { background-color: #edf7ed; color: #27ae60; }
+        .error { background-color: #fdf2f2; color: #c0392b; }
+        
+        .preview-container {
+            margin-top: 30px;
+            display: none;
+        }
+        .table-wrapper {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 10px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+            position: sticky;
+            top: 0;
+            color: #2c3e50;
+            z-index: 1;
+        }
+        tr:nth-child(even) { background-color: #fcfdfe; }
+        
+        .editable-cell {
+            background-color: #fffde7;
+            border: 2px solid #f1c40f;
+            border-radius: 4px;
+            cursor: text;
+            outline: none;
+        }
+        .editable-cell:focus {
+            background-color: #fff9c4;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+        }
+        
+        .editable-cell.manually-edited {
+            background-color: #e8f8f5;
+            border: 2px solid #2ecc71;
+        }
+        .editable-cell.manually-edited:focus {
+            background-color: #d1f2eb;
+        }
+
+        .center-btn-wrap {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .operation-area { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Excelふりがな編集 ➔ CSV変換システム</h1>
+    
+    <div class="operation-area">
+        <div class="left-panel">
+            <h2>1. ふりがな管理辞書（自動保存機能付き）</h2>
+            <p class="description">「対象漢字,ふりがな」の形式で1行ずつ入力してください。内容はブラウザに自動保存されます。</p>
+            <textarea id="dict-area" placeholder="例：&#13;一文字,いちもんじ&#13;角田,かくた"></textarea>
+            <div class="flex-actions">
+                <button type="button" class="btn-secondary" onclick="exportDictionary()">辞書を保存(.txt)</button>
+                <button type="button" class="btn-secondary" onclick="importDictionaryClick()">辞書を読込</button>
+                <input type="file" id="dict-file-input" accept=".txt" style="display:none;" onchange="loadDictionaryFile(this)">
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <h2>2. ファイル読込</h2>
+            <p class="description">Excelファイルをドロップすると、下にプレビューが表示されます。</p>
+            <div id="drop-zone">ここにExcelファイルをドロップしてください</div>
+            <div id="status" class="info"><div class="spinner"></div>システムを初期化中...</div>
+        </div>
+    </div>
+
+    <div class="preview-container" id="preview-area">
+        <h2>3. 変換プレビュー＆手動修正エリア</h2>
+        <p class="description">
+            黄色い枠のB列は直接修正できます。修正したセルは<span style="color:#2ecc71;font-weight:bold;">緑色</span>に変わりロックされます。<br>
+            辞書に新しく単語を追加した場合は、下のオレンジのボタンを押すと、まだ手で直していないセルにだけ一括反映されます。
+        </p>
+        
+        <button type="button" class="btn-orange" onclick="applyLatestDictToPreview()">💡 上の辞書の変更をプレビュー表に反映する（手動修正分はキープ）</button>
+        
+        <div class="table-wrapper">
+            <table id="preview-table">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="center-btn-wrap">
+            <button type="button" class="btn-success" onclick="downloadEditedCSV()">修正完了！CSVをダウンロードする</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const status = document.getElementById('status');
+    const dictArea = document.getElementById('dict-area');
+    const previewArea = document.getElementById('preview-area');
+    const previewTable = document.getElementById('preview-table');
+    
+    let tokenizer = null;
+    let currentFileName = "output";
+
+    // プログラム内埋め込みマスター辞書の初期値
+    const DEFAULT_DICTIONARY = 
+`主日,しゅじつ
+特定漢字,とくていかんじ
+東雲,しののめ
+日本,にっぽん`;
+
+    window.onload = function() {
+        const savedDict = localStorage.getItem('furigana_custom_dict');
+        if (savedDict !== null) {
+            dictArea.value = savedDict;
+        } else {
+            dictArea.value = DEFAULT_DICTIONARY;
+        }
+        dictArea.addEventListener('input', () => {
+            localStorage.setItem('furigana_custom_dict', dictArea.value);
+        });
+        kuromoji.builder({ dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/" }).build((err, _tokenizer) => {
+            if (err) {
+                showStatus('error', 'Kuromoji.jsの読み込みに失敗しました。ネット接続を確認してください。');
+            } else {
+                tokenizer = _tokenizer;
+                showStatus('success', '準備完了！Excelファイルをドロップしてください。');
+            }
+        });
+    };
+
+    window.addEventListener('dragover', (e) => e.preventDefault());
+    window.addEventListener('drop', (e) => e.preventDefault());
+    dropZone.addEventListener('dragover', () => dropZone.classList.add('hover'));
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
+    dropZone.addEventListener('drop', (e) => {
+        dropZone.classList.remove('hover');
+        if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+    });
+    dropZone.addEventListener('click', () => {
+        if (!tokenizer) return;
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx, .xls';
+        input.onchange = (e) => { if (e.target.files.length > 0) handleFile(e.target.files[0]); };
+        input.click();
+    });
+
+    function showStatus(type, message) {
+        status.className = type;
+        status.innerHTML = message;
+    }
+
+    function parseCustomDictionary() {
+        const dict = {};
+        const lines = dictArea.value.split('\n');
+        for (let line of lines) {
+            line = line.trim();
+            if (!line || !line.includes(',')) continue;
+            const [word, reading] = line.split(',');
+            if (word && reading) dict[word.trim()] = reading.trim();
+        }
+        return dict;
+    }
+
+    function katakanaToHiragana(src) {
+        return src.replace(/[\u30a1-\u30f6]/g, (m) => String.fromCharCode(m.charCodeAt(0) - 0x60));
+    }
+
+    function containsKanji(text) {
+        return /[\u4E00-\u9FFF\u3400-\u4DBF]/.test(text);
+    }
+
+    // 🌟【大修正】保護用記号を使わず、テキストを安全に「分割」して解析する新方式
+    function applyFurigana(text, customDict) {
+        if (!text || typeof text !== 'string') return text;
+
+        // 1. 辞書の単語を文字数が長い順にソート（最長一致）
+        const sortedKeys = Object.keys(customDict).sort((a, b) => b.length - a.length);
+
+        // 2. テキストを辞書単語に基づいてセグメント（配列）に分解する
+        let segments = [text];
+
+        sortedKeys.forEach(key => {
+            if (key.trim() === "") return;
+            
+            let newSegments = [];
+            segments.forEach(seg => {
+                // すでに辞書にヒットしてオブジェクト化しているセグメントはスルー
+                if (typeof seg !== 'string') {
+                    newSegments.push(seg);
+                    return;
+                }
+
+                // まだ未処理の文字列の部分から、該当する単語を探して分割
+                let currentIndex = 0;
+                let matchIndex = seg.indexOf(key);
+
+                while (matchIndex !== -1) {
+                    if (matchIndex > currentIndex) {
+                        newSegments.push(seg.substring(currentIndex, matchIndex));
+                    }
+                    // ヒットした単語は、あらかじめ「漢字」と「読み」をセットにしたオブジェクトにして保護
+                    newSegments.push({
+                        word: key,
+                        reading: customDict[key]
+                    });
+                    currentIndex = matchIndex + key.length;
+                    matchIndex = seg.indexOf(key, currentIndex);
+                }
+
+                if (currentIndex < seg.length) {
+                    newSegments.push(seg.substring(currentIndex));
+                }
+            });
+            segments = newSegments;
+        });
+
+        // 3. 各セグメントを結合（文字列セグメントだけをAIに通す）
+        let result = "";
+        segments.forEach(seg => {
+            if (typeof seg !== 'string') {
+                // 辞書で保護された単語 ➔ AIに触れさせず、指定の読みを強制適用
+                result += `${seg.word}[${seg.reading}]`;
+            } else {
+                // 辞書に該当しなかった前後の地続きテキスト ➔ ここだけをAIに通す
+                const tokens = tokenizer.tokenize(seg);
+                for (let token of tokens) {
+                    const surface = token.surface_form;
+                    if (containsKanji(surface) && token.reading && token.reading !== "*") {
+                        const hiraganaReading = katakanaToHiragana(token.reading);
+                        if (surface === hiraganaReading) {
+                            result += surface;
+                        } else {
+                            result += `${surface}[${hiraganaReading}]`;
+                        }
+                    } else {
+                        result += surface;
+                    }
+                }
+            }
+        });
+
+        return result;
+    }
+
+    function handleFile(file) {
+        if (!tokenizer) return;
+        if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+            showStatus('error', 'エラー: Excelファイルのみ対応しています。');
+            return;
+        }
+
+        currentFileName = file.name.substring(0, file.name.lastIndexOf('.'));
+        showStatus('info', '<div class="spinner"></div>Excelを解析し、ふりがなを計算しています...');
+        previewArea.style.display = 'none';
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const sheetData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+
+                if (sheetData.length === 0) {
+                    showStatus('error', 'シートにデータがありません。');
+                    return;
+                }
+
+                const customDict = parseCustomDictionary();
+                generatePreviewTable(sheetData, customDict);
+
+                showStatus('success', '解析完了！下のプレビュー表で確認・修正を行ってください。');
+                previewArea.style.display = 'block';
+            } catch (error) {
+                showStatus('error', '解析中にエラーが発生しました: ' + error.message);
+                console.error(error);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function generatePreviewTable(data, customDict) {
+        const thead = previewTable.querySelector('thead');
+        const tbody = previewTable.querySelector('tbody');
+        thead.innerHTML = "";
+        tbody.innerHTML = "";
+
+        let maxCols = 0;
+        data.forEach(row => { if(row.length > maxCols) maxCols = row.length; });
+
+        const headerTr = document.createElement('tr');
+        for (let j = 0; j < maxCols; j++) {
+            const th = document.createElement('th');
+            th.innerText = String.fromCharCode(65 + j) + (j === 1 ? "列 (編集可能)" : "列");
+            headerTr.appendChild(th);
+        }
+        thead.appendChild(headerTr);
+
+        data.forEach((row) => {
+            const tr = document.createElement('tr');
+            for (let j = 0; j < maxCols; j++) {
+                const td = document.createElement('td');
+                let cellValue = row[j] !== undefined ? String(row[j]) : "";
+                
+                if (j === 1 && cellValue.trim() !== "") {
+                    td.innerText = applyFurigana(cellValue, customDict);
+                    td.className = "editable-cell";
+                    td.contentEditable = "true";
+                    
+                    // 元の生データを隠し属性として保存
+                    td.setAttribute('data-raw', cellValue);
+                    
+                    // 手動編集されたらロック状態（data-edited="true"）にする
+                    td.addEventListener('input', () => {
+                        td.setAttribute('data-edited', 'true');
+                        td.classList.add('manually-edited');
+                    });
+                } else {
+                    td.innerText = cellValue;
+                }
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        });
+    }
+
+    function applyLatestDictToPreview() {
+        if (!previewTable.querySelector('tbody tr')) return;
+        
+        const customDict = parseCustomDictionary();
+        const cells = previewTable.querySelectorAll('tbody .editable-cell');
+        
+        let updateCount = 0;
+        cells.forEach(td => {
+            // 手動編集のロックがかかっていないセルだけを更新
+            if (!td.getAttribute('data-edited')) {
+                const rawValue = td.getAttribute('data-raw');
+                if (rawValue) {
+                    td.innerText = applyFurigana(rawValue, customDict);
+                    updateCount++;
+                }
+            }
+        });
+        
+        showStatus('success', `辞書の変更を、未修正のセル（${updateCount}箇所）に一括反映しました！手動で直した緑色のセルはそのまま維持されています。`);
+    }
+
+    function downloadEditedCSV() {
+        const rows = previewTable.querySelectorAll('tbody tr');
+        const csvData = [];
+
+        rows.forEach(tr => {
+            const rowData = [];
+            const cells = tr.querySelectorAll('td');
+            cells.forEach(td => {
+                let text = td.innerText;
+                if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+                    text = '"' + text.replace(/"/g, '""') + '"';
+                }
+                rowData.push(text);
+            });
+            csvData.push(rowData.join(','));
+        });
+
+        const csvString = csvData.join('\n');
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", currentFileName + "_修正済.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function exportDictionary() {
+        const blob = new Blob([dictArea.value], {type: "text/plain;charset=utf-8"});
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", "ふりがなカスタム辞書.txt");
+        link.click();
+    }
+
+    function importDictionaryClick() {
+        document.getElementById('dict-file-input').click();
+    }
+
+    function loadDictionaryFile(input) {
+        if (input.files.length === 0) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            dictArea.value = e.target.result;
+            localStorage.setItem('furigana_custom_dict', dictArea.value);
+            showStatus('success', 'ファイルから辞書を読み込みました！');
+            applyLatestDictToPreview();
+        };
+        reader.readAsText(input.files[0]);
+        input.value = "";
+    }
+</script>
+
+</body>
+</html>
