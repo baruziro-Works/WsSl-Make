@@ -18,3 +18,6 @@ https://baruziro-works.github.io/WsSl-Make/WsMake_mobile_manual.html
 
 ルビ付けて　エクセルからcsv作成
 https://baruziro-works.github.io/WsSl-Make/Ex-Csv.html
+
+Mobile版
+https://baruziro-works.github.io/WsSl-Make/Ex-CsvMobile.html
