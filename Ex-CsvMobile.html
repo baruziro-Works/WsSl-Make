@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Excelふりがな編集 ➔ CSV【スマホ最適化版】</title>
+    <title>Excelふりがな編集 ➔ CSV【スマホ最適化版 V2】</title>
     <!-- SheetJS (Excel解析用) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Kuromoji.js (形態素解析・ふりがな用) -->
@@ -13,14 +13,15 @@
             --primary-color: #3498db;
             --success-color: #2ecc71;
             --warning-color: #e67e22;
-            --bg-color: #f8f9fa;
+            --danger-color: #e74c3c;
+            --bg-color: #f4f6f9;
             --card-bg: #ffffff;
             --text-color: #2c3e50;
-            --border-color: #e0e0e0;
+            --border-color: #dcdde1;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
             padding: 10px;
             background-color: var(--bg-color);
@@ -35,9 +36,9 @@
             background: var(--card-bg);
             padding: 15px;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             position: relative;
-            padding-bottom: 60px;
+            padding-bottom: 80px;
         }
 
         h1 {
@@ -48,13 +49,53 @@
             margin-bottom: 15px;
         }
 
+        .header-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 8px;
+        }
+
         h2 {
             font-size: 14px;
             color: #34495e;
-            border-left: 4px solid var(--primary-color);
-            padding-left: 8px;
-            margin-top: 15px;
-            margin-bottom: 8px;
+            margin: 0;
+        }
+
+        /* ヘルプアイコンとツールチップ */
+        .help-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            background: #bdc3c7;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            position: relative;
+        }
+        .help-icon:hover::after {
+            content: attr(data-help);
+            position: absolute;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: #fff;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            width: 200px;
+            z-index: 100;
+            font-weight: normal;
+            line-height: 1.4;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
         .description {
@@ -64,7 +105,6 @@
             line-height: 1.4;
         }
 
-        /* セクション管理 */
         .section-box {
             border: 1px solid var(--border-color);
             border-radius: 8px;
@@ -73,17 +113,18 @@
             background-color: #fdfdfd;
         }
 
-        textarea id="dict-area" {
+        #dict-area, #bulk-area {
             width: 100%;
-            height: 80px;
             padding: 8px;
             box-sizing: border-box;
             border: 1px solid #bdc3c7;
             border-radius: 6px;
             font-family: monospace;
             font-size: 12px;
-            resize: vertical;
+            background-color: #fafafa;
         }
+        #dict-area { height: 80px; resize: vertical; }
+        #bulk-area { height: 90px; resize: vertical; overflow-y: scroll; }
 
         .btn-group {
             display: flex;
@@ -109,28 +150,66 @@
         button:active { opacity: 0.7; }
         button.btn-secondary { background-color: #95a5a6; }
         button.btn-orange { background-color: var(--warning-color); }
+        button.btn-danger { background-color: var(--danger-color); }
         button.btn-success { background-color: var(--success-color); font-size: 15px; padding: 12px; }
+        button.btn-inline { padding: 4px 8px; font-size: 11px; font-weight: normal; border-radius: 4px; flex: none; }
 
-        /* ファイル読み込みエリア */
-        .file-input-wrapper {
-            position: relative;
-            margin-bottom: 10px;
+        /* 常時上部固定の見出しジャンプナビゲーター */
+        .sticky-nav {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 2px solid var(--primary-color);
+            z-index: 1000;
+            padding: 6px 10px;
+            margin-left: -15px;
+            margin-right: -15px;
+            margin-top: -15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            max-height: 85px;
+            overflow-y: auto;
         }
+        .sticky-nav-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+        }
+        .jump-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .jump-badge {
+            background: #e1f5fe;
+            color: #0288d1;
+            border: 1px solid #b3e5fc;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* ファイル読込 */
+        .file-input-wrapper { position: relative; margin-bottom: 8px; }
         .file-input-label {
             display: block;
             background: #e8f4fd;
             color: var(--primary-color);
             border: 2px dashed var(--primary-color);
-            padding: 15px;
+            padding: 12px;
             text-align: center;
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
+            font-size: 13px;
         }
         #excel-file-input { display: none; }
 
         #status {
-            padding: 10px;
+            padding: 8px;
             border-radius: 6px;
             text-align: center;
             font-weight: bold;
@@ -141,51 +220,45 @@
         .success { background-color: #edf7ed; color: #27ae60; }
         .error { background-color: #fdf2f2; color: #c0392b; }
 
-        /* 行データリスト (スマホ最適化カード型) */
-        .row-list {
-            margin-top: 10px;
-        }
+        /* 行カード型UI */
+        .row-list { margin-top: 10px; }
         .row-card {
             background: #fff;
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            margin-bottom: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
             overflow: hidden;
+            scroll-margin-top: 90px; /* ジャンプ時の余白 */
         }
         .row-header {
             background: #f1f3f5;
-            padding: 8px 12px;
+            padding: 6px 12px;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border-color);
         }
-        .delete-btn {
-            background: #e74c3c;
-            color: white;
-            padding: 2px 8px;
-            font-size: 11px;
-            border-radius: 4px;
-            font-weight: normal;
-            flex: none;
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
         }
-        .row-body {
-            padding: 12px;
+        .header-actions {
+            display: flex;
+            gap: 5px;
         }
+        .row-body { padding: 10px; }
         
-        /* 入力フィールド定義 */
-        .field-group {
-            margin-bottom: 10px;
-        }
+        .field-group { margin-bottom: 8px; }
         .field-group:last-child { margin-bottom: 0; }
         .field-label {
             font-size: 11px;
             color: #7f8c8d;
             font-weight: bold;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             display: block;
         }
         .input-text {
@@ -196,13 +269,18 @@
             border-radius: 5px;
             font-size: 14px;
             color: #333;
-            background-color: #fff;
+        }
+
+        /* CD列の横並び配置 */
+        .row-flex-cd {
+            display: flex;
+            gap: 8px;
+        }
+        .row-flex-cd .field-group {
+            flex: 1;
         }
         
-        /* B列（ふりがな）の特別スタイル */
-        .b-column-wrapper {
-            position: relative;
-        }
+        /* B列スタイル */
         .editable-preview-cell {
             width: 100%;
             padding: 8px;
@@ -219,13 +297,13 @@
             background-color: #e8f8f5;
         }
 
-        /* クイックチップ用UI */
+        /* クイックチップ */
         .chip-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 5px;
+            gap: 4px;
             margin-top: 4px;
-            max-height: 65px;
+            max-height: 55px;
             overflow-y: auto;
             border: 1px solid #eee;
             padding: 4px;
@@ -235,27 +313,28 @@
         .chip {
             background: #e0e0e0;
             color: #333;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
             cursor: pointer;
-            user-select: none;
         }
-        .chip:active { background: #cbd5e1; }
 
-        /* フッター・全体アクション */
-        .action-sticky-bottom {
+        .bottom-actions {
             margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
+
         .spinner {
             display: inline-block;
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             border: 2px solid rgba(52, 152, 219, 0.3);
             border-radius: 50%;
             border-top-color: #3498db;
             animation: spin 1s linear infinite;
-            margin-right: 6px;
+            margin-right: 4px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -263,7 +342,7 @@
             text-align: right;
             font-size: 10px;
             color: #bdc3c7;
-            margin-top: 20px;
+            margin-top: 25px;
             user-select: none;
         }
     </style>
@@ -271,50 +350,77 @@
 <body>
 
 <div class="container">
-    <h1>Excelふりがな編集【スマホ最適化版】</h1>
-    
-    <!-- ステータス表示 -->
+    <!-- 常時固定の見出しジャンプナビゲーター -->
+    <div class="sticky-nav" id="sticky-navigation">
+        <div class="sticky-nav-title">📍 見出しジャンプナビ（チェックした行の一覧）</div>
+        <div class="jump-tags" id="jump-badge-container">
+            <span style="color:#aaa; font-size:11px;">行の「見出しチェック」を入れるとここに表示されます</span>
+        </div>
+    </div>
+
+    <h1>Excelふりがな編集【スマホ最適化版 V2】</h1>
     <div id="status" class="info"><div class="spinner"></div>システムを初期化中...</div>
 
     <!-- 1. 辞書セクション -->
     <div class="section-box">
-        <h2>1. ふりがな管理辞書</h2>
-        <p class="description">「漢字,ふりがな」形式で入力（自動保存対応）。</p>
+        <div class="header-title-wrap">
+            <h2>1. ふりがな管理辞書</h2>
+            <span class="help-icon" data-help="特定の漢字に対する独自のふりがなを指定します。「主日,しゅじつ」のようにカンマで区切って記述してください。">?</span>
+        </div>
         <textarea id="dict-area" placeholder="例：&#13;主日,しゅじつ"></textarea>
         <div class="btn-group">
-            <button type="button" class="btn-secondary" onclick="exportDictionary()">保存(.txt)</button>
-            <button type="button" class="btn-secondary" onclick="importDictionaryClick()">読込</button>
+            <button type="button" class="btn-secondary" onclick="exportDictionary()">辞書保存(.txt)</button>
+            <button type="button" class="btn-secondary" onclick="importDictionaryClick()">辞書読込</button>
             <input type="file" id="dict-file-input" accept=".txt" style="display:none;" onchange="loadDictionaryFile(this)">
         </div>
     </div>
 
-    <!-- 2. データ入力・読込セクション -->
+    <!-- 2. ファイル読込セクション -->
     <div class="section-box">
-        <h2>2. データの読込 ＆ 新規作成</h2>
+        <div class="header-title-wrap">
+            <h2>2. Excelファイル読込</h2>
+            <span class="help-icon" data-help="スマートフォン内にある既存のExcelファイルを読み込んで各データ行に展開します。">?</span>
+        </div>
         <div class="file-input-wrapper">
-            <label for="excel-file-input" class="file-input-label">📁 スマホからExcelファイルを読み込む</label>
+            <label for="excel-file-input" class="file-input-label">📁 スマートフォンからExcelを読み込む</label>
             <input type="file" id="excel-file-input" accept=".xlsx, .xls" onchange="handleFileSelect(this)">
         </div>
+    </div>
+
+    <!-- 5. プログラム一括読込エリア -->
+    <div class="section-box">
+        <div class="header-title-wrap">
+            <h2>5. プログラム一括読込エリア</h2>
+            <span class="help-icon" data-help="CSV形式のテキストから一括で行を作成します。1行につき1行データとなり、カンマ区切りでA列,B列,C列,D列へ自動入力されます。">?</span>
+        </div>
+        <p class="description">貼り付けたテキストから一括で複数行のデータ行を作成します。</p>
+        <textarea id="bulk-area" placeholder="例：&#13;招詞,主日礼拝,第1,備考&#13;賛美,讃美歌,第2,"></textarea>
         <div class="btn-group">
-            <button type="button" onclick="addNewRow()">➕ 新しい行を1行追加する</button>
-            <button type="button" class="btn-orange" onclick="applyDictToAllCards()">💡 辞書変更を一括反映</button>
+            <button type="button" onclick="loadBulkText()">⚡ データ行に一括展開する</button>
         </div>
     </div>
 
     <!-- 3. メイン入力・プレビューエリア -->
-    <h2>3. データ入力・ふりがな修正（各行4列まで）</h2>
-    <p class="description">※黄色いB列は直接ふりがなを修正できます。直すと緑色にロックされます。</p>
+    <div class="header-title-wrap">
+        <h2>3. データ入力・修正エリア（最大4列）</h2>
+        <span class="help-icon" data-help="各データ行の内容です。B列に入力して枠外をタップすると自動ルビ振りされます。黄色のB列は直接手直し可能で、直すと緑色にロックされます。">?</span>
+    </div>
+    <div class="btn-group" style="margin-bottom: 10px;">
+        <button type="button" class="btn-orange" onclick="applyDictToAllCards()">💡 辞書変更を未修正セルに一括反映</button>
+    </div>
     
     <div id="row-list-container" class="row-list">
-        <!-- ここに動的に行カードが追加されます -->
+        <!-- 動的に行カードが追加されます -->
     </div>
 
-    <!-- 下部一括操作 -->
-    <div class="action-sticky-bottom">
-        <button type="button" class="btn-success" style="width: 100%;" onclick="downloadCSV()">修正完了！CSVをダウンロード</button>
+    <!-- 下部操作エリア -->
+    <div class="bottom-actions">
+        <button type="button" style="background-color: #34495e;" onclick="addNewRow()">➕ 新しい行を追加する</button>
+        <button type="button" class="btn-success" onclick="downloadCSV()">修正完了！CSVをダウンロード</button>
+        <button type="button" class="btn-danger" style="font-size:11px; padding:6px;" onclick="clearAllDataWithConfirm()">⚠️ 画面の入力データを完全に初期化する</button>
     </div>
 
-    <div class="version-tag">Vr_07171613</div>
+    <div class="version-tag">Vr_07171704</div>
 </div>
 
 <script>
@@ -322,23 +428,23 @@
     let currentFileName = "mobile_output";
     let rowCounter = 0;
 
-    // A列用クイック選択肢
     const CHIP_ITEMS = ["招詞", "讃詠", "主の祈り", "2026聖句", "賛美", "祈り", "聖書", "説教", "信仰告白", "献金", "頌栄", "祝祷", "後奏"];
     const DEFAULT_DICTIONARY = `主日,しゅじつ\n特定漢字,とくていかんじ\n東雲,しののめ\n日本,にっぽん`;
 
     const dictArea = document.getElementById('dict-area');
     const container = document.getElementById('row-list-container');
     const status = document.getElementById('status');
+    const badgeContainer = document.getElementById('jump-badge-container');
 
     window.onload = function() {
-        const savedDict = localStorage.getItem('furigana_custom_dict_mobile');
+        // 辞書の読み込み
+        const savedDict = localStorage.getItem('furigana_custom_dict_mobile_v2');
         dictArea.value = savedDict !== null ? savedDict : DEFAULT_DICTIONARY;
-        
         dictArea.addEventListener('input', () => {
-            localStorage.setItem('furigana_custom_dict_mobile', dictArea.value);
+            localStorage.setItem('furigana_custom_dict_mobile_v2', dictArea.value);
         });
 
-        // Kuromoji初期化 (dict/ はHTMLと同階層)
+        // Kuromoji初期化
         kuromoji.builder({ dicPath: "dict/" }).build((err, _tokenizer) => {
             if (err) {
                 showStatus('error', '辞書の初期化に失敗しました。dict/ フォルダの配置を確認してください。');
@@ -346,8 +452,13 @@
             } else {
                 tokenizer = _tokenizer;
                 showStatus('success', '準備完了！入力するかファイルを読み込んでください。');
-                // 初期状態で空の行を3つ用意
-                for(let i=0; i<3; i++) addNewRow();
+                
+                // 自動保存されたデータの復元を試みる
+                if (!restoreLocalStorageData()) {
+                    // 自動保存がなければ初期状態で空の行を4行用意
+                    for(let i=0; i<4; i++) addNewRow();
+                }
+                updateNavigation();
             }
         });
     };
@@ -357,8 +468,66 @@
         status.innerHTML = message;
     }
 
-    // 新規行カード追加
-    function addNewRow(initialData = {a:"", b:"", c:"", d:"", rawB:""}) {
+    // データが入力されるたびにlocalStorageへ自動保存（要件6対策）
+    function saveCurrentStateToLocalStorage() {
+        const cards = container.querySelectorAll('.row-card');
+        const dataLog = [];
+        cards.forEach(card => {
+            const id = card.id.replace('card-', '');
+            const a = document.getElementById(`input-a-${id}`).value;
+            const bCell = document.getElementById(`input-b-${id}`);
+            const b = bCell.innerText;
+            const rawB = bCell.getAttribute('data-raw') || "";
+            const edited = bCell.getAttribute('data-edited') || "";
+            const c = document.getElementById(`input-c-${id}`).value;
+            const d = document.getElementById(`input-d-${id}`).value;
+            const isHead = document.getElementById(`check-head-${id}`).checked;
+            
+            dataLog.push({ id, a, b, rawB, edited, c, d, isHead });
+        });
+        localStorage.setItem('mobile_v2_autosave_data', JSON.stringify(dataLog));
+    }
+
+    // localStorageから復元
+    function restoreLocalStorageData() {
+        const raw = localStorage.getItem('mobile_v2_autosave_data');
+        if (!raw) return false;
+        try {
+            const dataLog = JSON.parse(raw);
+            if (dataLog.length === 0) return false;
+            container.innerHTML = "";
+            dataLog.forEach(item => {
+                addNewRow({
+                    a: item.a,
+                    b: item.b,
+                    c: item.c,
+                    d: item.d,
+                    rawB: item.rawB,
+                    isHead: item.isHead,
+                    edited: item.edited === 'true'
+                });
+            });
+            return true;
+        } catch (e) {
+            console.error("復元エラー", e);
+            return false;
+        }
+    }
+
+    // 全データを初期化
+    function clearAllDataWithConfirm() {
+        if(confirm("画面に入力されているすべての行データが消去されます。よろしいですか？")) {
+            localStorage.removeItem('mobile_v2_autosave_data');
+            container.innerHTML = "";
+            rowCounter = 0;
+            for(let i=0; i<4; i++) addNewRow();
+            updateNavigation();
+            showStatus('success', 'データを完全に初期化しました。');
+        }
+    }
+
+    // 新規行カード追加（要件1, 3, 4, 7）
+    function addNewRow(initialData = {a:"", b:"", c:"", d:"", rawB:"", isHead: false, edited: false}, referenceNode = null) {
         rowCounter++;
         const id = rowCounter;
         
@@ -366,7 +535,6 @@
         card.className = 'row-card';
         card.id = `card-${id}`;
         
-        // クイックチップの生成
         let chipsHtml = '';
         CHIP_ITEMS.forEach(item => {
             chipsHtml += `<span class="chip" onclick="setChipValue(${id}, '${item}')">${item}</span>`;
@@ -374,77 +542,218 @@
 
         card.innerHTML = `
             <div class="row-header">
-                <span>データ行 #${id}</span>
-                <button type="button" class="delete-btn" onclick="deleteRow(${id})">削除</button>
+                <div class="header-left">
+                    <input type="checkbox" id="check-head-${id}" ${initialData.isHead ? 'checked' : ''} onchange="onHeadCheckChanged(${id})">
+                    <label for="check-head-${id}">見出し行</label>
+                    <span style="color:#7f8c8d; margin-left:5px;">#${id}</span>
+                </div>
+                <div class="header-actions">
+                    <button type="button" class="btn-inline" style="background-color:#9b59b6;" onclick="insertRowAbove(${id})">上に挿入</button>
+                    <button type="button" class="btn-inline" style="background-color:var(--danger-color);" onclick="deleteRow(${id})">削除</button>
+                </div>
             </div>
             <div class="row-body">
                 <!-- A列 -->
                 <div class="field-group">
-                    <label class="field-label">A列 (項目名など)</label>
-                    <input type="text" class="input-text col-a" id="input-a-${id}" value="${initialData.a}" placeholder="直接入力または下のチップを選択">
+                    <label class="field-label">A列 (項目)</label>
+                    <input type="text" class="input-text col-a" id="input-a-${id}" value="${initialData.a}" oninput="onInputLive()">
                     <div class="chip-container">${chipsHtml}</div>
                 </div>
                 <!-- B列 -->
                 <div class="field-group">
-                    <label class="field-label">B列 (ふりがな対象テキスト / 直接編集可)</label>
-                    <div class="b-column-wrapper">
-                        <div class="editable-preview-cell col-b" 
-                             id="input-b-${id}" 
-                             contenteditable="true" 
-                             data-raw="${initialData.rawB || initialData.b}"
-                             placeholder="ここに漢字を入力すると自動ルビ振りされます">${initialData.b}</div>
+                    <label class="field-label">B列 (ふりがな対象テキスト / 自動＆手動両対応)</label>
+                    <div class="editable-preview-cell col-b" 
+                         id="input-b-${id}" 
+                         contenteditable="true" 
+                         data-raw="${initialData.rawB || initialData.b}"
+                         placeholder="漢字を入力して枠外をタップ">${initialData.b}</div>
+                </div>
+                <!-- C列・D列の横並び配置 -->
+                <div class="row-flex-cd">
+                    <div class="field-group">
+                        <label class="field-label">C列</label>
+                        <input type="text" class="input-text col-c" id="input-c-${id}" value="${initialData.c}" oninput="onInputLive()">
                     </div>
-                </div>
-                <!-- C列 -->
-                <div class="field-group">
-                    <label class="field-label">C列</label>
-                    <input type="text" class="input-text col-c" id="input-c-${id}" value="${initialData.c}">
-                </div>
-                <!-- D列 -->
-                <div class="field-group">
-                    <label class="field-label">D列</label>
-                    <input type="text" class="input-text col-d" id="input-d-${id}" value="${initialData.d}">
+                    <div class="field-group">
+                        <label class="field-label">D列 (最下行でEnterで次行追加)</label>
+                        <input type="text" class="input-text col-d" id="input-d-${id}" value="${initialData.d}" oninput="onInputLive()" onkeydown="handleDKeyDown(event, ${id})">
+                    </div>
                 </div>
             </div>
         `;
         
-        container.appendChild(card);
+        if (referenceNode) {
+            container.insertBefore(card, referenceNode);
+        } else {
+            container.appendChild(card);
+        }
         
-        // B列のイベントリスナー設定
         const bCell = card.querySelector('.col-b');
         
-        // フォーカスアウト時、未編集なら自動ふりがな計算を行うトリガーにする
+        // ユーザーの手動入力によるふりがな自動計算トリガー
         bCell.addEventListener('blur', () => {
             if (!bCell.getAttribute('data-edited') && bCell.innerText.trim() !== "") {
                 const text = bCell.innerText;
-                // ブラケット形式を含まない純粋入力なら生データとして退避
                 if (!text.includes('[')) {
                     bCell.setAttribute('data-raw', text);
                     const customDict = parseCustomDictionary();
                     bCell.innerText = applyFurigana(text, customDict);
                 }
             }
+            saveCurrentStateToLocalStorage();
         });
 
         bCell.addEventListener('input', () => {
             bCell.setAttribute('data-edited', 'true');
             bCell.classList.add('manually-edited');
+            saveCurrentStateToLocalStorage();
         });
 
-        // 読み込みデータ用で最初からロックがかかっている場合のスタイル反映
-        if (initialData.rawB && initialData.rawB !== initialData.b) {
+        if (initialData.edited) {
             bCell.setAttribute('data-edited', 'true');
             bCell.classList.add('manually-edited');
         }
     }
 
+    // ライブ保存用
+    function onInputLive() {
+        saveCurrentStateToLocalStorage();
+    }
+
     function setChipValue(id, value) {
         document.getElementById(`input-a-${id}`).value = value;
+        updateNavigation();
+        saveCurrentStateToLocalStorage();
+    }
+
+    // 指定行の上に挿入
+    function insertRowAbove(id) {
+        const targetCard = document.getElementById(`card-${id}`);
+        if(targetCard) {
+            addNewRow({a:"", b:"", c:"", d:"", rawB:"", isHead:false, edited:false}, targetCard);
+            saveCurrentStateToLocalStorage();
+        }
     }
 
     function deleteRow(id) {
         const card = document.getElementById(`card-${id}`);
-        if(card) card.remove();
+        if(card) {
+            card.remove();
+            updateNavigation();
+            saveCurrentStateToLocalStorage();
+        }
+    }
+
+    // D列でのエンターキーハンドリング（要件4）
+    function handleDKeyDown(event, id) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const cards = container.querySelectorAll('.row-card');
+            const lastCard = cards[cards.length - 1];
+            
+            // 現在のカードがリストの最下行である場合のみ自動追加
+            if (lastCard && lastCard.id === `card-${id}`) {
+                addNewRow();
+                saveCurrentStateToLocalStorage();
+                
+                // 次に新しく作られたカードのA列にフォーカスを当てる
+                setTimeout(() => {
+                    const newCards = container.querySelectorAll('.row-card');
+                    const nextCard = newCards[newCards.length - 1];
+                    if (nextCard) {
+                        const nextId = nextCard.id.replace('card-', '');
+                        const nextInputA = document.getElementById(`input-a-${nextId}`);
+                        if(nextInputA) nextInputA.focus();
+                    }
+                }, 50);
+            }
+        }
+    }
+
+    // 見出しチェック変更時（要件7）
+    function onHeadCheckChanged(id) {
+        updateNavigation();
+        saveCurrentStateToLocalStorage();
+    }
+
+    // 見出しジャンプナビゲーターの更新（要件7）
+    function updateNavigation() {
+        badgeContainer.innerHTML = "";
+        const cards = container.querySelectorAll('.row-card');
+        let hasChecked = false;
+
+        cards.forEach(card => {
+            const id = card.id.replace('card-', '');
+            const chk = document.getElementById(`check-head-${id}`);
+            if (chk && chk.checked) {
+                hasChecked = true;
+                const aVal = document.getElementById(`input-a-${id}`).value || "(空欄)";
+                
+                const badge = document.createElement('span');
+                badge.className = 'jump-badge';
+                badge.innerText = `#${id}: ${aVal}`;
+                badge.onclick = () => {
+                    card.scrollIntoView({ behavior: 'smooth' });
+                };
+                badgeContainer.appendChild(badge);
+            }
+        });
+
+        if (!hasChecked) {
+            badgeContainer.innerHTML = `<span style="color:#aaa; font-size:11px;">行の「見出しチェック」を入れるとここに表示されます</span>`;
+        }
+    }
+
+    // 5. プログラム一括読込エリアからのデータ展開（要件5）
+    function loadBulkText() {
+        const text = document.getElementById('bulk-area').value;
+        if(!text.trim()) {
+            alert("テキストエリアに入力されていません。");
+            return;
+        }
+
+        const lines = text.split('\n');
+        const customDict = parseCustomDictionary();
+        
+        // もし既存データが初期の空行だけならクリアする判断材料として確認
+        const cardsBefore = container.querySelectorAll('.row-card');
+        let isInitialEmpty = true;
+        cardsBefore.forEach(c => {
+            const cid = c.id.replace('card-', '');
+            if(document.getElementById(`input-a-${cid}`).value || document.getElementById(`input-b-${cid}`).innerText) {
+                isInitialEmpty = false;
+            }
+        });
+        if(isInitialEmpty) container.innerHTML = "";
+
+        lines.forEach(line => {
+            if(!line.trim()) return;
+            const parts = line.split(',');
+            
+            const a = parts[0] !== undefined ? parts[0].trim() : "";
+            const bRaw = parts[1] !== undefined ? parts[1].trim() : "";
+            const c = parts[2] !== undefined ? parts[2].trim() : "";
+            const d = parts[3] !== undefined ? parts[3].trim() : "";
+
+            let bProcessed = "";
+            if(bRaw !== "") {
+                bProcessed = bRaw.includes('[') ? bRaw : applyFurigana(bRaw, customDict);
+            }
+
+            addNewRow({
+                a: a,
+                b: bProcessed,
+                c: c,
+                d: d,
+                rawB: bRaw,
+                isHead: false,
+                edited: false
+            });
+        });
+
+        updateNavigation();
+        saveCurrentStateToLocalStorage();
+        showStatus('success', `一括入力エリアから ${lines.length} 行を生成・展開しました。`);
     }
 
     function parseCustomDictionary() {
@@ -523,7 +832,7 @@
         return result;
     }
 
-    // 辞書一括反映（手動修正分はスキップ）
+    // 辞書一括反映（手動修正分は保護）
     function applyDictToAllCards() {
         const customDict = parseCustomDictionary();
         const cards = container.querySelectorAll('.row-card');
@@ -540,10 +849,11 @@
                 }
             }
         });
-        showStatus('success', `辞書を未修正のB列（${count}件）に反映しました。`);
+        saveCurrentStateToLocalStorage();
+        showStatus('success', `辞書を未修正のB列（${count}件）に一括反映しました。`);
     }
 
-    // Excelファイルインポート処理
+    // Excelインポート処理
     function handleFileSelect(input) {
         if (!tokenizer) return;
         if (input.files.length === 0) return;
@@ -565,11 +875,10 @@
                     return;
                 }
 
-                container.innerHTML = ""; // クリア
+                container.innerHTML = "";
                 const customDict = parseCustomDictionary();
 
                 sheetData.forEach(row => {
-                    // 空行チェック
                     if (row.length === 0 || row.every(c => String(c).trim() === "")) return;
 
                     const a = row[0] !== undefined ? String(row[0]) : "";
@@ -583,25 +892,23 @@
                     }
 
                     addNewRow({
-                        a: a,
-                        b: bProcessed,
-                        c: c,
-                        d: d,
-                        rawB: bRaw
+                        a: a, b: bProcessed, c: c, d: d, rawB: bRaw, isHead: false, edited: false
                     });
                 });
 
-                showStatus('success', `Excelから ${container.children.length} 行読み込みました！`);
+                updateNavigation();
+                saveCurrentStateToLocalStorage();
+                showStatus('success', `Excelから ${container.children.length} 行を読み込みました！`);
             } catch (err) {
                 showStatus('error', '解析エラー: ' + err.message);
                 console.error(err);
             }
         };
         reader.readAsArrayBuffer(file);
-        input.value = ""; // リセット
+        input.value = "";
     }
 
-    // CSVエクスポート処理
+    // CSVダウンロード（要件6：リセットせずそのまま継続可能）
     function downloadCSV() {
         const cards = container.querySelectorAll('.row-card');
         if(cards.length === 0) {
@@ -611,10 +918,11 @@
 
         const csvData = [];
         cards.forEach(card => {
-            const a = card.querySelector('.col-a').value;
-            const b = card.querySelector('.col-b').innerText;
-            const c = card.querySelector('.col-c').value;
-            const d = card.querySelector('.col-d').value;
+            const id = card.id.replace('card-', '');
+            const a = document.getElementById(`input-a-${id}`).value;
+            const b = document.getElementById(`input-b-${id}`).innerText;
+            const c = document.getElementById(`input-c-${id}`).value;
+            const d = document.getElementById(`input-d-${id}`).value;
 
             const rowData = [a, b, c, d].map(text => {
                 let t = text || "";
@@ -634,14 +942,17 @@
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        
+        // 継続して使えるよう通知のみ出す
+        showStatus('success', 'CSVのダウンロードを行いました！データは保護されているため、そのまま編集を継続できます。');
     }
 
-    // 辞書機能群
+    // 辞書操作
     function exportDictionary() {
         const blob = new Blob([dictArea.value], {type: "text/plain;charset=utf-8"});
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.setAttribute("download", "ふりがなカスタム辞書_mobile.txt");
+        link.setAttribute("download", "ふりがなカスタム辞書_mobile_v2.txt");
         link.click();
     }
 
@@ -654,7 +965,7 @@
         const reader = new FileReader();
         reader.onload = function(e) {
             dictArea.value = e.target.result;
-            localStorage.setItem('furigana_custom_dict_mobile', dictArea.value);
+            localStorage.setItem('furigana_custom_dict_mobile_v2', dictArea.value);
             showStatus('success', 'ファイルから辞書を読み込みました！');
             applyDictToAllCards();
         };
