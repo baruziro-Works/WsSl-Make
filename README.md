@@ -6,4 +6,4 @@ https://baruziro-works.github.io/WsSl-Make/index.html
 https://baruziro-works.github.io/WsSl-Make/WorshipSlide_mobile.html
 
 ルビ付けて　エクセルからcsv作成
-https://baruziro-works.github.io/WsSl-Make/Ex-Csv0603.html
+https://baruziro-works.github.io/WsSl-Make/Ex-Csv.html
