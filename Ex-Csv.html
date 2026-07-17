@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Excelふりがな編集 ➔ CSV変換システム</title>
+    <!-- SheetJS (Excel解析用) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Kuromoji.js (形態素解析・ふりがな用) -->
     <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
     <style>
         body {
@@ -21,6 +23,7 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            position: relative; /* バージョン表示位置の基準用 */
         }
         h1 {
             text-align: center;
@@ -196,6 +199,15 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* バージョン表記のスタイル（右下に小さく、邪魔にならない薄いグレーで表示） */
+        .version-tag {
+            text-align: right;
+            font-size: 11px;
+            color: #bdc3c7;
+            margin-top: 25px;
+            user-select: none; /* コピペ時に選択されないようにする */
+        }
+
         @media (max-width: 768px) {
             .operation-area { flex-direction: column; }
         }
@@ -207,6 +219,7 @@
     <h1>Excelふりがな編集 ➔ CSV変換システム</h1>
     
     <div class="operation-area">
+        <!-- 左カラム: 辞書エリア -->
         <div class="left-panel">
             <h2>1. ふりがな管理辞書（自動保存機能付き）</h2>
             <p class="description">「対象漢字,ふりがな」の形式で1行ずつ入力してください。内容はブラウザに自動保存されます。</p>
@@ -218,6 +231,7 @@
             </div>
         </div>
 
+        <!-- 右カラム: ファイルエリア -->
         <div class="right-panel">
             <h2>2. ファイル読込</h2>
             <p class="description">Excelファイルをドロップすると、下にプレビューが表示されます。</p>
@@ -226,6 +240,7 @@
         </div>
     </div>
 
+    <!-- 3. 編集・プレビューエリア -->
     <div class="preview-container" id="preview-area">
         <h2>3. 変換プレビュー＆手動修正エリア</h2>
         <p class="description">
@@ -245,6 +260,9 @@
             <button type="button" class="btn-success" onclick="downloadEditedCSV()">修正完了！CSVをダウンロードする</button>
         </div>
     </div>
+
+    <!-- 画面の邪魔にならない右下にバージョン表示（作成日時：7月17日 11時15分） -->
+    <div class="version-tag">Vr_07171115</div>
 </div>
 
 <script>
@@ -274,9 +292,12 @@
         dictArea.addEventListener('input', () => {
             localStorage.setItem('furigana_custom_dict', dictArea.value);
         });
-        kuromoji.builder({ dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/" }).build((err, _tokenizer) => {
+
+        // 🌟【重要】GitHub同梱のdictフォルダを見に行くように設定変更しました！
+        kuromoji.builder({ dicPath: "dict/" }).build((err, _tokenizer) => {
             if (err) {
-                showStatus('error', 'Kuromoji.jsの読み込みに失敗しました。ネット接続を確認してください。');
+                showStatus('error', 'Kuromoji.jsの読み込みに失敗しました。dictフォルダ内のファイルが正しくアップロードされているか確認してください。');
+                console.error(err);
             } else {
                 tokenizer = _tokenizer;
                 showStatus('success', '準備完了！Excelファイルをドロップしてください。');
@@ -318,22 +339,21 @@
         return dict;
     }
 
+    // カタカナをひらがなに変換
     function katakanaToHiragana(src) {
         return src.replace(/[\u30a1-\u30f6]/g, (m) => String.fromCharCode(m.charCodeAt(0) - 0x60));
     }
 
+    // 漢字判定
     function containsKanji(text) {
         return /[\u4E00-\u9FFF\u3400-\u4DBF]/.test(text);
     }
 
-    // 🌟【大修正】保護用記号を使わず、テキストを安全に「分割」して解析する新方式
+    // 保護用記号を使わず、テキストを安全に「分割」して解析する新方式
     function applyFurigana(text, customDict) {
         if (!text || typeof text !== 'string') return text;
 
-        // 1. 辞書の単語を文字数が長い順にソート（最長一致）
         const sortedKeys = Object.keys(customDict).sort((a, b) => b.length - a.length);
-
-        // 2. テキストを辞書単語に基づいてセグメント（配列）に分解する
         let segments = [text];
 
         sortedKeys.forEach(key => {
@@ -341,13 +361,11 @@
             
             let newSegments = [];
             segments.forEach(seg => {
-                // すでに辞書にヒットしてオブジェクト化しているセグメントはスルー
                 if (typeof seg !== 'string') {
                     newSegments.push(seg);
                     return;
                 }
 
-                // まだ未処理の文字列の部分から、該当する単語を探して分割
                 let currentIndex = 0;
                 let matchIndex = seg.indexOf(key);
 
@@ -355,7 +373,6 @@
                     if (matchIndex > currentIndex) {
                         newSegments.push(seg.substring(currentIndex, matchIndex));
                     }
-                    // ヒットした単語は、あらかじめ「漢字」と「読み」をセットにしたオブジェクトにして保護
                     newSegments.push({
                         word: key,
                         reading: customDict[key]
@@ -371,14 +388,11 @@
             segments = newSegments;
         });
 
-        // 3. 各セグメントを結合（文字列セグメントだけをAIに通す）
         let result = "";
         segments.forEach(seg => {
             if (typeof seg !== 'string') {
-                // 辞書で保護された単語 ➔ AIに触れさせず、指定の読みを強制適用
                 result += `${seg.word}[${seg.reading}]`;
             } else {
-                // 辞書に該当しなかった前後の地続きテキスト ➔ ここだけをAIに通す
                 const tokens = tokenizer.tokenize(seg);
                 for (let token of tokens) {
                     const surface = token.surface_form;
@@ -464,10 +478,8 @@
                     td.className = "editable-cell";
                     td.contentEditable = "true";
                     
-                    // 元の生データを隠し属性として保存
                     td.setAttribute('data-raw', cellValue);
                     
-                    // 手動編集されたらロック状態（data-edited="true"）にする
                     td.addEventListener('input', () => {
                         td.setAttribute('data-edited', 'true');
                         td.classList.add('manually-edited');
@@ -489,7 +501,6 @@
         
         let updateCount = 0;
         cells.forEach(td => {
-            // 手動編集のロックがかかっていないセルだけを更新
             if (!td.getAttribute('data-edited')) {
                 const rawValue = td.getAttribute('data-raw');
                 if (rawValue) {
