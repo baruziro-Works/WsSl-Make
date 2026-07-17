@@ -7,7 +7,8 @@ https://baruziro-works.github.io/WsSl-Make/index.html
 https://baruziro-works.github.io/WsSl-Make/WsMake_manual.html
 
 
-モバイル版　WorshipSlide_mobile.html
+モバイル版　
+https://baruziro-works.github.io/WsSl-Make/WorshipSlide_mobile.html
 
 アプリ
 https://baruziro-works.github.io/WsSl-Make/WorshipSlide_mobile.html
