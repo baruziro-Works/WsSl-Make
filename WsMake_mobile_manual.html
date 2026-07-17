@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorshipSlide AI モバイル版 操作ガイド</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=BIZ+UDGothic:wght@400;700&family=BIZ+UDPGothic:wght@700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.min.js"></script>
+<style>
+  :root{
+    --bg:#F5F8FB; --card:#FFFFFF; --ink:#1E293B; --ink-mute:#5B6B80;
+    --sky:#2E86C1; --sky-deep:#1F5C86; --sky-soft:#DCEEFA;
+    --gold:#C9852E; --gold-soft:#FBEDD9;
+    --line:#E3E9F0; --frame:#182233; --screen:#0F172A;
+  }
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg); color:var(--ink); font-family:'BIZ UDGothic','Noto Sans JP',sans-serif;}
+  h1,h2,h3,.mincho{font-family:'Shippori Mincho',serif;}
+  .section-title{font-family:'Shippori Mincho',serif; font-weight:700; letter-spacing:.02em;}
+  .eyebrow{font-family:'BIZ UDPGothic','BIZ UDGothic',sans-serif; letter-spacing:.18em; font-size:11px; color:var(--sky-deep); font-weight:700;}
+
+  /* --- 電話フレーム（本マニュアル全体を通しての共通ビジュアル） --- */
+  .phone{width:250px; background:var(--frame); border-radius:30px; padding:9px; margin:0 auto;
+    box-shadow:0 24px 48px -18px rgba(15,23,42,.45), 0 2px 8px rgba(15,23,42,.15);}
+  .phone-notch{width:70px; height:5px; background:#0b1220; border-radius:99px; margin:0 auto 6px;}
+  .phone-screen{background:var(--screen); border-radius:22px; overflow:hidden; color:#E2E8F0; font-size:9.5px; position:relative;}
+  .m-header{display:flex; align-items:center; justify-content:space-between; padding:7px 9px; border-bottom:1px solid #263045; background:#151E2E;}
+  .m-tag{font-size:8px; color:#7DD3FC; font-weight:700; display:flex; align-items:center; gap:3px;}
+  .m-icon{width:12px; height:12px; color:#94A3B8;}
+  .m-preview{margin:8px; aspect-ratio:4/3; border-radius:12px; background:linear-gradient(180deg,#5bb4e5 0%,#a1d1eb 45%,#eef6fa 100%); position:relative; display:flex; align-items:center; justify-content:center;}
+  .m-preview-inner{position:absolute; inset:7%; border:1.5px solid rgba(255,255,255,.85); border-radius:8px; display:flex; flex-direction:column; justify-content:space-between; padding:6% 8%;}
+  .m-tabbar{display:flex; border-top:1px solid #263045;}
+  .m-tab{flex:1; text-align:center; padding:6px 2px; font-size:7.5px; color:#8291A8;}
+  .m-tab.on{color:#7DD3FC; border-top:2px solid #38BDF8; margin-top:-1px;}
+  .m-body{padding:8px 9px 12px;}
+
+  .callout{position:relative; padding-left:26px;}
+  .callout .num{position:absolute; left:0; top:0; width:19px; height:19px; border-radius:99px; background:var(--gold); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; font-family:'BIZ UDPGothic',sans-serif;}
+
+  .tip{background:var(--gold-soft); border:1px solid #F0D4A6; border-radius:14px; padding:14px 16px;}
+  .warn{background:#FDEEEE; border:1px solid #F4C7C7; border-radius:14px; padding:14px 16px;}
+
+  .navlink{color:var(--ink-mute); font-size:13px; padding:6px 10px; border-radius:8px; display:block;}
+  .navlink:hover{background:var(--sky-soft); color:var(--sky-deep);}
+
+  ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-thumb{background:#CBD5E1; border-radius:99px;}
+</style>
+</head>
+<body>
+
+<!-- ================= ヘッダー ================= -->
+<header class="sticky top-0 z-30 bg-white/90 backdrop-blur border-b" style="border-color:var(--line)">
+  <div class="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background:var(--sky-soft)">
+        <i data-lucide="sun" class="w-4 h-4" style="color:var(--sky-deep)"></i>
+      </div>
+      <span class="section-title text-lg" style="color:var(--sky-deep)">WorshipSlide AI 操作ガイド</span>
+    </div>
+    <button onclick="document.getElementById('mnav').classList.toggle('hidden')" class="lg:hidden p-2"><i data-lucide="menu" class="w-5 h-5"></i></button>
+  </div>
+</header>
+
+<div class="max-w-6xl mx-auto px-5 lg:flex lg:gap-10">
+
+  <!-- ================= サイドナビ ================= -->
+  <nav id="mnav" class="hidden lg:block lg:sticky lg:top-20 lg:self-start lg:w-52 shrink-0 py-6">
+    <div class="text-xs font-bold mb-2 px-2" style="color:var(--ink-mute)">もくじ</div>
+    <a class="navlink" href="#hajimeni">1. アプリの開き方</a>
+    <a class="navlink" href="#zentai">2. 画面の全体像</a>
+    <a class="navlink" href="#nyuryoku">3. 入力タブ</a>
+    <a class="navlink" href="#henshu">4. 編集タブ</a>
+    <a class="navlink" href="#shoshiki">5. 書式タブ</a>
+    <a class="navlink" href="#ichiran">6. 一覧タブ</a>
+    <a class="navlink" href="#preview">7. プレビュー操作</a>
+    <a class="navlink" href="#mokuji">8. 目次ボタン</a>
+    <a class="navlink" href="#data">9. データの読込・保存</a>
+    <a class="navlink" href="#faq">10. よくある質問</a>
+    <a class="navlink" href="#yougo">11. 用語集</a>
+  </nav>
+
+  <main class="flex-1 min-w-0">
+
+    <!-- ================= ヒーロー ================= -->
+    <section class="pt-10 pb-14">
+      <p class="eyebrow mb-3">SUNDAY WORSHIP · SLIDE MAKING GUIDE</p>
+      <h1 class="section-title text-3xl sm:text-4xl leading-snug mb-4" style="color:var(--ink)">
+        スマホひとつで、礼拝のスライドを<br class="hidden sm:block">つくる・整える・並べる。
+      </h1>
+      <p class="text-base leading-loose max-w-xl" style="color:var(--ink-mute)">
+        このページは、WorshipSlide AI（スマホ版）の使い方を、図を見ながら確認できるガイドです。
+        難しい操作はありません。上から順番に読んでいただければ、迷わず使えるようになります。
+      </p>
+    </section>
+
+    <!-- ================= 1. 開き方 ================= -->
+    <section id="hajimeni" class="py-10 border-t" style="border-color:var(--line)">
+      <p class="eyebrow mb-2">01</p>
+      <h2 class="section-title text-2xl mb-6">アプリの開き方</h2>
+      <div class="grid sm:grid-cols-2 gap-6">
+        <div class="callout"><span class="num">1</span>
+          <p class="leading-relaxed">送られてきたファイル（<code class="text-sm bg-slate-100 px-1.5 py-0.5 rounded">WorshipSlideAI_mobile.html</code>）を、iPhoneの「ファイル」アプリなどに保存します。</p>
+        </div>
+        <div class="callout"><span class="num">2</span>
+          <p class="leading-relaxed">ファイルをタップすると、Safari（またはChrome）で開きます。これだけで準備は完了です。</p>
+        </div>
+      </div>
+      <div class="tip mt-6 flex gap-3 items-start">
+        <i data-lucide="lightbulb" class="w-5 h-5 shrink-0 mt-0.5" style="color:var(--gold)"></i>
+        <p class="text-sm leading-relaxed"><b>ワンポイント：</b>Safariでファイルを開いた状態で、共有ボタン（四角に上矢印）→「ホーム画面に追加」を選ぶと、ホーム画面にアイコンができ、普通のアプリのようにワンタップで開けるようになります。</p>
+      </div>
+    </section>
+
+    <!-- ================= 2. 全体像 ================= -->
+    <section id="zentai" class="py-10 border-t" style="border-color:var(--line)">
+      <p class="eyebrow mb-2">02</p>
+      <h2 class="section-title text-2xl mb-6">画面の全体像</h2>
+      <div class="grid lg:grid-cols-[260px_1fr] gap-10 items-center">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="m-header"><span class="m-tag"><i data-lucide="list" class="m-icon"></i>目次</span><span style="color:#94A3B8">WorshipSlide AI</span><span class="flex gap-2"><i data-lucide="folder-open" class="m-icon"></i><i data-lucide="save" class="m-icon"></i></span></div>
+            <div class="m-preview"><div class="m-preview-inner"><div style="font-weight:700; text-align:center;">招詞</div><div style="font-size:8px; text-align:center;">さあ主に向かって<br>喜び歌おう</div><div style="display:flex; justify-content:space-between; font-size:7px;"><span></span><span>1/1</span></div></div></div>
+            <div class="m-tabbar">
+              <div class="m-tab on">入力</div><div class="m-tab">編集</div><div class="m-tab">書式</div><div class="m-tab">一覧</div>
+            </div>
+            <div class="m-body" style="color:#64748B">画面下半分が、選んだタブの作業エリアです。</div>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <p class="leading-loose" style="color:var(--ink-mute)">画面は、上から下へ4つのブロックに分かれています。役割さえ覚えてしまえば、あとは迷いません。</p>
+          <div class="space-y-3">
+            <div class="flex gap-3 items-start p-3 rounded-xl" style="background:var(--card); border:1px solid var(--line)">
+              <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style="background:var(--sky-soft)"><i data-lucide="layout-panel-top" class="w-4 h-4" style="color:var(--sky-deep)"></i></div>
+              <div><b class="text-sm">ヘッダー</b><p class="text-sm" style="color:var(--ink-mute)">目次を開く／データの読み込み・保存</p></div>
+            </div>
+            <div class="flex gap-3 items-start p-3 rounded-xl" style="background:var(--card); border:1px solid var(--line)">
+              <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style="background:var(--sky-soft)"><i data-lucide="monitor" class="w-4 h-4" style="color:var(--sky-deep)"></i></div>
+              <div><b class="text-sm">プレビュー</b><p class="text-sm" style="color:var(--ink-mute)">今のスライドが実際どう見えるかの確認画面</p></div>
+            </div>
+            <div class="flex gap-3 items-start p-3 rounded-xl" style="background:var(--card); border:1px solid var(--line)">
+              <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style="background:var(--sky-soft)"><i data-lucide="layout-grid" class="w-4 h-4" style="color:var(--sky-deep)"></i></div>
+              <div><b class="text-sm">タブ（入力・編集・書式・一覧）</b><p class="text-sm" style="color:var(--ink-mute)">作業内容の切り替え</p></div>
+            </div>
+            <div class="flex gap-3 items-start p-3 rounded-xl" style="background:var(--card); border:1px solid var(--line)">
+              <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style="background:var(--sky-soft)"><i data-lucide="pencil-ruler" class="w-4 h-4" style="color:var(--sky-deep)"></i></div>
+              <div><b class="text-sm">作業エリア</b><p class="text-sm" style="color:var(--ink-mute)">選んだタブに応じて入力・編集する場所</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 3. 入力タブ ================= -->
+    <section id="nyuryoku" class="py-10 border-t" style="border-color:var(--line)">
+      <p class="eyebrow mb-2">03</p>
+      <h2 class="section-title text-2xl mb-2">入力タブ — まずはここから</h2>
+      <p class="mb-6 leading-loose" style="color:var(--ink-mute)">礼拝プログラムを1行ずつ入力するだけで、自動でスライドが作られます。</p>
+
+      <div class="grid lg:grid-cols-[260px_1fr] gap-10 items-start">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="m-body">
+              <div class="rounded-lg p-2 mb-2" style="background:#1B2536; border:1px solid #2A3650; min-height:80px; line-height:1.7;">
+                招詞　詩篇100篇<br>讃美　254<br>主の祈り<br>説教<br>使徒信条<br>献金<br>祝祷
+              </div>
+              <div class="flex items-center gap-1.5 text-[8px]" style="color:#7DD3FC"><i data-lucide="database" class="w-3 h-3"></i>データベースと一致する行は自動でスライド化</div>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-5">
+          <div class="callout"><span class="num">1</span><p class="leading-relaxed">下のタブから <b>「入力」</b> をタップします。</p></div>
+          <div class="callout"><span class="num">2</span><p class="leading-relaxed">大きな入力欄に、プログラムを1行ずつ入力します。</p></div>
+          <div class="callout"><span class="num">3</span><p class="leading-relaxed">入力と同時に、自動でスライドが作られます。ボタン操作は不要です。</p></div>
+          <div class="callout"><span class="num">4</span><p class="leading-relaxed">データベースに登録済みの言葉（招詞・主の祈り・使徒信条・讃美歌番号など）を含む行は、自動でその内容に置き換わります。</p></div>
+
+          <div class="rounded-xl p-4 mt-2" style="background:var(--sky-soft)">
+            <p class="text-sm font-bold mb-2" style="color:var(--sky-deep)">見出しと本文の自動振り分け</p>
+            <p class="text-sm leading-relaxed">データベースに一致しない行は、<b>最初の空白より前が「見出し」</b>、<b>空白より後ろが「本文」</b>になります。</p>
+            <div class="mt-3 text-sm bg-white rounded-lg p-3 flex items-center gap-2 flex-wrap">
+              <span class="px-2 py-1 rounded" style="background:var(--gold-soft)">お知らせ</span>
+              <span style="color:var(--ink-mute)">来週は特別礼拝です</span>
+              <i data-lucide="arrow-right" class="w-4 h-4" style="color:var(--ink-mute)"></i>
+              <span>見出し「<b>お知らせ</b>」／本文「<b>来週は特別礼拝です</b>」</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 4. 編集タブ ================= -->
+    <section id="henshu" class="py-10 border-t" style="border-color:var(--line)">
+      <p class="eyebrow mb-2">04</p>
+      <h2 class="section-title text-2xl mb-2">編集タブ — 内容を直す</h2>
+      <p class="mb-6 leading-loose" style="color:var(--ink-mute)">見出し・本文・出典を直接書き換えられます。ふりがなや暗唱表示もここで設定します。</p>
+
+      <div class="grid lg:grid-cols-[260px_1fr] gap-10 items-start">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="m-body">
+              <div class="flex justify-between items-center mb-2 rounded-lg p-1.5" style="background:#1B2536">
+                <i data-lucide="chevron-left" class="w-3 h-3"></i><span>2 / 7</span><i data-lucide="chevron-right" class="w-3 h-3"></i>
+              </div>
+              <div class="flex gap-1 mb-2">
+                <div class="flex-1 h-5 rounded flex items-center justify-center" style="background:#065F46"><i data-lucide="plus" class="w-3 h-3"></i></div>
+                <div class="flex-1 h-5 rounded flex items-center justify-center" style="background:#155E75"><i data-lucide="copy" class="w-3 h-3"></i></div>
+                <div class="flex-1 h-5 rounded flex items-center justify-center" style="background:#334155"><i data-lucide="arrow-up" class="w-3 h-3"></i></div>
+                <div class="flex-1 h-5 rounded flex items-center justify-center" style="background:#334155"><i data-lucide="arrow-down" class="w-3 h-3"></i></div>
+                <div class="flex-1 h-5 rounded flex items-center justify-center" style="background:#7F1D1D"><i data-lucide="trash-2" class="w-3 h-3"></i></div>
+              </div>
+              <div class="text-[8px] mb-1" style="color:#7DD3FC">見出し</div>
+              <div class="rounded p-1.5 mb-2" style="background:#1B2536">讃美 254</div>
+              <div class="text-[8px] mb-1" style="color:#7DD3FC">本文</div>
+              <div class="rounded p-1.5" style="background:#1B2536; min-height:40px;">私[わたくし]たちは〈救われた〉</div>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-6">
+          <div>
+            <p class="text-sm font-bold mb-2">スライド操作の5つのボタン</p>
+            <div class="grid grid-cols-5 gap-2 text-center">
+              <div><div class="w-9 h-9 mx-auto rounded-lg flex items-center justify-center mb-1" style="background:#065F46"><i data-lucide="plus" class="w-4 h-4 text-white"></i></div><p class="text-[11px]" style="color:var(--ink-mute)">追加</p></div>
+              <div><div class="w-9 h-9 mx-auto rounded-lg flex items-center justify-center mb-1" style="background:#155E75"><i data-lucide="copy" class="w-4 h-4 text-white"></i></div><p class="text-[11px]" style="color:var(--ink-mute)">複製</p></div>
+              <div><div class="w-9 h-9 mx-auto rounded-lg flex items-center justify-center mb-1" style="background:#475569"><i data-lucide="arrow-up" class="w-4 h-4 text-white"></i></div><p class="text-[11px]" style="color:var(--ink-mute)">前へ</p></div>
+              <div><div class="w-9 h-9 mx-auto rounded-lg flex items-center justify-center mb-1" style="background:#475569"><i data-lucide="arrow-down" class="w-4 h-4 text-white"></i></div><p class="text-[11px]" style="color:var(--ink-mute)">後ろへ</p></div>
+              <div><div class="w-9 h-9 mx-auto rounded-lg flex items-center justify-center mb-1" style="background:#991B1B"><i data-lucide="trash-2" class="w-4 h-4 text-white"></i></div><p class="text-[11px]" style="color:var(--ink-mute)">削除</p></div>
+            </div>
+          </div>
+
+          <div class="rounded-xl p-4" style="background:var(--card); border:1px solid var(--line)">
+            <p class="text-sm font-bold mb-2 flex items-center gap-2"><i data-lucide="text" class="w-4 h-4" style="color:var(--sky-deep)"></i>ふりがな（ルビ）の付け方</p>
+            <p class="text-sm leading-relaxed mb-3">漢字のすぐ後ろに <code class="bg-slate-100 px-1 rounded">[ふりがな]</code> と書くだけです。</p>
+            <div class="rounded-lg p-3 flex items-center gap-3 flex-wrap" style="background:#F8FAFC">
+              <code class="text-sm">私[わたくし]たちは</code>
+              <i data-lucide="arrow-right" class="w-4 h-4" style="color:var(--ink-mute)"></i>
+              <span class="text-lg" style="line-height:2.2">
+                <ruby>私<rt style="font-size:.5em">わたくし</rt></ruby>たちは
+              </span>
+            </div>
+          </div>
+
+          <div class="rounded-xl p-4" style="background:var(--card); border:1px solid var(--line)">
+            <p class="text-sm font-bold mb-2 flex items-center gap-2"><i data-lucide="eye-off" class="w-4 h-4" style="color:var(--gold)"></i>暗唱（虫食い）マーカー</p>
+            <p class="text-sm leading-relaxed mb-3">言葉を <code class="bg-slate-100 px-1 rounded">〈　〉</code> で囲むと、暗唱モードでその言葉が隠れます。編集欄の下にある「〈〉1」「〈〉2」「〈〉3」ボタンで、選んだ言葉を囲めます（数字が大きいほど、後の段階で消えます）。</p>
+            <div class="flex gap-1.5">
+              <span class="text-xs px-2.5 py-1 rounded-lg font-bold" style="background:var(--gold-soft); color:var(--gold)">〈〉1</span>
+              <span class="text-xs px-2.5 py-1 rounded-lg font-bold" style="background:var(--gold-soft); color:var(--gold)">〈〉2</span>
+              <span class="text-xs px-2.5 py-1 rounded-lg font-bold" style="background:var(--gold-soft); color:var(--gold)">〈〉3</span>
+            </div>
+          </div>
+
+          <div class="rounded-xl p-4" style="background:var(--card); border:1px solid var(--line)">
+            <p class="text-sm font-bold mb-2 flex items-center gap-2"><i data-lucide="columns-2" class="w-4 h-4" style="color:var(--sky-deep)"></i>2段組にする</p>
+            <p class="text-sm leading-relaxed">文章の途中にカーソルを置いて「2段組」ボタンを押すと、そこから後の文章が右側の段に分かれます。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 5. 書式タブ ================= -->
+    <section id="shoshiki" class="py-10 border-t" style="border-color:var(--line)">
+      <p class="eyebrow mb-2">05</p>
+      <h2 class="section-title text-2xl mb-2">書式タブ — 見た目を整える</h2>
+      <p class="mb-6 leading-loose" style="color:var(--ink-mute)">文字の大きさや色、余白などを調整します。項目ボタンを押すと、その設定だけが下に現れます。</p>
+
+      <div class="grid lg:grid-cols-[260px_1fr] gap-10 items-start">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="m-body">
+              <div class="flex gap-1 flex-wrap mb-3">
+                <span class="text-[7.5px] px-1.5 py-1 rounded" style="background:#0284C7">文字サイズ</span>
+                <span class="text-[7.5px] px-1.5 py-1 rounded" style="background:#1E293B; color:#94A3B8">文字色</span>
+                <span class="text-[7.5px] px-1.5 py-1 rounded" style="background:#1E293B; color:#94A3B8">余白</span>
+                <span class="text-[7.5px] px-1.5 py-1 rounded" style="background:#1E293B; color:#94A3B8">行間</span>
+              </div>
+              <div class="rounded-lg p-2" style="background:#1B2536">
+                <div class="flex items-center gap-1.5 mb-2">
+                  <div class="w-5 h-5 rounded flex items-center justify-center" style="background:#7F1D1D">−</div>
+                  <div class="flex-1 h-1 rounded-full" style="background:#334155"><div class="h-1 rounded-full" style="width:60%; background:#38BDF8"></div></div>
+                  <div class="w-5 h-5 rounded flex items-center justify-center" style="background:#065F46">＋</div>
+                </div>
+                <div class="text-[7.5px]" style="color:#7DD3FC">本文：100%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-5">
+          <div class="callout"><span class="num">1</span><p class="leading-relaxed">下のタブから <b>「書式」</b> をタップします。</p></div>
+          <div class="callout"><span class="num">2</span><p class="leading-relaxed">上部の項目ボタン（<b>文字サイズ／文字色／左右余白／上下余白／縦位置／白枠／行間／テーマ</b>）から、変えたい項目をタップします。</p></div>
+          <div class="callout"><span class="num">3</span><p class="leading-relaxed">スライダーや「−」「＋」ボタンで細かく調整、または選択肢のボタンをタップして選びます。</p></div>
+
+          <div class="grid sm:grid-cols-2 gap-3 mt-2">
+            <div class="rounded-xl p-4" style="background:var(--card); border:1px solid var(--line)">
+              <p class="text-sm font-bold mb-1 flex items-center gap-2"><i data-lucide="copy-check" class="w-4 h-4" style="color:var(--sky-deep)"></i>前と同じ書式</p>
+              <p class="text-sm" style="color:var(--ink-mute)">ひとつ前のスライドと同じ見た目に揃えます。</p>
+            </div>
+            <div class="rounded-xl p-4" style="background:var(--card); border:1px solid var(--line)">
+              <p class="text-sm font-bold mb-1 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4" style="color:var(--sky-deep)"></i>全スライドに適用</p>
+              <p class="text-sm" style="color:var(--ink-mute)">今の書式を、すべてのスライドに一気に反映します。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 6. 一覧タブ ================= -->
+    <section id="ichiran" class="py-10 border-t" style="border-color:var(--line)">
+      <p class="eyebrow mb-2">06</p>
+      <h2 class="section-title text-2xl mb-2">一覧タブ — 並べ替え・複数選択</h2>
+      <p class="mb-6 leading-loose" style="color:var(--ink-mute)">スライドをカードで一覧表示し、ドラッグで順番を入れ替えられます。</p>
+
+      <div class="grid lg:grid-cols-[260px_1fr] gap-10 items-start">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="m-body space-y-1.5">
+              <div class="flex items-center gap-1.5 rounded-lg p-1.5" style="background:#1B2536; border:1px solid #38BDF8">
+                <span style="color:#64748B">1</span><span class="flex-1">招詞</span><i data-lucide="grip-vertical" class="w-3 h-3" style="color:#64748B"></i>
+              </div>
+              <div class="flex items-center gap-1.5 rounded-lg p-1.5" style="background:#1B2536">
+                <span style="color:#64748B">2</span><span class="flex-1">讃美 254</span><i data-lucide="grip-vertical" class="w-3 h-3" style="color:#64748B"></i>
+              </div>
+              <div class="flex items-center gap-1.5 rounded-lg p-1.5" style="background:#1B2536">
+                <span style="color:#64748B">3</span><span class="flex-1">主の祈り</span><i data-lucide="grip-vertical" class="w-3 h-3" style="color:#64748B"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-5">
+          <div class="callout"><span class="num">1</span><p class="leading-relaxed">一番右の <b>「一覧」</b> タブをタップすると、スライドがカードで縦に並びます。</p></div>
+          <div class="callout"><span class="num">2</span><p class="leading-relaxed">カードをタップすると、そのスライドの編集画面に移動します。</p></div>
+          <div class="callout"><span class="num">3</span><p class="leading-relaxed">カード右端の「⋮⋮」を指で押さえたまま上下にドラッグすると、<b>順番を入れ替え</b>られます。</p></div>
+
+          <div class="rounded-xl p-4" style="background:var(--sky-soft)">
+            <p class="text-sm font-bold mb-2" style="color:var(--sky-deep)">複数選択して削除・入れ替え</p>
+            <p class="text-sm leading-relaxed">右上の「選択」ボタンでチェックボックスが現れます。<b>2件チェックして「入れ替え」</b>を押すとその2枚が入れ替わり、<b>複数チェックして「削除」</b>を押すとまとめて削除できます。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 7. プレビュー操作 ================= -->
+    <section id="preview" class="py-10 border-t" style="border-color:var(--line)">
+      <p class="eyebrow mb-2">07</p>
+      <h2 class="section-title text-2xl mb-2">プレビューの使い方</h2>
+      <p class="mb-6 leading-loose" style="color:var(--ink-mute)">プレビュー右上の3つのボタンと、スワイプ操作を覚えておくと、作業がぐっと快適になります。</p>
+
+      <div class="grid lg:grid-cols-[260px_1fr] gap-10 items-start">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="m-header" style="border-bottom:none; padding-bottom:0;"><span></span>
+              <span class="flex gap-2 text-[8px]" style="color:#94A3B8">
+                <span class="flex items-center gap-0.5"><i data-lucide="minimize-2" class="m-icon"></i>小さく</span>
+                <span class="flex items-center gap-0.5"><i data-lucide="maximize-2" class="m-icon"></i>拡大</span>
+                <span class="flex items-center gap-0.5"><i data-lucide="eye-off" class="m-icon"></i>隠す</span>
+              </span>
+            </div>
+            <div class="m-preview" style="margin-top:6px;"><div class="m-preview-inner" style="align-items:center; justify-content:center;"><i data-lucide="move-horizontal" class="w-6 h-6" style="color:#fff; opacity:.85"></i></div></div>
+            <div class="m-body" style="text-align:center; color:#64748B;">左右にスワイプでスライド送り</div>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="flex gap-3 items-center p-3 rounded-xl" style="background:var(--card); border:1px solid var(--line)">
+            <i data-lucide="minimize-2" class="w-5 h-5 shrink-0" style="color:var(--sky-deep)"></i>
+            <p class="text-sm"><b>小さく／大きく</b>：プレビューを小さくして、入力・編集エリアを広く使えます。</p>
+          </div>
+          <div class="flex gap-3 items-center p-3 rounded-xl" style="background:var(--card); border:1px solid var(--line)">
+            <i data-lucide="maximize-2" class="w-5 h-5 shrink-0" style="color:var(--sky-deep)"></i>
+            <p class="text-sm"><b>拡大／閉じる</b>：画面いっぱいに広げて実際の見え方を確認できます。画面を軽くタップすると元に戻ります。</p>
+          </div>
+          <div class="flex gap-3 items-center p-3 rounded-xl" style="background:var(--card); border:1px solid var(--line)">
+            <i data-lucide="eye-off" class="w-5 h-5 shrink-0" style="color:var(--sky-deep)"></i>
+            <p class="text-sm"><b>プレビューを隠す／表示</b>：入力・編集タブで入力欄を大きく使えます（書式タブでは常に表示されます）。</p>
+          </div>
+          <div class="flex gap-3 items-center p-3 rounded-xl" style="background:var(--card); border:1px solid var(--line)">
+            <i data-lucide="move-horizontal" class="w-5 h-5 shrink-0" style="color:var(--sky-deep)"></i>
+            <p class="text-sm"><b>左右スワイプ</b>：プレビュー画面を指でなぞると、前後のスライドに移動します。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 8. 目次 ================= -->
+    <section id="mokuji" class="py-10 border-t" style="border-color:var(--line)">
+      <p class="eyebrow mb-2">08</p>
+      <h2 class="section-title text-2xl mb-2">目次ボタン</h2>
+      <div class="grid lg:grid-cols-[260px_1fr] gap-10 items-center">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="m-body">
+              <div class="text-[8px] font-bold mb-2" style="color:#E2E8F0">目次（タップでジャンプ）</div>
+              <div class="space-y-1">
+                <div class="rounded p-1.5" style="background:#0C4A6E; color:#7DD3FC">1　招詞</div>
+                <div class="rounded p-1.5" style="background:#1B2536">2　讃美 254</div>
+                <div class="rounded p-1.5" style="background:#1B2536">3　主の祈り</div>
+                <div class="rounded p-1.5" style="background:#1B2536">4　説教</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="leading-loose" style="color:var(--ink-mute)">ヘッダー左の <b style="color:var(--ink)">「目次」</b> ボタンを押すと、全スライドの見出しだけが一覧表示されます。プログラム全体の流れをざっと確認したいときや、特定のスライドにすぐジャンプしたいときに使います。項目をタップすると、そのスライドの編集画面が開きます。</p>
+      </div>
+    </section>
+
+    <!-- ================= 9. データ読込・保存 ================= -->
+    <section id="data" class="py-10 border-t" style="border-color:var(--line)">
+      <p class="eyebrow mb-2">09</p>
+      <h2 class="section-title text-2xl mb-6">データの読み込み・保存（.wslideファイル）</h2>
+
+      <div class="flex items-center justify-center gap-3 sm:gap-6 mb-8 flex-wrap">
+        <div class="text-center">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-2" style="background:var(--sky-soft)"><i data-lucide="monitor" class="w-6 h-6" style="color:var(--sky-deep)"></i></div>
+          <p class="text-xs" style="color:var(--ink-mute)">PC版で書き出す</p>
+        </div>
+        <i data-lucide="arrow-right" class="w-5 h-5 shrink-0" style="color:var(--ink-mute)"></i>
+        <div class="text-center">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-2" style="background:var(--gold-soft)"><i data-lucide="file-text" class="w-6 h-6" style="color:var(--gold)"></i></div>
+          <p class="text-xs" style="color:var(--ink-mute)">.wslideファイル</p>
+        </div>
+        <i data-lucide="arrow-right" class="w-5 h-5 shrink-0" style="color:var(--ink-mute)"></i>
+        <div class="text-center">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-2" style="background:var(--sky-soft)"><i data-lucide="smartphone" class="w-6 h-6" style="color:var(--sky-deep)"></i></div>
+          <p class="text-xs" style="color:var(--ink-mute)">スマホ版で読込</p>
+        </div>
+        <i data-lucide="arrow-right" class="w-5 h-5 shrink-0" style="color:var(--ink-mute)"></i>
+        <div class="text-center">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-2" style="background:#DCFCE7"><i data-lucide="check" class="w-6 h-6" style="color:#166534"></i></div>
+          <p class="text-xs" style="color:var(--ink-mute)">以後は自動で保存</p>
+        </div>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div class="rounded-xl p-4" style="background:var(--card); border:1px solid var(--line)">
+          <p class="text-sm font-bold mb-1 flex items-center gap-2"><i data-lucide="folder-open" class="w-4 h-4" style="color:var(--sky-deep)"></i>読み込み</p>
+          <p class="text-sm leading-relaxed" style="color:var(--ink-mute)">PC版で書き出した<code class="bg-slate-100 px-1 rounded">.wslide</code>ファイルを読み込みます。歌詞・お祈りの文言などの<b>データベースがスマホに保存</b>され、次回以降も自動で使われ続けます（一度読み込めば、毎回の読み込みは不要）。</p>
+        </div>
+        <div class="rounded-xl p-4" style="background:var(--card); border:1px solid var(--line)">
+          <p class="text-sm font-bold mb-1 flex items-center gap-2"><i data-lucide="save" class="w-4 h-4" style="color:var(--sky-deep)"></i>書き出し</p>
+          <p class="text-sm leading-relaxed" style="color:var(--ink-mute)">今スマホで作業している内容を<code class="bg-slate-100 px-1 rounded">.wslide</code>として保存します。PC版で読み込むこともできます。</p>
+        </div>
+      </div>
+
+      <div class="warn mt-5 flex gap-3 items-start">
+        <i data-lucide="triangle-alert" class="w-5 h-5 shrink-0 mt-0.5" style="color:#B91C1C"></i>
+        <div class="text-sm leading-relaxed">
+          <p class="mb-1">データは、<b>その端末・そのブラウザの中だけ</b>に保存されます。別の端末やブラウザに移すには、その都度<code class="bg-white px-1 rounded">.wslide</code>を読み込む必要があります。</p>
+          <p>スマホの「設定」からブラウザの履歴・データを消去すると、保存されていたデータベースも消えます。その場合は、もう一度<code class="bg-white px-1 rounded">.wslide</code>を読み込めば復元できます。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 10. FAQ ================= -->
+    <section id="faq" class="py-10 border-t" style="border-color:var(--line)">
+      <p class="eyebrow mb-2">10</p>
+      <h2 class="section-title text-2xl mb-6">よくある質問</h2>
+      <div class="space-y-3">
+        <details class="rounded-xl p-4 group" style="background:var(--card); border:1px solid var(--line)">
+          <summary class="font-bold text-sm cursor-pointer flex items-center justify-between">入力しても何もスライドができません<i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i></summary>
+          <p class="text-sm mt-2 leading-relaxed" style="color:var(--ink-mute)">入力欄に文字が入っているか、キーボードを閉じてプレビューが更新されているかご確認ください。</p>
+        </details>
+        <details class="rounded-xl p-4 group" style="background:var(--card); border:1px solid var(--line)">
+          <summary class="font-bold text-sm cursor-pointer flex items-center justify-between">データベースに登録したはずの言葉が反映されません<i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i></summary>
+          <p class="text-sm mt-2 leading-relaxed" style="color:var(--ink-mute)">.wslideを読み込んだ後に入力し直すと反映されます。読み込み前に入力していた内容は、読み込み時に自動で再解析されます。</p>
+        </details>
+        <details class="rounded-xl p-4 group" style="background:var(--card); border:1px solid var(--line)">
+          <summary class="font-bold text-sm cursor-pointer flex items-center justify-between">せっかく作ったスライドが消えてしまいました<i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i></summary>
+          <p class="text-sm mt-2 leading-relaxed" style="color:var(--ink-mute)">作業内容は自動保存されているので、アプリを閉じて再度開けば復元されます。それでも消えている場合は、直前に保存した.wslideファイルを読み込んでください。</p>
+        </details>
+        <details class="rounded-xl p-4 group" style="background:var(--card); border:1px solid var(--line)">
+          <summary class="font-bold text-sm cursor-pointer flex items-center justify-between">文字が思ったより小さい／大きいです<i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i></summary>
+          <p class="text-sm mt-2 leading-relaxed" style="color:var(--ink-mute)">「書式」タブの「文字サイズ」から調整できます。長い文章は自動で少し小さめに表示される仕組みです。</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- ================= 11. 用語集 ================= -->
+    <section id="yougo" class="py-10 border-t" style="border-color:var(--line)">
+      <p class="eyebrow mb-2">11</p>
+      <h2 class="section-title text-2xl mb-6">用語かんたん解説</h2>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div class="rounded-xl p-4" style="background:var(--card); border:1px solid var(--line)"><b class="text-sm">スライド</b><p class="text-sm mt-1" style="color:var(--ink-mute)">プロジェクターに映す1画面分の内容</p></div>
+        <div class="rounded-xl p-4" style="background:var(--card); border:1px solid var(--line)"><b class="text-sm">データベース</b><p class="text-sm mt-1" style="color:var(--ink-mute)">招詞・お祈り・讃美歌など、あらかじめ登録された定型文</p></div>
+        <div class="rounded-xl p-4" style="background:var(--card); border:1px solid var(--line)"><b class="text-sm">.wslideファイル</b><p class="text-sm mt-1" style="color:var(--ink-mute)">スライド・データベースをまとめて保存できるファイル</p></div>
+        <div class="rounded-xl p-4" style="background:var(--card); border:1px solid var(--line)"><b class="text-sm">ルビ</b><p class="text-sm mt-1" style="color:var(--ink-mute)">漢字の上に付く「ふりがな」のこと</p></div>
+        <div class="rounded-xl p-4 sm:col-span-2" style="background:var(--card); border:1px solid var(--line)"><b class="text-sm">暗唱モード</b><p class="text-sm mt-1" style="color:var(--ink-mute)">文字の一部を隠して、みんなで覚えて唱えるための表示モード</p></div>
+      </div>
+    </section>
+
+    <footer class="py-12 text-center text-sm" style="color:var(--ink-mute)">
+      困ったときや分かりにくい箇所があれば、いつでも遠慮なくお知らせください。
+    </footer>
+
+  </main>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

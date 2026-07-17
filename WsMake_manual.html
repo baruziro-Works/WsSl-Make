@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorshipSlide AI 使い方ガイド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF6EC;
+    --paper-soft:#F3EBDB;
+    --ink:#2B3245;
+    --ink-soft:#5B6478;
+    --sky:#3B82C4;
+    --sky-deep:#215A8C;
+    --amber:#D98E4A;
+    --amber-deep:#B36E2E;
+    --sage:#6B8E63;
+    --sage-deep:#4E6B47;
+    --coral:#C1583F;
+    --line:#E4D9C2;
+    --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;
+    line-height:1.9;
+    font-size:16px;
+  }
+  h1,h2,h3,.display{
+    font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN",sans-serif;
+  }
+  a{color:var(--sky-deep);}
+  img,svg{max-width:100%;}
+
+  /* ===== ヘッダー ===== */
+  .hero{
+    position:relative;
+    background:linear-gradient(180deg,#2A4F72 0%, #3B82C4 55%, #8FC1E8 100%);
+    color:#fff;
+    padding:56px 24px 90px;
+    overflow:hidden;
+  }
+  .hero-inner{max-width:880px;margin:0 auto;position:relative;z-index:2;}
+  .hero-eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(255,255,255,0.16);
+    border:1px solid rgba(255,255,255,0.35);
+    padding:6px 14px;border-radius:999px;
+    font-size:13px;font-weight:700;letter-spacing:.04em;
+    margin-bottom:18px;
+  }
+  .hero h1{
+    font-size:clamp(28px,5vw,44px);
+    font-weight:900;
+    margin:0 0 14px;
+    line-height:1.35;
+  }
+  .hero p.lead{
+    font-size:17px;
+    max-width:560px;
+    color:rgba(255,255,255,0.92);
+    margin:0 0 8px;
+  }
+  .hero-wave{
+    position:absolute;left:0;right:0;bottom:-2px;line-height:0;z-index:1;
+  }
+
+  /* ===== 目次 ===== */
+  .toc-wrap{max-width:880px;margin:-56px auto 40px;padding:0 24px;position:relative;z-index:3;}
+  .toc{
+    background:var(--card);
+    border-radius:20px;
+    box-shadow:0 18px 40px -20px rgba(43,50,69,0.35);
+    padding:26px 28px;
+    border:1px solid var(--line);
+  }
+  .toc h2{margin:0 0 14px;font-size:15px;color:var(--ink-soft);font-weight:700;letter-spacing:.05em;}
+  .toc ol{
+    margin:0;padding:0;list-style:none;
+    display:grid;grid-template-columns:repeat(2,1fr);gap:6px 22px;
+  }
+  .toc li a{
+    display:flex;align-items:baseline;gap:10px;
+    color:var(--ink);text-decoration:none;font-weight:500;font-size:15px;
+    padding:6px 4px;border-radius:10px;
+  }
+  .toc li a:hover{background:var(--paper-soft);}
+  .toc li a .num{
+    font-family:"Zen Maru Gothic",sans-serif;font-weight:900;color:var(--sky);
+    font-size:14px;min-width:20px;
+  }
+  @media (max-width:640px){ .toc ol{grid-template-columns:1fr;} }
+
+  /* ===== 本文セクション ===== */
+  main{max-width:880px;margin:0 auto;padding:0 24px 80px;}
+  section{margin-top:64px;scroll-margin-top:24px;}
+  section:first-of-type{margin-top:20px;}
+
+  .section-head{display:flex;align-items:center;gap:16px;margin-bottom:22px;}
+  .section-head .badge{
+    width:46px;height:46px;border-radius:14px;
+    background:var(--sky);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Zen Maru Gothic",sans-serif;font-weight:900;font-size:20px;
+    flex-shrink:0;
+    box-shadow:0 8px 16px -6px rgba(59,130,196,0.55);
+  }
+  .section-head h2{margin:0;font-size:24px;font-weight:700;color:var(--ink);}
+  .section-head p{margin:2px 0 0;color:var(--ink-soft);font-size:14px;}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:24px 26px;
+    margin:18px 0;
+  }
+  .card h3{margin:0 0 10px;font-size:17px;color:var(--sky-deep);}
+
+  .tip, .caution, .note{
+    border-radius:16px;
+    padding:18px 20px;
+    margin:20px 0;
+    display:flex;gap:14px;
+    align-items:flex-start;
+    font-size:15px;
+  }
+  .tip{background:#EEF5EA;border:1px solid #CFE3C6;}
+  .tip .icon{color:var(--sage-deep);}
+  .caution{background:#FBECE7;border:1px solid #F0CBBE;}
+  .caution .icon{color:var(--coral);}
+  .note{background:#EAF2FA;border:1px solid #CBDFF0;}
+  .note .icon{color:var(--sky-deep);}
+  .tip b, .caution b, .note b{display:block;margin-bottom:3px;}
+  .tip .icon, .caution .icon, .note .icon{
+    font-size:22px;line-height:1;flex-shrink:0;margin-top:2px;
+  }
+
+  .steps{counter-reset:step;list-style:none;padding:0;margin:26px 0;}
+  .steps > li{
+    counter-increment:step;
+    position:relative;
+    padding:22px 22px 22px 74px;
+    margin-bottom:16px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+  }
+  .steps > li::before{
+    content:counter(step);
+    position:absolute;left:20px;top:22px;
+    width:38px;height:38px;border-radius:12px;
+    background:var(--amber);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Zen Maru Gothic",sans-serif;font-weight:900;font-size:18px;
+  }
+  .steps h4{margin:0 0 8px;font-size:17px;}
+  .steps p{margin:0;color:var(--ink-soft);}
+
+  code, .kbd{
+    font-family:ui-monospace,"SF Mono",Consolas,monospace;
+    background:var(--paper-soft);
+    border:1px solid var(--line);
+    padding:2px 7px;
+    border-radius:6px;
+    font-size:0.92em;
+    color:var(--sky-deep);
+  }
+  .kbd{color:var(--ink);font-weight:700;}
+
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14.5px;}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);}
+  th{color:var(--ink-soft);font-weight:700;font-size:13px;letter-spacing:.02em;}
+
+  .diagram{
+    background:var(--paper-soft);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:18px;
+    margin:20px 0;
+    text-align:center;
+  }
+  .diagram figcaption{
+    margin-top:10px;font-size:13px;color:var(--ink-soft);
+  }
+
+  .faq{border-bottom:1px solid var(--line);padding:18px 0;}
+  .faq:last-child{border-bottom:none;}
+  .faq .q{font-weight:700;display:flex;gap:10px;margin-bottom:8px;}
+  .faq .q .qmark{
+    background:var(--sky);color:#fff;border-radius:50%;
+    width:24px;height:24px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:900;
+  }
+  .faq .a{color:var(--ink-soft);padding-left:34px;}
+
+  footer{
+    text-align:center;padding:40px 24px 70px;color:var(--ink-soft);font-size:13px;
+  }
+  .back-to-top{
+    display:inline-block;margin-top:18px;color:var(--sky-deep);text-decoration:none;font-weight:700;font-size:14px;
+  }
+
+  .pill-row{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;}
+  .pill{
+    background:var(--paper-soft);border:1px solid var(--line);
+    border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;color:var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ ヒーローヘッダー ============ -->
+<div class="hero">
+  <div class="hero-inner">
+    <span class="hero-eyebrow">📖 使い方ガイド</span>
+    <h1>WorshipSlide AI<br>操作マニュアル</h1>
+    <p class="lead">礼拝プログラムの文章を入力するだけで、プロジェクター用のスライドを自動でつくれるアプリです。このページでは、画面の見方から投影のしかたまで、ひとつずつ図で説明します。</p>
+    <p class="lead" style="font-size:14px;opacity:.85;">むずかしい操作はありません。ゆっくり読みながら、実際にアプリを触ってみてください。</p>
+  </div>
+  <div class="hero-wave">
+    <svg viewBox="0 0 1440 90" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:90px;">
+      <path d="M0,40 C240,90 480,0 720,30 C960,60 1200,10 1440,45 L1440,90 L0,90 Z" fill="#FBF6EC"/>
+    </svg>
+  </div>
+</div>
+
+<!-- ============ 目次 ============ -->
+<div class="toc-wrap">
+  <nav class="toc">
+    <h2>もくじ</h2>
+    <ol>
+      <li><a href="#map"><span class="num">01</span>画面の見方（全体地図）</a></li>
+      <li><a href="#basic"><span class="num">02</span>基本の使い方（3ステップ）</a></li>
+      <li><a href="#writing"><span class="num">03</span>文字の書き方のコツ</a></li>
+      <li><a href="#design"><span class="num">04</span>見た目を整える</a></li>
+      <li><a href="#database"><span class="num">05</span>歌詞データベースの使い方</a></li>
+      <li><a href="#present"><span class="num">06</span>投影する（本番操作）</a></li>
+      <li><a href="#backup"><span class="num">07</span>データの保存・読み込み</a></li>
+      <li><a href="#version"><span class="num">08</span>バージョン表示について</a></li>
+      <li><a href="#faq"><span class="num">09</span>困ったときは（Q&amp;A）</a></li>
+    </ol>
+  </nav>
+</div>
+
+<main>
+
+<!-- ============ 01. 画面の見方 ============ -->
+<section id="map">
+  <div class="section-head">
+    <div class="badge">01</div>
+    <div>
+      <h2>画面の見方（全体地図）</h2>
+      <p>まずは、どこに何があるのかを大まかに知っておきましょう。</p>
+    </div>
+  </div>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 820 480" xmlns="http://www.w3.org/2000/svg" font-family="'Noto Sans JP',sans-serif">
+      <rect x="0" y="0" width="820" height="480" rx="16" fill="#1e293b"/>
+      <!-- ヘッダー -->
+      <rect x="12" y="12" width="796" height="46" rx="8" fill="#334155"/>
+      <circle cx="34" cy="35" r="10" fill="#0ea5e9"/>
+      <text x="52" y="30" fill="#fff" font-size="13" font-weight="700">WorshipSlide AI</text>
+      <text x="52" y="45" fill="#94a3b8" font-size="9">礼拝用プロジェクター自動作成・投影システム</text>
+      <rect x="600" y="22" width="90" height="24" rx="6" fill="#ea580c"/>
+      <text x="645" y="38" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">DB管理</text>
+      <rect x="700" y="22" width="96" height="24" rx="6" fill="#475569"/>
+      <text x="748" y="38" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">保存/読込</text>
+
+      <!-- 左パネル -->
+      <rect x="12" y="66" width="270" height="402" rx="10" fill="#0f172a"/>
+      <text x="26" y="88" fill="#7dd3fc" font-size="12" font-weight="700">① プログラム入力欄</text>
+      <rect x="24" y="96" width="246" height="70" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="32" y="114" fill="#cbd5e1" font-size="9">招詞　詩篇100篇1-2節</text>
+      <text x="32" y="128" fill="#cbd5e1" font-size="9">讃美歌　LP78</text>
+      <text x="32" y="142" fill="#cbd5e1" font-size="9">祈りと献金の時</text>
+      <text x="32" y="156" fill="#cbd5e1" font-size="9">説教　◯◯牧師</text>
+
+      <text x="26" y="184" fill="#7dd3fc" font-size="12" font-weight="700">② スライド一覧</text>
+      <rect x="24" y="192" width="246" height="130" rx="6" fill="#1e293b" stroke="#334155"/>
+      <rect x="32" y="200" width="230" height="26" rx="4" fill="#7c2d12"/>
+      <text x="40" y="217" fill="#fed7aa" font-size="9">1. 招詞（詩篇100篇）</text>
+      <rect x="32" y="230" width="230" height="26" rx="4" fill="#334155"/>
+      <text x="40" y="247" fill="#e2e8f0" font-size="9">2. 讃美歌 LP78</text>
+      <rect x="32" y="260" width="230" height="26" rx="4" fill="#334155"/>
+      <text x="40" y="277" fill="#e2e8f0" font-size="9">3. 祈りと献金の時</text>
+      <rect x="32" y="290" width="230" height="26" rx="4" fill="#334155"/>
+      <text x="40" y="307" fill="#e2e8f0" font-size="9">4. 説教</text>
+
+      <text x="26" y="340" fill="#7dd3fc" font-size="12" font-weight="700">③ スライド編集エリア</text>
+      <rect x="24" y="348" width="246" height="106" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="32" y="366" fill="#94a3b8" font-size="8">見出し／本文／左下 を書きかえられます</text>
+      <rect x="32" y="374" width="230" height="70" rx="4" fill="#0f172a"/>
+
+      <!-- 右パネル -->
+      <rect x="292" y="66" width="516" height="290" rx="10" fill="#0f172a"/>
+      <text x="308" y="88" fill="#7dd3fc" font-size="12" font-weight="700">④ プレビュー画面（実際の見え方）</text>
+      <rect x="330" y="98" width="440" height="220" rx="10" fill="url(#skygrad)" stroke="#334155"/>
+      <defs>
+        <linearGradient id="skygrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#5bb4e5"/>
+          <stop offset="1" stop-color="#eef6fa"/>
+        </linearGradient>
+      </defs>
+      <text x="550" y="140" fill="#0f3a5c" font-size="13" text-anchor="middle" font-weight="700">招詞（詩篇100篇1-2節）</text>
+      <text x="550" y="190" fill="#0f3a5c" font-size="14" text-anchor="middle">全地よ、主に向かって</text>
+      <text x="550" y="215" fill="#0f3a5c" font-size="14" text-anchor="middle">喜びの叫びをあげよ。</text>
+      <text x="700" y="300" fill="#0f3a5c" font-size="9" text-anchor="end">詩篇 100:1-2　　2/4</text>
+
+      <!-- 書式タブ -->
+      <rect x="292" y="366" width="516" height="102" rx="10" fill="#0f172a"/>
+      <text x="308" y="388" fill="#7dd3fc" font-size="12" font-weight="700">⑤ 見た目を整えるタブ</text>
+      <g font-size="9" font-weight="700">
+        <rect x="308" y="396" width="60" height="22" rx="5" fill="#0ea5e9"/><text x="338" y="411" fill="#fff" text-anchor="middle">サイズ</text>
+        <rect x="372" y="396" width="60" height="22" rx="5" fill="#334155"/><text x="402" y="411" fill="#cbd5e1" text-anchor="middle">文字色</text>
+        <rect x="436" y="396" width="60" height="22" rx="5" fill="#334155"/><text x="466" y="411" fill="#cbd5e1" text-anchor="middle">左右</text>
+        <rect x="500" y="396" width="60" height="22" rx="5" fill="#334155"/><text x="530" y="411" fill="#cbd5e1" text-anchor="middle">上下</text>
+        <rect x="564" y="396" width="60" height="22" rx="5" fill="#334155"/><text x="594" y="411" fill="#cbd5e1" text-anchor="middle">枠</text>
+        <rect x="628" y="396" width="60" height="22" rx="5" fill="#334155"/><text x="658" y="411" fill="#cbd5e1" text-anchor="middle">行間</text>
+      </g>
+      <text x="308" y="440" fill="#94a3b8" font-size="8.5">文字の大きさ・色・余白・枠線・行間隔などを、ここで細かく調整できます</text>
+    </svg>
+    <figcaption>画面はおおまかに「① プログラム入力欄」「② スライド一覧」「③ 編集エリア」（左側）と、「④ プレビュー」「⑤ 見た目調整タブ」（右側）に分かれています。</figcaption>
+  </figure>
+
+  <div class="card">
+    <h3>それぞれの役割</h3>
+    <table>
+      <tr><th>①プログラム入力欄</th><td>礼拝の式次第（プログラム）をそのまま文章で入力する場所。ここに入力すると自動でスライドが作られます。</td></tr>
+      <tr><th>②スライド一覧</th><td>自動でできたスライドが、順番にカードとして並びます。クリックすると内容を編集できます。</td></tr>
+      <tr><th>③編集エリア</th><td>選んだスライドの見出し・本文・左下の文字を、直接書きかえられる場所です。</td></tr>
+      <tr><th>④プレビュー</th><td>実際にプロジェクターに映る見た目を、その場で確認できます。</td></tr>
+      <tr><th>⑤見た目調整タブ</th><td>文字サイズ・色・余白・枠・行間を、スライドごとに細かく調整できます。</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 02. 基本の使い方 ============ -->
+<section id="basic">
+  <div class="section-head">
+    <div class="badge">02</div>
+    <div>
+      <h2>基本の使い方（3ステップ）</h2>
+      <p>むずかしく考えず、まずはこの3つの手順だけ覚えてください。</p>
+    </div>
+  </div>
+
+  <ul class="steps">
+    <li>
+      <h4>プログラムを入力する</h4>
+      <p>画面左上の「プログラム入力欄」に、その日の礼拝の流れを1行ずつ書きます。たとえば「招詞」「讃美歌 LP78」「祈りと献金の時」「説教」のように書くだけで、対応するスライドが自動でつくられます。歌詞データベースに登録している言葉（曲名など）を書けば、その歌詞がそのまま呼び出されます。</p>
+    </li>
+    <li>
+      <h4>できたスライドを確認・調整する</h4>
+      <p>左側の「スライド一覧」に自動でスライドが並びます。1つずつクリックして、右側の「プレビュー」で見た目を確認しましょう。文字を直したいときは「編集エリア」で書きかえ、大きさや色・余白は下の「見た目調整タブ」で整えます。</p>
+    </li>
+    <li>
+      <h4>投影する</h4>
+      <p>準備ができたら、画面右上あたりの投影ボタン（フルスクリーンのアイコン）を押すと、プロジェクター用の全画面表示に切りかわります。あとは矢印キーやリモコンで、スライドを送っていくだけです。詳しい操作は「<a href="#present">06 投影する</a>」を見てください。</p>
+    </li>
+  </ul>
+
+  <div class="tip">
+    <div class="icon">💡</div>
+    <div><b>ヒント</b>プログラム入力欄に書いた内容は自動で保存されます。途中で画面を閉じてしまっても、次にひらいたときに続きから再開できます。</div>
+  </div>
+</section>
+
+<!-- ============ 03. 文字の書き方のコツ ============ -->
+<section id="writing">
+  <div class="section-head">
+    <div class="badge">03</div>
+    <div>
+      <h2>文字の書き方のコツ</h2>
+      <p>ちょっとした書き方のルールを覚えると、もっと便利に使えます。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>① ふりがな（ルビ）をつける</h3>
+    <p>漢字の直後に「<code>[かっこ]</code>」で読みがなを書くと、自動でふりがな付きの文字になります。</p>
+    <div class="diagram">
+      <svg viewBox="0 0 700 140" xmlns="http://www.w3.org/2000/svg">
+        <rect width="700" height="140" rx="14" fill="#fff"/>
+        <text x="24" y="34" fill="#5B6478" font-size="12" font-weight="700">入力する文章</text>
+        <rect x="20" y="44" width="330" height="40" rx="8" fill="#F3EBDB"/>
+        <text x="34" y="69" font-size="15" fill="#2B3245" font-family="ui-monospace,monospace">全地[ぜんち]よ、主[しゅ]に感謝せよ</text>
+        <text x="380" y="60" font-size="22" fill="#D98E4A">➜</text>
+        <text x="420" y="34" fill="#5B6478" font-size="12" font-weight="700">スライドでの見え方</text>
+        <rect x="416" y="44" width="264" height="60" rx="8" fill="#eaf2fa" stroke="#cbdff0"/>
+        <text x="448" y="62" font-size="9" fill="#3B82C4" text-anchor="middle">ぜんち　　　しゅ</text>
+        <text x="448" y="82" font-size="17" fill="#0f3a5c" text-anchor="middle">全地よ、主に感謝せよ</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>② スライドを2段組（左右2列）にする</h3>
+    <p>本文の中に「<code>|col|</code>」という文字を入れると、そこから後ろの文章が右側の列に移り、画面が左右2つに分かれます。編集エリアの「２段組」ボタンを押しても、同じ記号が自動で入ります。</p>
+    <div class="diagram">
+      <svg viewBox="0 0 700 150" xmlns="http://www.w3.org/2000/svg">
+        <rect width="700" height="150" rx="14" fill="#fff"/>
+        <rect x="20" y="20" width="300" height="110" rx="8" fill="#F3EBDB"/>
+        <text x="34" y="42" font-size="12" fill="#2B3245" font-family="ui-monospace,monospace">左側の歌詞</text>
+        <text x="34" y="62" font-size="12" fill="#B36E2E" font-family="ui-monospace,monospace" font-weight="700">|col|</text>
+        <text x="34" y="82" font-size="12" fill="#2B3245" font-family="ui-monospace,monospace">右側の歌詞</text>
+        <text x="345" y="82" font-size="22" fill="#D98E4A">➜</text>
+        <rect x="378" y="20" width="302" height="110" rx="8" fill="#eaf2fa" stroke="#cbdff0"/>
+        <line x1="529" y1="30" x2="529" y2="120" stroke="#9dc4e3" stroke-width="1.5"/>
+        <text x="453" y="80" font-size="12" fill="#0f3a5c" text-anchor="middle">左側の歌詞</text>
+        <text x="605" y="80" font-size="12" fill="#0f3a5c" text-anchor="middle">右側の歌詞</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>③ 暗唱練習用に、文字を少しずつ消す（虫食い）</h3>
+    <p>山かっこ「<code>〈 〉</code>」で単語を囲むと、投影中に「次へ」を押すたびに、その単語が少しずつ透明になっていきます。聖句の暗唱練習にとても便利です。かっこを二重・三重にすると、消えるタイミングを遅らせられます。</p>
+    <div class="pill-row">
+      <span class="pill">〈言葉〉→ 1回目の「次へ」で消える</span>
+      <span class="pill">〈〈言葉〉〉→ 2回目で消える</span>
+      <span class="pill">〈〈〈言葉〉〉〉→ 3回目で消える</span>
+    </div>
+    <div class="diagram">
+      <svg viewBox="0 0 760 160" xmlns="http://www.w3.org/2000/svg">
+        <rect width="760" height="160" rx="14" fill="#fff"/>
+        <text x="24" y="26" fill="#5B6478" font-size="12" font-weight="700">編集中（まだ何も消していない）</text>
+        <rect x="20" y="34" width="220" height="60" rx="8" fill="#eaf2fa" stroke="#cbdff0"/>
+        <text x="130" y="60" font-size="12" fill="#0f3a5c" text-anchor="middle">初め<tspan text-decoration="underline" fill="#B36E2E">に</tspan>、言<tspan text-decoration="underline" fill="#B36E2E">葉</tspan>があった</text>
+        <text x="130" y="78" font-size="9" fill="#B36E2E" text-anchor="middle">（点線＝消える単語の印）</text>
+
+        <text x="270" y="26" fill="#5B6478" font-size="12" font-weight="700">「次へ」を1回押す</text>
+        <rect x="266" y="34" width="220" height="60" rx="8" fill="#eaf2fa" stroke="#cbdff0"/>
+        <text x="376" y="60" font-size="12" fill="#0f3a5c" text-anchor="middle">初め　、言葉があった</text>
+
+        <text x="516" y="26" fill="#5B6478" font-size="12" font-weight="700">さらに1回押す</text>
+        <rect x="512" y="34" width="220" height="60" rx="8" fill="#eaf2fa" stroke="#cbdff0"/>
+        <text x="622" y="60" font-size="12" fill="#0f3a5c" text-anchor="middle">初め　、言　があった</text>
+
+        <text x="24" y="130" fill="#94a3b8" font-size="11">※編集中の画面だけに点線の印が表示されます。実際の投影中は印は出ず、ただ単語だけが消えます。</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="tip">
+    <div class="icon">💡</div>
+    <div><b>ヒント</b>本文入力欄の上にある「〈〉1」「〈〉2」「〈〉3」ボタンを使うと、記号を手打ちしなくても、選んだ単語をワンタッチで囲めます。</div>
+  </div>
+</section>
+
+<!-- ============ 04. 見た目を整える ============ -->
+<section id="design">
+  <div class="section-head">
+    <div class="badge">04</div>
+    <div>
+      <h2>見た目を整える</h2>
+      <p>プレビュー画面の下にある6つのタブで、スライドごとに細かく調整できます。</p>
+    </div>
+  </div>
+
+  <table>
+    <tr><th>サイズ</th><td>本文・見出し・フッター（左下の文字）の大きさを調整します。「-10%」「+10%」のほか、細かく合わせたいときは「-2%」「+2%」も使えます。</td></tr>
+    <tr><th>文字色</th><td>白・黒・黄色・水色・金色など、文字の色を選べます。</td></tr>
+    <tr><th>左右</th><td>画面の左右の余白（スペース）の広さを選びます。文字が多いときは「0」に近づけると、より多くの文字が収まります。</td></tr>
+    <tr><th>上下</th><td>画面の上下の余白と、文字を上に詰めるか中央に置くか、フッター（左下の出典表示）を隠すかを設定します。</td></tr>
+    <tr><th>枠</th><td>白い外枠の太さと、外枠の外側の余白を調整します。</td></tr>
+    <tr><th>行間</th><td>文章の行と行の間隔を調整します。</td></tr>
+  </table>
+
+  <div class="caution">
+    <div class="icon">⚠️</div>
+    <div><b>文字が画面からはみ出てしまうとき</b>「サイズ」タブで文字を小さくするか、「左右」「上下」タブで余白を「0」に近づけてみてください。それでも入りきらない場合は、本文を2枚のスライドに分けるのがおすすめです（本文の間に空の行を1行入れると、そこでスライドが分かれます）。</div>
+  </div>
+</section>
+
+<!-- ============ 05. 歌詞データベース ============ -->
+<section id="database">
+  <div class="section-head">
+    <div class="badge">05</div>
+    <div>
+      <h2>歌詞データベースの使い方</h2>
+      <p>讃美歌や招詞、主の祈りなど、繰り返し使う文章をあらかじめ登録しておく場所です。</p>
+    </div>
+  </div>
+
+  <p>画面右上の「<b>歌詞データベース管理</b>」ボタンを押すと、登録・編集・削除ができる画面が開きます。</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 780 320" xmlns="http://www.w3.org/2000/svg">
+      <rect width="780" height="320" rx="16" fill="#1e293b"/>
+      <rect x="16" y="16" width="220" height="288" rx="10" fill="#0f172a"/>
+      <rect x="28" y="28" width="196" height="26" rx="6" fill="#334155"/>
+      <text x="126" y="45" fill="#94a3b8" font-size="10" text-anchor="middle">🔍 曲番号やタイトルで検索…</text>
+      <rect x="28" y="62" width="196" height="26" rx="6" fill="#7c2d12"/>
+      <text x="40" y="79" fill="#fed7aa" font-size="9">LP78</text>
+      <text x="190" y="79" fill="#fca5a5" font-size="7" text-anchor="end">カスタム</text>
+      <rect x="28" y="92" width="196" height="26" rx="6" fill="#334155"/>
+      <text x="40" y="109" fill="#e2e8f0" font-size="9">主の祈り</text>
+      <text x="190" y="109" fill="#93c5fd" font-size="7" text-anchor="end">プリセット(編集済)</text>
+      <rect x="28" y="122" width="196" height="26" rx="6" fill="#334155"/>
+      <text x="40" y="139" fill="#e2e8f0" font-size="9">祝祷</text>
+
+      <rect x="252" y="16" width="512" height="288" rx="10" fill="#0f172a"/>
+      <text x="268" y="40" fill="#fbbf24" font-size="10" font-weight="700">★プログラム検索キーワード（登録キー）</text>
+      <rect x="266" y="46" width="230" height="24" rx="5" fill="#020617" stroke="#475569"/>
+      <text x="276" y="62" fill="#e2e8f0" font-size="9">LP78</text>
+      <text x="512" y="40" fill="#94a3b8" font-size="10" font-weight="700">曲名・項目名（表示用ラベル）</text>
+      <rect x="506" y="46" width="240" height="24" rx="5" fill="#020617" stroke="#475569"/>
+      <text x="516" y="62" fill="#e2e8f0" font-size="9">聖霊の神よ</text>
+
+      <text x="268" y="92" fill="#94a3b8" font-size="10" font-weight="700">スライド見出し</text>
+      <rect x="266" y="98" width="230" height="24" rx="5" fill="#020617" stroke="#475569"/>
+      <text x="276" y="114" fill="#e2e8f0" font-size="9">賛美（聖霊の神よ）</text>
+      <text x="512" y="92" fill="#94a3b8" font-size="10" font-weight="700">左下出典</text>
+      <rect x="506" y="98" width="240" height="24" rx="5" fill="#020617" stroke="#475569"/>
+      <text x="516" y="114" fill="#e2e8f0" font-size="9">聖霊の神よ LP78</text>
+
+      <text x="268" y="144" fill="#94a3b8" font-size="10" font-weight="700">歌詞スライド構成編集</text>
+      <rect x="266" y="150" width="480" height="90" rx="6" fill="#020617" stroke="#475569"/>
+      <text x="278" y="168" fill="#cbd5e1" font-size="9">聖霊の神よ　今　私にあふれて</text>
+      <text x="278" y="184" fill="#cbd5e1" font-size="9">（空の行を入れると、そこでスライドが分かれます）</text>
+
+      <rect x="266" y="256" width="90" height="28" rx="7" fill="#7f1d1d"/>
+      <text x="311" y="274" fill="#fecaca" font-size="10" text-anchor="middle" font-weight="700">削除</text>
+      <rect x="600" y="256" width="146" height="28" rx="7" fill="#ea580c"/>
+      <text x="673" y="274" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">データベースに保存</text>
+    </svg>
+    <figcaption>「登録キー」はプログラム入力欄で検索される言葉、「曲名」は一覧に表示するための名前です（この2つは別物です）。</figcaption>
+  </figure>
+
+  <div class="card">
+    <h3>覚えておきたい5つのこと</h3>
+    <table>
+      <tr><th>①新しく登録する</th><td>「＋新規作成」を押し、登録キー（例：LP78）と本文を入力して保存します。</td></tr>
+      <tr><th>②プリセットも編集できる</th><td>もともと入っている項目（招詞・主の祈り等）も、一覧から選んで自由に書きかえ・削除できます。</td></tr>
+      <tr><th>③元に戻せる</th><td>プリセットを編集したあと、「初期状態に戻す」ボタンで、もとの内容に戻せます。</td></tr>
+      <tr><th>④空欄のままでもOK</th><td>曲名や見出しなどは、空欄のまま保存してもかまいません。空欄のときに自動で文字が入ることはありません。</td></tr>
+      <tr><th>⑤ページ番号は自動</th><td>本文を空の行で複数ページに分けると、左下に「1/3」のようなページ番号が自動で付きます。手で入力する必要はありません。</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>CSVでまとめて入れる・書き出す</h3>
+    <p>Excel等で作った一覧表（CSVファイル）を使って、まとめて登録することもできます。「CSVエクスポート」で今の内容を書き出し、「CSVインポート(マージ)」で読み込みます。列の並びは次の通りです。</p>
+    <div class="pill-row">
+      <span class="pill">1列目：登録キー</span>
+      <span class="pill">2列目：曲タイトル</span>
+      <span class="pill">3列目：スライド見出し</span>
+      <span class="pill">4列目：左下出典</span>
+      <span class="pill">5列目：歌詞本文</span>
+    </div>
+    <p>すでにある登録キーと同じものがあれば内容が上書きされ、新しいキーはそのまま追加されます（＝もとからあるデータは消えません）。</p>
+  </div>
+
+  <div class="caution">
+    <div class="icon">⚠️</div>
+    <div><b>「標準データベースにリセット」ボタンについて</b>これを押すと、歌詞データベースの中身が<b>すべて消え</b>、教会で決めた標準の内容（16項目）に戻ります。元には戻せませんので、確認メッセージが出たら内容をよく確認してから押してください。</div>
+  </div>
+</section>
+
+<!-- ============ 06. 投影する ============ -->
+<section id="present">
+  <div class="section-head">
+    <div class="badge">06</div>
+    <div>
+      <h2>投影する（本番の操作）</h2>
+      <p>プロジェクターに映すときの操作方法です。</p>
+    </div>
+  </div>
+
+  <ul class="steps">
+    <li>
+      <h4>フルスクリーンにする</h4>
+      <p>画面上部の投影ボタンを押すと、画面いっぱいにスライドが表示されます（会衆に見せる本番の画面です）。</p>
+    </li>
+    <li>
+      <h4>スライドを送る・戻す</h4>
+      <p>キーボードの矢印キー（→で次へ、←で戻る）、画面のクリック、または市販のプレゼン用リモコン（ロジクール R400など）のボタンで操作できます。</p>
+    </li>
+    <li>
+      <h4>暗唱マーカーがあるスライドの場合</h4>
+      <p>「次へ」を押すたびに、まずそのスライドの中で消える単語が1つずつ消えていきます。全部消え終わってから、次のスライドに進みます（戻るときも同様に、1段階ずつ元に戻ってから前のスライドに戻ります）。</p>
+    </li>
+    <li>
+      <h4>画面を真っ暗にする（ブラックアウト）</h4>
+      <p>説教の間など、スライドを消しておきたいときはブラックアウト機能を使います。もう一度操作すると元のスライドに戻ります。</p>
+    </li>
+  </ul>
+
+  <div class="tip">
+    <div class="icon">💡</div>
+    <div><b>ヒント</b>本番前に一度、最初から最後まで通しでスライドを送ってみることをおすすめします。文字の大きさや暗唱マーカーの動きを事前に確認できます。</div>
+  </div>
+</section>
+
+<!-- ============ 07. データの保存・読み込み ============ -->
+<section id="backup">
+  <div class="section-head">
+    <div class="badge">07</div>
+    <div>
+      <h2>データの保存・読み込み</h2>
+      <p>作った内容をファイルとして保存し、あとで呼び出すことができます。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>保存（データ保存）</h3>
+    <p>画面上部の保存ボタンを押すと、その時点のスライド・歌詞データベース・音声設定などが、すべて1つのファイル（<code>.wslide</code>）としてパソコンに保存されます。定期的に保存しておくと安心です。</p>
+  </div>
+  <div class="card">
+    <h3>読み込み（データ読込み）</h3>
+    <p>保存しておいた<code>.wslide</code>ファイルを選ぶと、その時の状態をまるごと復元できます。</p>
+  </div>
+
+  <div class="caution">
+    <div class="icon">⚠️</div>
+    <div><b>古いバックアップを読み込むときの注意</b>バックアップファイルには、保存した時点の歌詞データベースの中身も、まるごと一緒に入っています。そのため、<b>ずっと昔に保存した古いファイルを読み込むと、今は使っていない古い曲が復活してしまう</b>ことがあります。もしそうなってしまったら、「05 歌詞データベースの使い方」にある「標準データベースにリセット」ボタンで、標準の内容に戻すことができます。</div>
+  </div>
+</section>
+
+<!-- ============ 08. バージョン表示 ============ -->
+<section id="version">
+  <div class="section-head">
+    <div class="badge">08</div>
+    <div>
+      <h2>バージョン表示について</h2>
+      <p>画面を開いたときに、今どのバージョンなのかがすぐわかるようになっています。</p>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <svg viewBox="0 0 500 90" xmlns="http://www.w3.org/2000/svg">
+      <rect width="500" height="90" rx="12" fill="#1e293b"/>
+      <circle cx="34" cy="45" r="14" fill="#0ea5e9"/>
+      <text x="60" y="38" fill="#fff" font-size="15" font-weight="700">WorshipSlide AI</text>
+      <text x="60" y="55" fill="#94a3b8" font-size="10">礼拝用プロジェクター自動作成・投影システム <tspan fill="#64748b">Vr_07170241</tspan></text>
+      <rect x="55" y="46" width="120" height="16" rx="4" fill="none" stroke="#D98E4A" stroke-width="1.5"/>
+    </svg>
+  </div>
+  <p>画面左上、アプリ名のすぐ下に小さく<code>Vr_MMDDHHMM</code>（月日＋時分）という表示があります。これは「このアプリのファイルが、いつ作られたバージョンか」を表す番号です。たとえば <code>Vr_07170905</code> なら「7月17日 9時5分に作られた版」という意味です。不具合の相談をするときなどに、この番号を伝えていただくと、どのバージョンの話か分かりやすくなります。</p>
+</section>
+
+<!-- ============ 09. FAQ ============ -->
+<section id="faq">
+  <div class="section-head">
+    <div class="badge">09</div>
+    <div>
+      <h2>困ったときは（Q&amp;A）</h2>
+      <p>よくある質問をまとめました。</p>
+    </div>
+  </div>
+
+  <div class="faq">
+    <div class="q"><span class="qmark">Q</span>プログラム入力欄に曲名を書いても、歌詞が出てこない</div>
+    <div class="a">歌詞データベースに登録されている「登録キー」と、プログラム入力欄に書いた言葉が一致しているか確認してください。登録キーは「歌詞データベース管理」の画面で確認・修正できます。</div>
+  </div>
+  <div class="faq">
+    <div class="q"><span class="qmark">Q</span>文字がスライドの外にはみ出してしまう</div>
+    <div class="a">「04 見た目を整える」の「サイズ」タブで文字を小さくするか、本文を空の行で区切って2枚のスライドに分けてください。</div>
+  </div>
+  <div class="faq">
+    <div class="q"><span class="qmark">Q</span>昔登録していたはずの曲が消えている／逆に、消したはずの曲が復活している</div>
+    <div class="a">古い<code>.wslide</code>バックアップファイルを読み込むと、その時点の古い歌詞データベースが復元されてしまうことがあります。「05」の「標準データベースにリセット」ボタンで、標準の状態に戻せます。</div>
+  </div>
+  <div class="faq">
+    <div class="q"><span class="qmark">Q</span>Enterキーを押しても改行されない／変な動きをする</div>
+    <div class="a">現在のバージョンでは、プログラム入力欄でふつうにEnterキーを押せば改行されます。もし違う動きをする場合は、開いているファイルが古いバージョンの可能性があります。バージョン表示（08参照）を確認してください。</div>
+  </div>
+  <div class="faq">
+    <div class="q"><span class="qmark">Q</span>暗唱マーカー（虫食い）を消してしまいたい</div>
+    <div class="a">本文の中の「〈」「〉」の記号を消してください。ただの文章に戻ります。</div>
+  </div>
+
+  <a href="#" class="back-to-top">↑ ページの先頭にもどる</a>
+</section>
+
+</main>
+
+<footer>
+  WorshipSlide AI 使い方ガイド ｜ このページはアプリと同じ1つのファイルとして、お使いのパソコンに保存しておくことができます。
+</footer>
+
+</body>
+</html>
