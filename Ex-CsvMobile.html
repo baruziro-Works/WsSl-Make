@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Excelふりがな編集 ➔ CSV【スマホ最適化版】</title>
+    <!-- SheetJS (Excel解析用) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Kuromoji.js (形態素解析・ふりがな用) -->
+    <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --success-color: #2ecc71;
+            --warning-color: #e67e22;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 14px;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: relative;
+            padding-bottom: 60px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 18px;
+            color: var(--text-color);
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            font-size: 14px;
+            color: #34495e;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 8px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+
+        .description {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        /* セクション管理 */
+        .section-box {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            background-color: #fdfdfd;
+        }
+
+        textarea id="dict-area" {
+            width: 100%;
+            height: 80px;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            flex: 1;
+            transition: opacity 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        button:active { opacity: 0.7; }
+        button.btn-secondary { background-color: #95a5a6; }
+        button.btn-orange { background-color: var(--warning-color); }
+        button.btn-success { background-color: var(--success-color); font-size: 15px; padding: 12px; }
+
+        /* ファイル読み込みエリア */
+        .file-input-wrapper {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .file-input-label {
+            display: block;
+            background: #e8f4fd;
+            color: var(--primary-color);
+            border: 2px dashed var(--primary-color);
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #excel-file-input { display: none; }
+
+        #status {
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+        .info { background-color: #e8f4fd; color: #2980b9; }
+        .success { background-color: #edf7ed; color: #27ae60; }
+        .error { background-color: #fdf2f2; color: #c0392b; }
+
+        /* 行データリスト (スマホ最適化カード型) */
+        .row-list {
+            margin-top: 10px;
+        }
+        .row-card {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .row-header {
+            background: #f1f3f5;
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            padding: 2px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            font-weight: normal;
+            flex: none;
+        }
+        .row-body {
+            padding: 12px;
+        }
+        
+        /* 入力フィールド定義 */
+        .field-group {
+            margin-bottom: 10px;
+        }
+        .field-group:last-child { margin-bottom: 0; }
+        .field-label {
+            font-size: 11px;
+            color: #7f8c8d;
+            font-weight: bold;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .input-text {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #333;
+            background-color: #fff;
+        }
+        
+        /* B列（ふりがな）の特別スタイル */
+        .b-column-wrapper {
+            position: relative;
+        }
+        .editable-preview-cell {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 2px solid #f1c40f;
+            background-color: #fffde7;
+            border-radius: 5px;
+            font-size: 14px;
+            min-height: 36px;
+            outline: none;
+        }
+        .editable-preview-cell.manually-edited {
+            border-color: var(--success-color);
+            background-color: #e8f8f5;
+        }
+
+        /* クイックチップ用UI */
+        .chip-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 4px;
+            max-height: 65px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 4px;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .chip {
+            background: #e0e0e0;
+            color: #333;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .chip:active { background: #cbd5e1; }
+
+        /* フッター・全体アクション */
+        .action-sticky-bottom {
+            margin-top: 20px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s linear infinite;
+            margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .version-tag {
+            text-align: right;
+            font-size: 10px;
+            color: #bdc3c7;
+            margin-top: 20px;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Excelふりがな編集【スマホ最適化版】</h1>
+    
+    <!-- ステータス表示 -->
+    <div id="status" class="info"><div class="spinner"></div>システムを初期化中...</div>
+
+    <!-- 1. 辞書セクション -->
+    <div class="section-box">
+        <h2>1. ふりがな管理辞書</h2>
+        <p class="description">「漢字,ふりがな」形式で入力（自動保存対応）。</p>
+        <textarea id="dict-area" placeholder="例：&#13;主日,しゅじつ"></textarea>
+        <div class="btn-group">
+            <button type="button" class="btn-secondary" onclick="exportDictionary()">保存(.txt)</button>
+            <button type="button" class="btn-secondary" onclick="importDictionaryClick()">読込</button>
+            <input type="file" id="dict-file-input" accept=".txt" style="display:none;" onchange="loadDictionaryFile(this)">
+        </div>
+    </div>
+
+    <!-- 2. データ入力・読込セクション -->
+    <div class="section-box">
+        <h2>2. データの読込 ＆ 新規作成</h2>
+        <div class="file-input-wrapper">
+            <label for="excel-file-input" class="file-input-label">📁 スマホからExcelファイルを読み込む</label>
+            <input type="file" id="excel-file-input" accept=".xlsx, .xls" onchange="handleFileSelect(this)">
+        </div>
+        <div class="btn-group">
+            <button type="button" onclick="addNewRow()">➕ 新しい行を1行追加する</button>
+            <button type="button" class="btn-orange" onclick="applyDictToAllCards()">💡 辞書変更を一括反映</button>
+        </div>
+    </div>
+
+    <!-- 3. メイン入力・プレビューエリア -->
+    <h2>3. データ入力・ふりがな修正（各行4列まで）</h2>
+    <p class="description">※黄色いB列は直接ふりがなを修正できます。直すと緑色にロックされます。</p>
+    
+    <div id="row-list-container" class="row-list">
+        <!-- ここに動的に行カードが追加されます -->
+    </div>
+
+    <!-- 下部一括操作 -->
+    <div class="action-sticky-bottom">
+        <button type="button" class="btn-success" style="width: 100%;" onclick="downloadCSV()">修正完了！CSVをダウンロード</button>
+    </div>
+
+    <div class="version-tag">Vr_07171613</div>
+</div>
+
+<script>
+    let tokenizer = null;
+    let currentFileName = "mobile_output";
+    let rowCounter = 0;
+
+    // A列用クイック選択肢
+    const CHIP_ITEMS = ["招詞", "讃詠", "主の祈り", "2026聖句", "賛美", "祈り", "聖書", "説教", "信仰告白", "献金", "頌栄", "祝祷", "後奏"];
+    const DEFAULT_DICTIONARY = `主日,しゅじつ\n特定漢字,とくていかんじ\n東雲,しののめ\n日本,にっぽん`;
+
+    const dictArea = document.getElementById('dict-area');
+    const container = document.getElementById('row-list-container');
+    const status = document.getElementById('status');
+
+    window.onload = function() {
+        const savedDict = localStorage.getItem('furigana_custom_dict_mobile');
+        dictArea.value = savedDict !== null ? savedDict : DEFAULT_DICTIONARY;
+        
+        dictArea.addEventListener('input', () => {
+            localStorage.setItem('furigana_custom_dict_mobile', dictArea.value);
+        });
+
+        // Kuromoji初期化 (dict/ はHTMLと同階層)
+        kuromoji.builder({ dicPath: "dict/" }).build((err, _tokenizer) => {
+            if (err) {
+                showStatus('error', '辞書の初期化に失敗しました。dict/ フォルダの配置を確認してください。');
+                console.error(err);
+            } else {
+                tokenizer = _tokenizer;
+                showStatus('success', '準備完了！入力するかファイルを読み込んでください。');
+                // 初期状態で空の行を3つ用意
+                for(let i=0; i<3; i++) addNewRow();
+            }
+        });
+    };
+
+    function showStatus(type, message) {
+        status.className = type;
+        status.innerHTML = message;
+    }
+
+    // 新規行カード追加
+    function addNewRow(initialData = {a:"", b:"", c:"", d:"", rawB:""}) {
+        rowCounter++;
+        const id = rowCounter;
+        
+        const card = document.createElement('div');
+        card.className = 'row-card';
+        card.id = `card-${id}`;
+        
+        // クイックチップの生成
+        let chipsHtml = '';
+        CHIP_ITEMS.forEach(item => {
+            chipsHtml += `<span class="chip" onclick="setChipValue(${id}, '${item}')">${item}</span>`;
+        });
+
+        card.innerHTML = `
+            <div class="row-header">
+                <span>データ行 #${id}</span>
+                <button type="button" class="delete-btn" onclick="deleteRow(${id})">削除</button>
+            </div>
+            <div class="row-body">
+                <!-- A列 -->
+                <div class="field-group">
+                    <label class="field-label">A列 (項目名など)</label>
+                    <input type="text" class="input-text col-a" id="input-a-${id}" value="${initialData.a}" placeholder="直接入力または下のチップを選択">
+                    <div class="chip-container">${chipsHtml}</div>
+                </div>
+                <!-- B列 -->
+                <div class="field-group">
+                    <label class="field-label">B列 (ふりがな対象テキスト / 直接編集可)</label>
+                    <div class="b-column-wrapper">
+                        <div class="editable-preview-cell col-b" 
+                             id="input-b-${id}" 
+                             contenteditable="true" 
+                             data-raw="${initialData.rawB || initialData.b}"
+                             placeholder="ここに漢字を入力すると自動ルビ振りされます">${initialData.b}</div>
+                    </div>
+                </div>
+                <!-- C列 -->
+                <div class="field-group">
+                    <label class="field-label">C列</label>
+                    <input type="text" class="input-text col-c" id="input-c-${id}" value="${initialData.c}">
+                </div>
+                <!-- D列 -->
+                <div class="field-group">
+                    <label class="field-label">D列</label>
+                    <input type="text" class="input-text col-d" id="input-d-${id}" value="${initialData.d}">
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(card);
+        
+        // B列のイベントリスナー設定
+        const bCell = card.querySelector('.col-b');
+        
+        // フォーカスアウト時、未編集なら自動ふりがな計算を行うトリガーにする
+        bCell.addEventListener('blur', () => {
+            if (!bCell.getAttribute('data-edited') && bCell.innerText.trim() !== "") {
+                const text = bCell.innerText;
+                // ブラケット形式を含まない純粋入力なら生データとして退避
+                if (!text.includes('[')) {
+                    bCell.setAttribute('data-raw', text);
+                    const customDict = parseCustomDictionary();
+                    bCell.innerText = applyFurigana(text, customDict);
+                }
+            }
+        });
+
+        bCell.addEventListener('input', () => {
+            bCell.setAttribute('data-edited', 'true');
+            bCell.classList.add('manually-edited');
+        });
+
+        // 読み込みデータ用で最初からロックがかかっている場合のスタイル反映
+        if (initialData.rawB && initialData.rawB !== initialData.b) {
+            bCell.setAttribute('data-edited', 'true');
+            bCell.classList.add('manually-edited');
+        }
+    }
+
+    function setChipValue(id, value) {
+        document.getElementById(`input-a-${id}`).value = value;
+    }
+
+    function deleteRow(id) {
+        const card = document.getElementById(`card-${id}`);
+        if(card) card.remove();
+    }
+
+    function parseCustomDictionary() {
+        const dict = {};
+        const lines = dictArea.value.split('\n');
+        for (let line of lines) {
+            line = line.trim();
+            if (!line || !line.includes(',')) continue;
+            const [word, reading] = line.split(',');
+            if (word && reading) dict[word.trim()] = reading.trim();
+        }
+        return dict;
+    }
+
+    function katakanaToHiragana(src) {
+        return src.replace(/[\u30a1-\u30f6]/g, (m) => String.fromCharCode(m.charCodeAt(0) - 0x60));
+    }
+
+    function containsKanji(text) {
+        return /[\u4E00-\u9FFF\u3400-\u4DBF]/.test(text);
+    }
+
+    // 安全分割解析方式
+    function applyFurigana(text, customDict) {
+        if (!text || typeof text !== 'string') return text;
+        const sortedKeys = Object.keys(customDict).sort((a, b) => b.length - a.length);
+        let segments = [text];
+
+        sortedKeys.forEach(key => {
+            if (key.trim() === "") return;
+            let newSegments = [];
+            segments.forEach(seg => {
+                if (typeof seg !== 'string') {
+                    newSegments.push(seg);
+                    return;
+                }
+                let currentIndex = 0;
+                let matchIndex = seg.indexOf(key);
+                while (matchIndex !== -1) {
+                    if (matchIndex > currentIndex) {
+                        newSegments.push(seg.substring(currentIndex, matchIndex));
+                    }
+                    newSegments.push({ word: key, reading: customDict[key] });
+                    currentIndex = matchIndex + key.length;
+                    matchIndex = seg.indexOf(key, currentIndex);
+                }
+                if (currentIndex < seg.length) {
+                    newSegments.push(seg.substring(currentIndex));
+                }
+            });
+            segments = newSegments;
+        });
+
+        let result = "";
+        segments.forEach(seg => {
+            if (typeof seg !== 'string') {
+                result += `${seg.word}[${seg.reading}]`;
+            } else {
+                if(!tokenizer) { result += seg; return; }
+                const tokens = tokenizer.tokenize(seg);
+                for (let token of tokens) {
+                    const surface = token.surface_form;
+                    if (containsKanji(surface) && token.reading && token.reading !== "*") {
+                        const hiraganaReading = katakanaToHiragana(token.reading);
+                        if (surface === hiraganaReading) {
+                            result += surface;
+                        } else {
+                            result += `${surface}[${hiraganaReading}]`;
+                        }
+                    } else {
+                        result += surface;
+                    }
+                }
+            }
+        });
+        return result;
+    }
+
+    // 辞書一括反映（手動修正分はスキップ）
+    function applyDictToAllCards() {
+        const customDict = parseCustomDictionary();
+        const cards = container.querySelectorAll('.row-card');
+        let count = 0;
+        
+        cards.forEach(card => {
+            const bCell = card.querySelector('.col-b');
+            if (bCell && !bCell.getAttribute('data-edited')) {
+                const raw = bCell.getAttribute('data-raw') || bCell.innerText;
+                if (raw.trim() !== "") {
+                    bCell.setAttribute('data-raw', raw);
+                    bCell.innerText = applyFurigana(raw, customDict);
+                    count++;
+                }
+            }
+        });
+        showStatus('success', `辞書を未修正のB列（${count}件）に反映しました。`);
+    }
+
+    // Excelファイルインポート処理
+    function handleFileSelect(input) {
+        if (!tokenizer) return;
+        if (input.files.length === 0) return;
+        const file = input.files[0];
+        
+        currentFileName = file.name.substring(0, file.name.lastIndexOf('.'));
+        showStatus('info', '<div class="spinner"></div>Excelファイルを解析中...');
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const sheetData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+
+                if (sheetData.length === 0) {
+                    showStatus('error', 'シートにデータがありません。');
+                    return;
+                }
+
+                container.innerHTML = ""; // クリア
+                const customDict = parseCustomDictionary();
+
+                sheetData.forEach(row => {
+                    // 空行チェック
+                    if (row.length === 0 || row.every(c => String(c).trim() === "")) return;
+
+                    const a = row[0] !== undefined ? String(row[0]) : "";
+                    const bRaw = row[1] !== undefined ? String(row[1]) : "";
+                    const c = row[2] !== undefined ? String(row[2]) : "";
+                    const d = row[3] !== undefined ? String(row[3]) : "";
+                    
+                    let bProcessed = "";
+                    if(bRaw.trim() !== "") {
+                        bProcessed = bRaw.includes('[') ? bRaw : applyFurigana(bRaw, customDict);
+                    }
+
+                    addNewRow({
+                        a: a,
+                        b: bProcessed,
+                        c: c,
+                        d: d,
+                        rawB: bRaw
+                    });
+                });
+
+                showStatus('success', `Excelから ${container.children.length} 行読み込みました！`);
+            } catch (err) {
+                showStatus('error', '解析エラー: ' + err.message);
+                console.error(err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+        input.value = ""; // リセット
+    }
+
+    // CSVエクスポート処理
+    function downloadCSV() {
+        const cards = container.querySelectorAll('.row-card');
+        if(cards.length === 0) {
+            alert("出力するデータがありません。");
+            return;
+        }
+
+        const csvData = [];
+        cards.forEach(card => {
+            const a = card.querySelector('.col-a').value;
+            const b = card.querySelector('.col-b').innerText;
+            const c = card.querySelector('.col-c').value;
+            const d = card.querySelector('.col-d').value;
+
+            const rowData = [a, b, c, d].map(text => {
+                let t = text || "";
+                if (t.includes(',') || t.includes('"') || t.includes('\n')) {
+                    t = '"' + t.replace(/"/g, '""') + '"';
+                }
+                return t;
+            });
+            csvData.push(rowData.join(','));
+        });
+
+        const csvString = csvData.join('\n');
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", currentFileName + "_スマホ修正済.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // 辞書機能群
+    function exportDictionary() {
+        const blob = new Blob([dictArea.value], {type: "text/plain;charset=utf-8"});
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", "ふりがなカスタム辞書_mobile.txt");
+        link.click();
+    }
+
+    function importDictionaryClick() {
+        document.getElementById('dict-file-input').click();
+    }
+
+    function loadDictionaryFile(input) {
+        if (input.files.length === 0) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            dictArea.value = e.target.result;
+            localStorage.setItem('furigana_custom_dict_mobile', dictArea.value);
+            showStatus('success', 'ファイルから辞書を読み込みました！');
+            applyDictToAllCards();
+        };
+        reader.readAsText(input.files[0]);
+        input.value = "";
+    }
+</script>
+
+</body>
+</html>
