@@ -133,7 +133,7 @@
             <div class="bg-sky-600 p-2 rounded-lg text-white"><i data-lucide="presentation" class="w-6 h-6"></i></div>
             <div>
                 <h1 class="text-xl font-bold tracking-wider">WorshipSlide AI</h1>
-                <p class="text-xs text-slate-400">礼拝用プロジェクター自動作成・投影システム <span class="text-slate-600">Vr_07170241</span></p>
+                <p class="text-xs text-slate-400">礼拝用プロジェクター自動作成・投影システム <span class="text-slate-600">Vr_07180220</span></p>
             </div>
         </div>
         <div class="flex items-center space-x-3 flex-wrap gap-2">
@@ -2034,6 +2034,15 @@
         // 短い「献金」ではなく、より具体的な「祈りと献金の時」を優先して返す。
         // 「信仰告白」等の一般的な語で判定している固定辞書チェックが、より具体的な登録項目
         // （例：日本同盟基督教団信仰告白）を誤って上書きしてしまう問題を防ぐためのもの。
+        // キーに埋め込まれた数字のいずれかと、抽出した数字が完全に一致するかどうかを調べる。
+        // 単純な部分文字列一致（normKey.includes(num)）だと、「17」が「117」に、「10」が「100」に
+        // 誤って一致してしまう（日付・時刻などの無関係な数字でも数字が拾われてしまう）ため、
+        // キー側の数字を個別に抽出したうえで、完全一致でのみ比較する。
+        function keyContainsExactNumber(normKey, num) {
+            const keyNumbers = normKey.match(/\d+/g) || [];
+            return keyNumbers.includes(num);
+        }
+
         function findBestTextKeyMatch(normalizedLine, fullDict) {
             let bestKey = null;
             let bestLen = 0;
@@ -2069,7 +2078,10 @@
                     .toUpperCase();
 
                 if (inLiturgyLyrBlock) {
-                    const isNextProgramLine = cleanLine.includes("聖句") || cleanLine.includes("説教") || cleanLine.includes("祈") || cleanLine.includes("招詞") || cleanLine.includes("告白") || cleanLine.includes("祝祷") || cleanLine.includes("献金");
+                    // 歌詞本文の中に「祈り」「献金」等の言葉が含まれているだけで次の項目とみなされ、
+                    // 歌詞入力が途中で打ち切られてしまわないよう、これらの言葉が「行の先頭」に
+                    // 来ている場合のみ、次のプログラム項目が始まったとみなす（文中に含まれるだけでは反応しない）。
+                    const isNextProgramLine = ["聖句", "説教", "祈", "招詞", "告白", "祝祷", "献金"].some(w => cleanLine.startsWith(w));
                     if (isNextProgramLine || i === lines.length - 1) {
                         if (!lastPulledFromDB) {
                             if (i === lines.length - 1 && cleanLine && !cleanLine.startsWith("[")) {
@@ -2117,7 +2129,7 @@
                         for (let num of invocationNumbers) {
                             for (let key in fullDict) {
                                 const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
-                                if (normKey.includes(num)) { matchedInvocationKey = key; break; }
+                                if (keyContainsExactNumber(normKey, num)) { matchedInvocationKey = key; break; }
                             }
                             if (matchedInvocationKey) break;
                         }
@@ -2142,17 +2154,11 @@
                     }
                     // 登録キーがリネーム・削除されている場合はここで止めず、下の汎用検索に処理を続ける
                 }
-                else if (normalizedLine.includes("2026") || (normalizedLine.includes("コリント") && normalizedLine.includes("5") && normalizedLine.includes("7"))) {
-                    const bestKey = findBestTextKeyMatch(normalizedLine, fullDict);
-                    const fallbackKey = fullDict["テーマ聖句"] ? "テーマ聖句" : "2026聖句";
-                    const targetKey = (bestKey && fullDict[bestKey]) ? bestKey : fallbackKey;
-                    if (fullDict[targetKey]) {
-                        slides.push(...JSON.parse(JSON.stringify(fullDict[targetKey])));
-                        lastPulledFromDB = true; continue;
-                    }
-                    // 登録キーがリネーム・削除されている場合はここで止めず、下の汎用検索に処理を続ける
-                }
-                else if (normalizedLine.includes("使徒信条") || normalizedLine.includes("信仰告白")) {
+                // ※以前ここに「2026」という数字だけ、または「コリント」+「5」+「7」という
+                //   短い断片の組み合わせだけでテーマ聖句を呼び出す特別判定があったが、
+                //   日付（例：2026年7月20日）や時刻などで簡単に誤爆してしまうため撤去した。
+                //   「テーマ聖句」という文字列そのものは、下の汎用検索で正しく見つかる。
+                if (normalizedLine.includes("使徒信条") || normalizedLine.includes("信仰告白")) {
                     // 「信仰告白」は他の項目名にも含まれ得る一般的な語のため、まずより具体的な
                     // 登録キー（例：日本同盟基督教団信仰告白）が無いか調べ、あればそちらを優先する
                     const bestKey = findBestTextKeyMatch(normalizedLine, fullDict);
@@ -2181,15 +2187,14 @@
                             let foundKeyForThisNum = null;
                             for (let key in fullDict) {
                                 const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
-                                if (normKey.includes(num)) {
-                                    if (normKey.startsWith("LP") && (normalizedLine.includes("LP") || normalizedLine.includes("リビング") || normalizedLine.includes("プレイズ"))) {
-                                        foundKeyForThisNum = key;
-                                        break;
-                                    } else {
-                                        foundKeyForThisNum = key;
-                                        break;
-                                    }
-                                }
+                                if (!keyContainsExactNumber(normKey, num)) continue;
+                                // LP番号は、行に「LP」等の文脈語が無い場合は誤爆防止のため候補から外す
+                                if (normKey.startsWith("LP") && !(normalizedLine.includes("LP") || normalizedLine.includes("リビング") || normalizedLine.includes("プレイズ"))) continue;
+                                // 「詩篇◯◯篇」形式は、行に「詩篇」「招詞」等の文脈語が無い場合は誤爆防止のため候補から外す
+                                // （日付・時刻など無関係な数字だけで詩篇スライドが呼び出されてしまうのを防ぐ）
+                                if (normKey.includes("篇") && !(normalizedLine.includes("詩篇") || normalizedLine.includes("招詞"))) continue;
+                                foundKeyForThisNum = key;
+                                break;
                             }
                             if (foundKeyForThisNum) matchedKeys.push(foundKeyForThisNum);
                         }
