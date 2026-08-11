@@ -133,7 +133,7 @@
             <div class="bg-sky-600 p-2 rounded-lg text-white"><i data-lucide="presentation" class="w-6 h-6"></i></div>
             <div>
                 <h1 class="text-xl font-bold tracking-wider">WorshipSlide AI</h1>
-                <p class="text-xs text-slate-400">礼拝用プロジェクター自動作成・投影システム <span class="text-slate-600">Vr_07180220</span></p>
+                <p class="text-xs text-slate-400">礼拝用プロジェクター自動作成・投影システム <span class="text-slate-600">Vr_08110017</span></p>
             </div>
         </div>
         <div class="flex items-center space-x-3 flex-wrap gap-2">
@@ -389,6 +389,10 @@
                     <div class="cloud-1" id="scrCloud1"></div><div class="cloud-2" id="scrCloud2"></div>
                     
                     <div id="previewInnerFrame" class="border-[1.2cqw] border-white border-opacity-90 rounded-[3cqw] w-full h-full flex flex-col justify-between relative z-10 box-border bg-white/5 backdrop-blur-[1px] shadow-inner transition-all duration-150">
+                        <div id="previewClock" class="hidden absolute top-[4%] right-[4%] z-20 bg-slate-900/55 text-white rounded-[1.5cqw] px-[2.8cqw] py-[1.4cqw] text-center backdrop-blur-sm shadow-lg pointer-events-none">
+                            <div id="previewClockTime" class="worship-font-bold" style="font-size:5.2cqw; line-height:1; letter-spacing:0.03em; font-variant-numeric: tabular-nums;">--:--</div>
+                            <div id="previewClockDate" style="font-size:1.7cqw; opacity:.85; margin-top:0.4cqw;"></div>
+                        </div>
                         <div id="previewTitle" class="worship-font-bold dynamic-title text-center"></div>
                         <div id="previewContentContainer" class="flex-1 flex items-center justify-center text-center w-full overflow-visible my-1 relative">
                             <div id="previewBody" class="worship-font-bold text-center dynamic-body text-left"></div>
@@ -548,6 +552,12 @@
                                     <span class="text-slate-400 font-bold">フッター非表示</span>
                                 </label>
                             </div>
+                            <div>
+                                <label class="flex items-center text-[9px]">
+                                    <input type="checkbox" id="liveClockToggle" onchange="toggleLiveClock(this.checked)" class="w-3 h-3 mr-1">
+                                    <span class="text-slate-400 font-bold">🕐 現在時刻を表示（右上・礼拝前の待機画面等に）</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -622,6 +632,10 @@
         <div id="fullscreenProjector" class="h-full w-full max-w-[133.33vh] max-h-[75vw] sky-bg relative flex flex-col justify-between p-[4%] select-none">
             <div class="cloud-1" id="fsCloud1"></div><div class="cloud-2" id="fsCloud2"></div>
             <div id="fsInnerFrame" class="border-[1.2cqw] border-white border-opacity-95 rounded-[3cqw] w-full h-full flex flex-col justify-between relative z-10 box-border transition-all duration-150">
+                <div id="fsClock" class="hidden absolute top-[4%] right-[4%] z-20 bg-slate-900/55 text-white rounded-[1.5cqw] px-[2.8cqw] py-[1.4cqw] text-center backdrop-blur-sm shadow-lg pointer-events-none">
+                    <div id="fsClockTime" class="worship-font-bold" style="font-size:5.2cqw; line-height:1; letter-spacing:0.03em; font-variant-numeric: tabular-nums;">--:--</div>
+                    <div id="fsClockDate" style="font-size:1.7cqw; opacity:.85; margin-top:0.4cqw;"></div>
+                </div>
                 <div id="fsTitle" class="worship-font-bold dynamic-title text-center"></div>
                 <div id="fsContentContainer" class="flex-1 flex items-center justify-center text-center w-full overflow-visible my-1 relative">
                     <div id="fsBody" class="worship-font-bold text-center dynamic-body text-left"></div>
@@ -2280,6 +2294,7 @@
             const footerFontSizeDisplay = document.getElementById('footerFontSizeDisplay');
             const padSelect = document.getElementById('padSelect');
             const hideFooterToggle = document.getElementById('hideFooterToggle');
+            const liveClockToggle = document.getElementById('liveClockToggle');
             const textColorSelect = document.getElementById('textColorSelect');
 
             if (fontSizeDisplay) fontSizeDisplay.innerText = (slide.fontSize || 100) + "%";
@@ -2287,6 +2302,7 @@
             if (footerFontSizeDisplay) footerFontSizeDisplay.innerText = (slide.footerFontSize || 100) + "%";
             if (padSelect) padSelect.value = slide.padding || "standard";
             if (textColorSelect) textColorSelect.value = slide.textColor || "auto";
+            if (liveClockToggle) liveClockToggle.checked = !!slide.liveClock;
             
             // 左右余白ボタンのアクティブ状態を更新
             const pad = slide.padding || "standard";
@@ -2516,6 +2532,36 @@
             slides[currentSlideIndex].hideFooter = isChecked; updatePreview();
         }
 
+        // 現在時刻のリアルタイム表示（礼拝前のタイトル・プログラム表示スライド等に使用）のON/OFF切り替え
+        function toggleLiveClock(isChecked) {
+            if (slides.length === 0) return;
+            slides[currentSlideIndex].liveClock = isChecked;
+            updatePreview();
+        }
+
+        // 現在時刻表示がONのスライドが表示されている間、1秒ごとに時刻表示を更新する。
+        // updatePreview()を毎秒まるごと呼び直すのは重いため、時計の文字部分だけを直接書き換える。
+        function tickLiveClock() {
+            const s = slides[currentSlideIndex];
+            const isOn = !!(s && s.liveClock);
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            const timeStr = `${hh}:${mm}:${ss}`;
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const dateStr = `${now.getMonth() + 1}月${now.getDate()}日(${weekdays[now.getDay()]})`;
+
+            [['previewClockTime', 'previewClockDate'], ['fsClockTime', 'fsClockDate']].forEach(([timeId, dateId]) => {
+                if (!isOn) return;
+                const timeEl = document.getElementById(timeId);
+                const dateEl = document.getElementById(dateId);
+                if (timeEl) timeEl.textContent = timeStr;
+                if (dateEl) dateEl.textContent = dateStr;
+            });
+        }
+        setInterval(tickLiveClock, 1000);
+
         function selectSlide(i) { 
             currentSlideIndex = i; 
             if (!isPresenting) { renderSlideList(); scrollSelectedSlideIntoView(); }
@@ -2737,6 +2783,14 @@
             const finalFooterSize = (3.2 * footerMultiplier) + "cqw";
 
             const isHideFooter = !!s.hideFooter;
+
+            // 現在時刻のリアルタイム表示（礼拝前のタイトル・プログラム表示スライド等に使用）
+            const isLiveClock = !!s.liveClock;
+            const pClock = document.getElementById('previewClock');
+            const fClock = document.getElementById('fsClock');
+            if (pClock) pClock.classList.toggle('hidden', !isLiveClock);
+            if (fClock) fClock.classList.toggle('hidden', !isLiveClock);
+            if (isLiveClock) tickLiveClock(); // 表示を切り替えた瞬間に即座に現在時刻を反映（1秒待たせない）
 
             // 暗唱用マーカー（虫食い）：現在の段階を取り出す（未設定なら0＝何も消えていない状態）
             // 編集中（プレゼン開始前）でまだ段階0のときは currentStage=undefined を渡し、
