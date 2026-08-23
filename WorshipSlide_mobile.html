@@ -87,7 +87,7 @@
         <button onclick="openDrawer()" title="項目名だけのクイックジャンプ一覧" class="btn flex items-center gap-1 px-2 rounded-lg hover:bg-slate-700 text-sm font-bold text-sky-300">
             <i data-lucide="list" class="w-5 h-5"></i>目次
         </button>
-        <span class="text-xs font-bold text-slate-400">WorshipSlide AI <span class="text-slate-600">mobile</span> <span class="text-slate-700 font-normal">・v2026-07-17</span></span>
+        <span class="text-xs font-bold text-slate-400">WorshipSlide AI <span class="text-slate-600">mobile</span> <span class="text-slate-700 font-normal">・v2026-08-23</span></span>
         <div class="flex items-center gap-1">
             <button onclick="triggerWslideImport()" title="PCで書き出した.wslideを読み込み" class="btn px-2 rounded-lg hover:bg-slate-700 text-emerald-300"><i data-lucide="folder-open" class="w-5 h-5"></i></button>
             <button onclick="exportWslide()" title="現在のデータを.wslideとして保存" class="btn px-2 rounded-lg hover:bg-slate-700 text-sky-300"><i data-lucide="save" class="w-5 h-5"></i></button>
@@ -842,12 +842,14 @@ function renderPreview() {
     const footerMul = (s.footerFontSize !== undefined ? s.footerFontSize : 100) / 100;
 
     const plainText = (s.content || '').replace(/\[.*?\]/g, '').replace(/[〈〉]/g, '');
-    let baseCqw = 5.2;
-    if (plainText.length > 120) baseCqw = 3.8; else if (plainText.length > 75) baseCqw = 4.4; else if (plainText.length > 45) baseCqw = 4.8;
+    // 【2026-08修正】デフォルトの文字サイズをもう少し大きくしたいというご要望により、
+    // 本文・見出し・フッターの基準値を約10%引き上げ（PC版と同じ値に統一）。
+    let baseCqw = 5.7;
+    if (plainText.length > 120) baseCqw = 4.2; else if (plainText.length > 75) baseCqw = 4.8; else if (plainText.length > 45) baseCqw = 5.3;
 
     pBody.style.fontSize = (baseCqw * bodyMul) + 'cqw';
-    pTitle.style.fontSize = (4.2 * titleMul) + 'cqw';
-    document.querySelectorAll('.dynamic-footer-left, .dynamic-footer-right').forEach(el => el.style.fontSize = (3.2 * footerMul) + 'cqw');
+    pTitle.style.fontSize = (4.6 * titleMul) + 'cqw';
+    document.querySelectorAll('.dynamic-footer-left, .dynamic-footer-right').forEach(el => el.style.fontSize = (3.5 * footerMul) + 'cqw');
 
     pScreen.style.background = BG_THEMES[activeBgTheme] || BG_THEMES.sky;
     pScreen.style.color = textColor;
@@ -964,7 +966,9 @@ function renderDrawerList() {
     const wrap = document.getElementById('drawerList');
     if (!slides.length) { wrap.innerHTML = '<p class="text-xs text-slate-500 p-4">スライドがありません</p>'; return; }
     wrap.innerHTML = slides.map((s, i) => {
-        const label = stripRubyMarkup(s.title || s.content || '(無題)').split('\n')[0].slice(0, 24) || '(無題)';
+        // 【2026-08修正】見出しが空欄のとき、これまでは本文（content）の先頭行を表示していたが、
+        // 左下出典に値がある場合はそちらの方が項目を識別しやすいため、本文より優先して使う。
+        const label = stripRubyMarkup(s.title || s.bottomLeft || s.content || '(無題)').split('\n')[0].slice(0, 24) || '(無題)';
         const active = i === currentSlideIndex;
         return `<button onclick="jumpToSlideFromDrawer(${i})" class="w-full text-left px-4 py-3 border-b border-slate-750 flex items-center gap-2.5 ${active ? 'bg-sky-900/40' : 'hover:bg-slate-750'}">
             <span class="text-[11px] text-slate-500 w-5 shrink-0">${i + 1}</span>
@@ -985,7 +989,13 @@ function renderSlideListTab() {
     if (!wrap) return;
     if (!slides.length) { wrap.innerHTML = '<p class="text-xs text-slate-500 py-10 text-center">スライドがありません。「追加」から作成するか、「入力」タブでプログラムを入力してください。</p>'; return; }
     wrap.innerHTML = slides.map((s, i) => {
+        // 【2026-08修正】見出し（s.title）が空欄の場合、リスト上でどのスライドか分からず
+        // 見分けにくいという声を受け、見出しが空欄かつ左下出典に何か入っている場合は、
+        // 左下出典の文字列をタイトル代わりに表示する（見出しと区別できるよう斜体表示）。
         const title = stripRubyMarkup(s.title || '').trim();
+        const bottomLeft = stripRubyMarkup(s.bottomLeft || '').trim();
+        const useBottomLeftFallback = !title && !!bottomLeft;
+        const displayLabel = title || bottomLeft || '(無題)';
         const bodyPreview = stripRubyMarkup((s.content || '').split('\n')[0] || '').slice(0, 32);
         const checked = listSelectedIndices.has(i);
         const isCurrent = i === currentSlideIndex;
@@ -995,7 +1005,7 @@ function renderSlideListTab() {
             <div class="flex-1 min-w-0" ${listSelectMode ? '' : `onclick="jumpToSlideFromList(${i})"`}>
                 <div class="flex items-center gap-1.5">
                     <span class="text-[10px] text-slate-500 shrink-0">${i + 1}</span>
-                    <span class="text-sm font-bold text-slate-200 truncate">${title || '(無題)'}</span>
+                    <span class="text-sm font-bold ${useBottomLeftFallback ? 'italic text-slate-400' : 'text-slate-200'} truncate">${displayLabel}</span>
                 </div>
                 <div class="text-[11px] text-slate-500 truncate">${bodyPreview}</div>
             </div>

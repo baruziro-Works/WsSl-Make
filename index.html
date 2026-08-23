@@ -133,7 +133,7 @@
             <div class="bg-sky-600 p-2 rounded-lg text-white"><i data-lucide="presentation" class="w-6 h-6"></i></div>
             <div>
                 <h1 class="text-xl font-bold tracking-wider">WorshipSlide AI</h1>
-                <p class="text-xs text-slate-400">礼拝用プロジェクター自動作成・投影システム <span class="text-slate-600">Vr_08110017</span></p>
+                <p class="text-xs text-slate-400">礼拝用プロジェクター自動作成・投影システム <span class="text-slate-600">Vr_08231200</span></p>
             </div>
         </div>
         <div class="flex items-center space-x-3 flex-wrap gap-2">
@@ -2057,14 +2057,18 @@
             return keyNumbers.includes(num);
         }
 
-        function findBestTextKeyMatch(normalizedLine, fullDict) {
+        // 【2026-08修正】以前は normalizedLine.includes(normKey) という「部分一致」で判定していたため、
+        // 「来週の礼拝についての報告事項」のように、文章の途中にキーワードが含まれているだけの行が
+        // 誤ってデータベースの内容に置き換わってしまう不具合があった（Mobile版で先に発覚・修正済み）。
+        // 引数を「行全体」から「行頭の単語（firstTokenNorm）」に変更し、完全一致でのみ判定する。
+        function findBestTextKeyMatch(firstTokenNorm, fullDict) {
             let bestKey = null;
             let bestLen = 0;
             for (let key in fullDict) {
                 const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
                 if (!normKey || normKey.length < 2) continue;
                 if (/\d/.test(normKey)) continue; // 数字を含むキーは数字一致ロジックが別途担当
-                if (normalizedLine.includes(normKey) && normKey.length > bestLen) {
+                if (firstTokenNorm === normKey && normKey.length > bestLen) {
                     bestKey = key;
                     bestLen = normKey.length;
                 }
@@ -2090,6 +2094,26 @@
                     .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
                     .replace(/[Ａ-Ｚａ-ｚ]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
                     .toUpperCase();
+
+                // 【2026-08修正】データベースのキーワードとして扱ってよいのは、原則として
+                // 行の先頭の単語（＝最初の空白より前の部分）だけに限定する。こうすることで、
+                // 「来週の礼拝についての報告事項」のように、文章の途中にたまたまキーワードが
+                // 含まれているだけの行が、誤ってデータベースの内容に置き換わる事故を防ぐ
+                // （Mobile版で確立した安全設計をPC版にも統一適用）。
+                const firstTokenNorm = (cleanLine.split(/\s+/)[0] || "")
+                    .replace(/[　・=「」“”：:_-]/g, "")
+                    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+                    .replace(/[Ａ-Ｚａ-ｚ]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+                    .toUpperCase();
+                // 讃美歌番号等の数字照合も、行全体から数字を拾うのではなく、空白で区切った
+                // 「数字だけの単語」（末尾に番/篇/章/節が付くのは許容）にのみ限定する。
+                // これにより「2026年に254名が受洗しました」のような文中の数字に誤反応しない。
+                const numericTokens = [];
+                cleanLine.split(/\s+/).forEach(t => {
+                    const tn = t.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+                    const m = tn.match(/^(\d+)(番|篇|章|節)?$/);
+                    if (m) numericTokens.push(m[1]);
+                });
 
                 if (inLiturgyLyrBlock) {
                     // 歌詞本文の中に「祈り」「献金」等の言葉が含まれているだけで次の項目とみなされ、
@@ -2134,12 +2158,16 @@
                 }
 
                 // 固定辞書（主の祈り・使徒信条など）を最優先でチェック（liturgyDatabaseより先）
-                if (normalizedLine.includes("招詞") || normalizedLine.includes("招きのことば") || normalizedLine.includes("まねき")) {
+                if (firstTokenNorm === "招詞" || firstTokenNorm === "招きのことば" || firstTokenNorm === "まねき") {
                     // 「招詞」行に番号が含まれる場合は、まずカスタム登録済み・プリセットDB内から
                     // 番号が一致する項目を探す（例：招詞 詩篇105篇1-2節 → 登録済みの詩篇105篇を優先使用）
                     let matchedInvocationKey = null;
-                    const invocationNumbers = normalizedLine.match(/\d+/g);
-                    if (invocationNumbers) {
+                    // 「招詞　詩篇105篇1-2節」のように、数字が単語の一部に埋め込まれる書き方にも
+                    // 対応するため、招詞の番号判定だけは行全体から数字を拾う（Mobile版と同じ設計）。
+                    // 一般照合（下部）とは異なり、こちらは「招詞」という行頭キーワードが既に
+                    // 確定した上での絞り込みなので、部分一致的な数字抽出でも誤爆リスクは低い。
+                    const invocationNumbers = normalizedLine.match(/\d+/g) || [];
+                    if (invocationNumbers.length) {
                         for (let num of invocationNumbers) {
                             for (let key in fullDict) {
                                 const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
@@ -2158,9 +2186,9 @@
                     }
                     lastPulledFromDB = true; continue;
                 }
-                else if (normalizedLine.includes("主の祈り") || normalizedLine.includes("主のいのり")) {
+                else if (firstTokenNorm === "主の祈り" || firstTokenNorm === "主のいのり") {
                     // 「主の祈り」に一致する行でも、より具体的な登録キーがあればそちらを優先する
-                    const bestKey = findBestTextKeyMatch(normalizedLine, fullDict);
+                    const bestKey = findBestTextKeyMatch(firstTokenNorm, fullDict);
                     const targetKey = (bestKey && fullDict[bestKey]) ? bestKey : "主の祈り";
                     if (fullDict[targetKey]) {
                         slides.push(...JSON.parse(JSON.stringify(fullDict[targetKey])));
@@ -2172,10 +2200,10 @@
                 //   短い断片の組み合わせだけでテーマ聖句を呼び出す特別判定があったが、
                 //   日付（例：2026年7月20日）や時刻などで簡単に誤爆してしまうため撤去した。
                 //   「テーマ聖句」という文字列そのものは、下の汎用検索で正しく見つかる。
-                if (normalizedLine.includes("使徒信条") || normalizedLine.includes("信仰告白")) {
+                if (firstTokenNorm === "使徒信条" || firstTokenNorm === "信仰告白") {
                     // 「信仰告白」は他の項目名にも含まれ得る一般的な語のため、まずより具体的な
                     // 登録キー（例：日本同盟基督教団信仰告白）が無いか調べ、あればそちらを優先する
-                    const bestKey = findBestTextKeyMatch(normalizedLine, fullDict);
+                    const bestKey = findBestTextKeyMatch(firstTokenNorm, fullDict);
                     const targetKey = (bestKey && fullDict[bestKey]) ? bestKey : "使徒信条";
                     if (fullDict[targetKey]) {
                         slides.push(...JSON.parse(JSON.stringify(fullDict[targetKey])));
@@ -2195,9 +2223,11 @@
                 }
                 else {
                     let matchedKeys = [];
-                    let numbers = normalizedLine.match(/\d+/g);
-                    if (numbers) {
-                        for (let num of numbers) {
+                    // 【2026-08修正】以前は normalizedLine.match(/\d+/g) で行全体から数字を拾っていたため、
+                    // 「2026年に254名が受洗しました」のような文中の数字にも反応しうる状態だった。
+                    // 空白で区切られた「数字だけの単語」（numericTokens）にのみ限定する。
+                    if (numericTokens.length) {
+                        for (let num of numericTokens) {
                             let foundKeyForThisNum = null;
                             for (let key in fullDict) {
                                 const normKey = key.replace(/[\s　・=「」“”：:_-]/g, "").toUpperCase();
@@ -2215,9 +2245,9 @@
                     }
 
                     // 数字でマッチしなかった場合、数字を含まない登録キー（例：テーマ聖句、主の祈り等）との
-                    // 文字列一致もチェックする（最も長く具体的に一致するキーを優先する）
+                    // 完全一致もチェックする（行頭の単語とキーが完全に一致する場合のみ反応する）
                     if (matchedKeys.length === 0) {
-                        const bestKey = findBestTextKeyMatch(normalizedLine, fullDict);
+                        const bestKey = findBestTextKeyMatch(firstTokenNorm, fullDict);
                         if (bestKey) matchedKeys.push(bestKey);
                     }
 
@@ -2246,10 +2276,18 @@
                 const active = i === currentSlideIndex ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold' : 'bg-slate-900/60 border-slate-700 text-slate-300';
                 let typeIcon = s.image ? 'image' : (s.youtubeId || extractYoutubeId(s.content) ? 'video' : 'file-text');
                 const isChecked = audioCheckboxes[i] || false;
+                // 【2026-08修正】見出し（s.title）が空欄の場合、リスト上でどのスライドか分からず
+                // 見分けにくいという声を受け、見出しが空欄かつ左下出典に何か入っている場合は、
+                // 左下出典の文字列をリスト表示にフォールバックで使う（見出しと区別できるよう斜体表示）。
+                const rawTitle = (s.title || '').replace(/\[.*?\]/g, '').trim();
+                const rawBottomLeft = (s.bottomLeft || '').replace(/\[.*?\]/g, '').trim();
+                const useBottomLeftFallback = !rawTitle && !!rawBottomLeft;
+                const listLabel = rawTitle || rawBottomLeft || '(無題)';
+                const listLabelClass = useBottomLeftFallback ? 'text-xs truncate italic text-slate-400' : 'text-xs truncate';
                 list.innerHTML += `<div id="slide-item-${i}" class="p-2 rounded border flex items-center justify-between cursor-pointer transition-all duration-150 ${active}">
                     <div class="flex items-center gap-2 truncate flex-1" onclick="selectSlide(${i})">
                         <i data-lucide="${typeIcon}" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
-                        <span class="text-xs truncate">${s.title.replace(/\[.*?\]/g, '')}</span>
+                        <span class="${listLabelClass}">${listLabel}</span>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <input type="checkbox" id="audio-checkbox-${i}" 
@@ -2773,14 +2811,18 @@
 
             const plainText = s.content ? s.content.replace(/\[.*?\]/g, '').replace(/[〈〉]/g, '') : '';
             const textLength = plainText.length;
-            let baseFontSizeCqw = 5.2;
-            if (textLength > 120) baseFontSizeCqw = 3.8;
-            else if (textLength > 75) baseFontSizeCqw = 4.4;
-            else if (textLength > 45) baseFontSizeCqw = 4.8;
+            // 【2026-08修正】デフォルトの文字サイズをもう少し大きくしたいというご要望により、
+            // 本文・見出し・フッターの基準値を約10%引き上げ（5.2→5.7 / 4.8→5.3 / 4.4→4.8 / 3.8→4.2、
+            // 見出し4.2→4.6、フッター3.2→3.5）。「100%」という表示上の基準はそのまま維持し、
+            // ±の書式設定ボタンはこの新しい基準値に対して機能する。Mobile版にも同じ値を適用済み。
+            let baseFontSizeCqw = 5.7;
+            if (textLength > 120) baseFontSizeCqw = 4.2;
+            else if (textLength > 75) baseFontSizeCqw = 4.8;
+            else if (textLength > 45) baseFontSizeCqw = 5.3;
 
             const finalFontSize = (baseFontSizeCqw * bodyMultiplier) + "cqw";
-            const finalTitleSize = (4.2 * titleMultiplier) + "cqw";
-            const finalFooterSize = (3.2 * footerMultiplier) + "cqw";
+            const finalTitleSize = (4.6 * titleMultiplier) + "cqw";
+            const finalFooterSize = (3.5 * footerMultiplier) + "cqw";
 
             const isHideFooter = !!s.hideFooter;
 
