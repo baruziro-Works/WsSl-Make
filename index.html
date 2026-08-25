@@ -133,7 +133,7 @@
             <div class="bg-sky-600 p-2 rounded-lg text-white"><i data-lucide="presentation" class="w-6 h-6"></i></div>
             <div>
                 <h1 class="text-xl font-bold tracking-wider">WorshipSlide AI</h1>
-                <p class="text-xs text-slate-400">礼拝用プロジェクター自動作成・投影システム <span class="text-slate-600">Vr_08251114</span></p>
+                <p class="text-xs text-slate-400">礼拝用プロジェクター自動作成・投影システム <span class="text-slate-600">Vr-08251145</span></p>
             </div>
         </div>
         <div class="flex items-center space-x-3 flex-wrap gap-2">
@@ -1128,6 +1128,14 @@
         // 歌詞データベースを「基本データベース案0713」CSVの内容で完全に置き換える（1回限りのマイグレーション）。
         // SEED_VERSIONが一致する場合は何もしない＝これ以降にユーザーが行った編集・追加・削除は保持される。
         // SEED_VERSIONを変えない限り、既存のカスタム登録・プリセット上書きが再度消えることはない。
+        // 【2026-08修正】bottomLeftの末尾に既についているページ番号（例:「1/3」）を取り除く共通ヘルパー。
+        // .wslideの読み込みや、歌詞データベース管理画面での編集保存の際に、既に計算済みの番号を
+        // 「出典テンプレート」として誤って保存してしまうと、次に表示するときにもう一度番号が付き、
+        // 「詩篇 100:1-2 1/2 1/2」のように二重表示になってしまう。そのため、テンプレートとして
+        // 扱う値には、常にこの関数を通して古い番号を除去してから使う（Mobile版にも同じ関数を追加済み）。
+        function stripTrailingPageNumber(text) {
+            return (text || "").trim().replace(/\s*\d+\/\d+\s*$/, "").trim();
+        }
         // 本文を空行区切りでスライドに分割する共通ヘルパー。
         // 2枚以上に分かれる場合、左下の表示に自動で「現在ページ/全ページ」を追加する
         // （例：「使徒信条[しとしんじょう]」が3枚に分かれる場合 → 「使徒信条[しとしんじょう] 1/3」「...2/3」「...3/3」）。
@@ -1137,8 +1145,9 @@
             const blocks = (content || "").split(/\n\s*\n/);
             const trimmedBlocks = blocks.map(b => b.trim()).filter(b => b);
             const total = trimmedBlocks.length;
+            const cleanTemplate = stripTrailingPageNumber(bottomLeftTemplate);
             return trimmedBlocks.map((trimmed, i) => {
-                let bottomLeft = bottomLeftTemplate || "";
+                let bottomLeft = cleanTemplate || "";
                 if (total > 1) {
                     bottomLeft = bottomLeft ? `${bottomLeft} ${i + 1}/${total}` : `${i + 1}/${total}`;
                 }
@@ -3650,7 +3659,7 @@
             // プリセットのまま一度も保存されていない場合のみ、キーやスライドから推測した初期値を表示する。
             const derivedTitle = meta ? (meta.title || "") : deriveTitleFromKey(key);
             const derivedHeading = meta ? (meta.heading || "") : (firstSlide.title || "");
-            const derivedBottomLeft = meta ? (meta.bottomLeftTemplate || "") : (firstSlide.bottomLeft || "");
+            const derivedBottomLeft = meta ? (meta.bottomLeftTemplate || "") : stripTrailingPageNumber(firstSlide.bottomLeft || "");
 
             if (songKeyInput) songKeyInput.value = key;
             if (songTitleInput) songTitleInput.value = derivedTitle;
