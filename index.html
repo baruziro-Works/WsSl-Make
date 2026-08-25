@@ -1439,7 +1439,10 @@
                 audioTracks: audioTracks,  // 🔊 音声トラックも保存
                 version: "1.1" 
             };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            // 【2026-08修正】Mobile版で、スマホのブラウザが保存時に拡張子を「.json」に書き換えてしまう
+            // 不具合が見つかり、Blobの形式を 'application/octet-stream' に変更して解消した。
+            // PC版でも将来的にスマホのブラウザで開かれる可能性や、ブラウザ間の互換性を考慮し、同じ形式に統一する。
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

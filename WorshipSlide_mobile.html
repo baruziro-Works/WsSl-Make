@@ -1139,7 +1139,12 @@ function showToast(msg) {
 function triggerWslideImport() { document.getElementById('wslideImportInput').click(); }
 function exportWslide() {
     const data = { customDictionary, liturgyDatabase, dbMeta, deletedPresetKeys, slides, version: "1.1" };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    // 【2026-08修正】Blobの形式を 'application/json' のままにしておくと、スマホのブラウザ
+    // （Android Chrome・Safari等）が保存時に、指定したファイル名の拡張子（.wslide）を無視して
+    // 中身の形式から「.json」だと判断し直してしまい、常に「〜.json」として保存されてしまう不具合があった。
+    // 'application/octet-stream'（＝形式不明の汎用データ）にすることで、拡張子の自動判定・書き換えを防ぎ、
+    // 指定した .wslide のファイル名のまま保存されるようにする。
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = `worship_data_${new Date().toISOString().slice(0,10)}.wslide`;
